@@ -66,6 +66,7 @@ C=======================================================================
         CHARACTER*8 parsfile,logfile,termfile,
      &              outcfile,incfile,elfile,partfile,cenfile,cpufile
         CHARACTER*8 ibodfile,obodfile,potparsfile
+        CHARACTER*20 ibodfile_apw
         PARAMETER(uterm=6,upars=10,ulog=11,ubodsin=12,ubodsout=13,
      &            utermfil=15,uoutcoef=16,uincoef=17,ubodsel=18,
      &            uorb=19,ucpu=20,ucen=21,upotpars=71)
@@ -77,7 +78,7 @@ C=======================================================================
      &            partfile='SCFORB',
      &            cpufile='SCFCPU',cenfile='SCFCEN',
      &            potparsfile='SCFPOT')
-
+        COMMON/bifile/ibodfile_apw
 
 
 

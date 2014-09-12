@@ -777,25 +777,29 @@ C
 C
 C=======================================================================
 
-        INCLUDE 'scf.h'
+      INCLUDE 'scf.h'
 
-        INTEGER i
-        CHARACTER*8 filepar
-	CHARACTER*6 filename
+C      APW hacks:
+      INTEGER i
+      CHARACTER*20 filepar
+	CHARACTER*15 filename
 
-        filepar=ibodfile
-	filename=filepar(1:5)
+C      filepar=ibodfile
+C      filename=filepar(1:5)
+      filepar = ibodfile_apw
+	filename = filepar(1:15)
+      PRINT *, filename
 
-        OPEN(ubodsin,FILE=filename,STATUS='OLD')
+      OPEN(ubodsin,FILE=filename,STATUS='OLD')
 
-        READ(ubodsin,*) nbodies,tnow
+      READ(ubodsin,*) nbodies,tnow
 
-C     CHANGE THIS FOR HIGHER RESOLUTION
+C       CHANGE THIS FOR HIGHER RESOLUTION
       nbodies=nbodies/10
-C      nbodies=nbodies
+C       nbodies=nbodies
 
-        DO 10 i=1,nbodies
-           READ(ubodsin,*) mass(i),x(i),y(i),z(i),vx(i),vy(i),vz(i)
+      DO 10 i=1,nbodies
+         READ(ubodsin,*) mass(i),x(i),y(i),z(i),vx(i),vy(i),vz(i)
 	   mass(i)=mass(i)*10.d0
 	   IF(david.AND.ntide.EQ.0)THEN
 	      x(i)=x(i)-xframe
@@ -803,7 +807,7 @@ C      nbodies=nbodies
 	      z(i)=z(i)-zframe
 	   ENDIF
 
- 10     CONTINUE
+ 10   CONTINUE
 
         CLOSE(ubodsin)
 
@@ -1015,6 +1019,7 @@ C   --------------------------------
 
       READ(upars,'(a)') pcomment
       READ(upars,'(a)') headline
+      READ(upars,*) ibodfile_apw
 	    READ(upars,*) nsteps
 	    READ(upars,*) noutlog
 	    READ(upars,*) noutbod
