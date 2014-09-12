@@ -51,6 +51,24 @@ clean:
     rm SCFCPU SCFCEN SCFORB SCFOUT SCFLOG
 """
 
+base_SCFPOT = """(comment) Miyamoto-Nagai disk parameters
+6.5             a [kpc]
+0.26            b [kpc]
+6.5e10          mass scale [Msun]
+(comment) Hernquist spheroid parameters
+0.3             c [kpc]
+2e10            mass scale [Msun]
+(comment) Triaxial NFW halo parameters
+30.             rs (scale radius) [kpc]
+547.6           vh (scale velocity) [km/s]
+1.2             a (major axis)
+1.              b (intermediate axis)
+0.8             c (minor axis)
+1.570796        phi (use for rotating halo) [radian]
+1.570796        theta (use for rotating halo) [radian]
+1.570796        psi (use for rotating halo) [radian]
+"""
+
 def main(name, x, v, scfpars, overwrite=False):
     _path = os.path.split(__file__)[0]
     run_path = os.path.abspath(os.path.join(_path, "..", "simulations", "runs"))
@@ -89,6 +107,9 @@ def main(name, x, v, scfpars, overwrite=False):
 
     with open(os.path.join(path, "Makefile"), 'w') as f:
         f.write(base_Makefile)
+
+    with open(os.path.join(path, "SCFPOT"), 'w') as f:
+        f.write(base_SCFPOT)
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
