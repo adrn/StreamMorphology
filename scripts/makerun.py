@@ -42,6 +42,15 @@ TRUE            orbiting in NFW potential?
 {v[0]:.5f} {v[1]:.5f} {v[2]:.5f}
 """
 
+base_Makefile = """scf:
+    gfortran ../../scf/scf_nfw.f ../../scf/potential.f -o scf
+
+clean:
+    rm scf
+    rm SNAP*
+    rm SCFCPU SCFCEN SCFORB SCFOUT SCFLOG
+"""
+
 def main(name, x, v, scfpars, overwrite=False):
     _path = os.path.split(__file__)[0]
     run_path = os.path.abspath(os.path.join(_path, "..", "simulations", "runs"))
@@ -77,6 +86,9 @@ def main(name, x, v, scfpars, overwrite=False):
 
     with open(os.path.join(path, "SCFPAR"), 'w') as f:
         f.write(base_SCFPAR.format(x=x, v=v, **scfpars))
+
+    with open(os.path.join(path, "Makefile"), 'w') as f:
+        f.write(base_Makefile)
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
