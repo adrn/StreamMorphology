@@ -27,12 +27,12 @@ from streamteam.units import galactic
 
 # input_path = "/vega/astro/users/amp2217/projects/nonlinear-dynamics/input/pal5"
 # output_path = "/vega/astro/users/amp2217/projects/nonlinear-dynamics/output/pal5"
-input_path = "/Users/adrian/projects/nonlinear-dynamics/input/pal5"
-output_path = "/Users/adrian/projects/nonlinear-dynamics/output/pal5"
+# input_path = "/Users/adrian/projects/nonlinear-dynamics/input/pal5"
+# output_path = "/Users/adrian/projects/nonlinear-dynamics/output/pal5"
 
 def main(filename):
-    norbits = 10
-    nsteps = 250
+    norbits = 2000
+    nsteps = 100000
 
     filename_base = os.path.splitext(os.path.basename(filename))[0]
     time_file = os.path.join(output_path,"time_{}.npy".format(filename_base))
