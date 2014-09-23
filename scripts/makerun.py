@@ -43,12 +43,12 @@ TRUE            orbiting in NFW potential?
 """
 
 base_Makefile = """scf:
-    gfortran ../../scf/scf_nfw.f ../../scf/potential.f -o scf
+        gfortran ../../scf/scf_nfw.f ../../scf/potential.f -o scf
 
 clean:
-    rm scf
-    rm SNAP*
-    rm SCFCPU SCFCEN SCFORB SCFOUT SCFLOG
+        rm scf
+        rm SNAP*
+        rm SCFCPU SCFCEN SCFORB SCFOUT SCFLOG
 """
 
 base_SCFPOT = """(comment) Miyamoto-Nagai disk parameters
@@ -61,7 +61,7 @@ base_SCFPOT = """(comment) Miyamoto-Nagai disk parameters
 (comment) Triaxial NFW halo parameters
 30.             rs (scale radius) [kpc]
 547.6           vh (scale velocity) [km/s]
-1.2             a (major axis)
+1.3             a (major axis)
 1.              b (intermediate axis)
 0.8             c (minor axis)
 1.570796        phi (use for rotating halo) [radian]
@@ -69,7 +69,35 @@ base_SCFPOT = """(comment) Miyamoto-Nagai disk parameters
 1.570796        psi (use for rotating halo) [radian]
 """
 
-def main(name, x, v, scfpars, overwrite=False):
+base_submit = """#!/bin/sh
+
+# Directives
+#PBS -N scf_{name}
+#PBS -W group_list=yetiastro
+#PBS -l nodes=1:ppn=1,walltime=8:00:00,mem=8gb
+#PBS -M amp2217@columbia.edu
+#PBS -m abe
+#PBS -V
+
+# Set output and error directories
+#PBS -o localhost:/vega/astro/users/amp2217/pbs_output
+#PBS -e localhost:/vega/astro/users/amp2217/pbs_output
+
+# print date and time to file
+date
+
+#Command to execute Python program
+cd {path}
+make
+./scf
+/vega/astro/users/amp2217/projects/new_streamteam/bin/moviesnap --path={path}
+
+date
+
+#End of script
+"""
+
+def main(name, x, v, scfpars, overwrite=False, submit=False):
     _path = os.path.split(__file__)[0]
     run_path = os.path.abspath(os.path.join(_path, "..", "simulations", "runs"))
     logger.debug("Run path: {}".format(run_path))
@@ -108,8 +136,15 @@ def main(name, x, v, scfpars, overwrite=False):
     with open(os.path.join(path, "Makefile"), 'w') as f:
         f.write(base_Makefile)
 
+    sed_cmd = "sed 's/ \+ /\t/g' {} > {}".format(os.path.join(path, "Makefile"))
+    os.system(sed_cmd)
+
     with open(os.path.join(path, "SCFPOT"), 'w') as f:
         f.write(base_SCFPOT)
+
+    if submit:
+        with open(os.path.join(path, "submit.sh"), 'w') as f:
+            f.write(base_submit.format(name=name, path=path))
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -125,6 +160,8 @@ if __name__ == '__main__':
                         default=False, help="DESTROY. DESTROY.")
 
     parser.add_argument("--name", dest="name", type=str, help="Name.", required=True)
+    parser.add_argument("-s", "--submit", action="store_true", dest="submit",
+                        default=False, help="Generate a submit.sh file as well.")
     parser.add_argument("--pos", dest="x", required=True,
                         type=str, help="Initial position in 3 space. Must specify a "
                                        "unit, e.g., --x='15.324,123.314,51.134 kpc'")
@@ -182,4 +219,5 @@ if __name__ == '__main__':
     scfpars['nsnap'] = args.nsnap
     scfpars['ntide'] = args.ntide
 
-    main(name=args.name, x=args.x, v=args.v, scfpars=scfpars, overwrite=args.overwrite)
+    main(name=args.name, x=args.x, v=args.v, scfpars=scfpars,
+         overwrite=args.overwrite, submit=args.submit)
