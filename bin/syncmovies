@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo `rsync -vazr --exclude="*.hdf5" --include="*.mp4" yeti:/vega/astro/users/amp2217/projects/morphology/simulations/* ~/projects/morphology/simulations`
