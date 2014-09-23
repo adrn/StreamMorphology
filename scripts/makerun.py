@@ -136,7 +136,7 @@ def main(name, x, v, scfpars, overwrite=False, submit=False):
     with open(os.path.join(path, "Makefile"), 'w') as f:
         f.write(base_Makefile)
 
-    sed_cmd = "sed 's/ \+ /\t/g' {fn} > {fn}".format(fn=os.path.join(path, "Makefile"))
+    sed_cmd = "sed 's/ \+ /\t/g' {fn} > {fn}2".format(fn=os.path.join(path, "Makefile"))
     os.system(sed_cmd)
 
     with open(os.path.join(path, "SCFPOT"), 'w') as f:
