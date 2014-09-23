@@ -90,7 +90,7 @@ date
 cd {path}
 make
 ./scf
-/vega/astro/users/amp2217/projects/new_streamteam/bin/moviesnap --path={path}
+/vega/astro/users/amp2217/projects/streamteam/bin/moviesnap --path={path}
 
 date
 
@@ -138,6 +138,8 @@ def main(name, x, v, scfpars, overwrite=False, submit=False):
 
     sed_cmd = "sed 's/ \+ /\t/g' {fn} > {fn}2".format(fn=os.path.join(path, "Makefile"))
     os.system(sed_cmd)
+    cmd = "mv {fn}2 {fn}".format(os.path.join(path, "Makefile"))
+    os.system(cmd)
 
     with open(os.path.join(path, "SCFPOT"), 'w') as f:
         f.write(base_SCFPOT)
