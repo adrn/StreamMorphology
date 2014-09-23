@@ -8,7 +8,7 @@
 (comment) Triaxial NFW halo parameters
 30.             rs (scale radius) [kpc]
 547.6           vh (scale velocity) [km/s]
-1.2             a (major axis)
+1.3             a (major axis)
 1.              b (intermediate axis)
 0.8             c (minor axis)
 1.570796        phi (use for rotating halo) [radian]
