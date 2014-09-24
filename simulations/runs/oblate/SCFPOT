@@ -1,0 +1,16 @@
+(comment) Miyamoto-Nagai disk parameters
+6.5             a [kpc]
+0.26            b [kpc]
+0.          mass scale [Msun]
+(comment) Hernquist spheroid parameters
+0.3             c [kpc]
+0.            mass scale [Msun]
+(comment) Triaxial NFW halo parameters
+30.             rs (scale radius) [kpc]
+488.896         vh (scale velocity) [km/s]
+1.             a (major axis)
+1.              b (intermediate axis)
+0.8             c (minor axis)
+0        phi (use for rotating halo) [radian]
+0        theta (use for rotating halo) [radian]
+0         psi (use for rotating halo) [radian]
