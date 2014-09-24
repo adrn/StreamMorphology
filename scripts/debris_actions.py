@@ -28,8 +28,8 @@ from streamteam.units import galactic
 from streamteam.util import get_pool
 
 # Integration parameters
-nsteps = 500000
-dt = 1.  # Myr
+nsteps = 250000
+dt = 0.4  # Myr
 
 def ic_generator(w0, mmap, potential):
     n = 0
