@@ -27,18 +27,14 @@ import streamteam.dynamics as sd
 from streamteam.units import galactic
 from streamteam.util import get_pool
 
-# Integration parameters
-nsteps = 250000
-dt = 0.4  # Myr
-
-def ic_generator(w0, mmap, potential):
+def ic_generator(w0, mmap, potential, nsteps, dt):
     n = 0
     while n < w0.shape[0]:
-        yield n, w0, mmap, potential
+        yield n, w0, mmap, potential, nsteps, dt
         n += 1
 
 def mpi_helper(p):
-    n, w0, mmap, potential = p
+    n, w0, mmap, potential, nsteps, dt = p
 
     # Integrate single orbit
     t,w = potential.integrate_orbit(w0[n], Integrator=si.DOPRI853Integrator,
@@ -102,7 +98,7 @@ def main(file_path, output_path=None, mpi=False, overwrite=False):
                          shape=(nsteps+1, norbits, 6), dtype=np.float64)
 
         if mpi:
-            pool.map(mpi_helper, ic_generator(w0, mmap, potential))
+            pool.map(mpi_helper, ic_generator(w0, mmap, potential, nsteps, dt))
             pool.close()
         else:
             # Integrate orbits and save
@@ -224,6 +220,10 @@ if __name__ == "__main__":
                         type=str, help="Filename.")
     parser.add_argument("--output", dest="output", default=None,
                         type=str, help="Path to save files and plots to.")
+    parser.add_argument("--nsteps", dest="nsteps", default=400000,
+                        type=int, help="Number of integration steps.")
+    parser.add_argument("--dt", dest="dt", default=0.25,
+                        type=float, help="Timestep in Myr.")
 
     args = parser.parse_args()
 
@@ -235,4 +235,5 @@ if __name__ == "__main__":
     else:
         logger.setLevel(logging.INFO)
 
-    main(args.filename, args.output, mpi=args.mpi, overwrite=args.overwrite)
+    main(args.filename, args.output, mpi=args.mpi, overwrite=args.overwrite,
+         dt=args.dt, nsteps=args.nsteps)
