@@ -20,44 +20,46 @@ import astropy.units as u
 
 # Project
 import streamteam.integrate as si
+import streamteam.io as io
 from streamteam.potential.lm10 import LM10Potential
 from streamteam.potential.apw import PW14Potential
 import streamteam.dynamics as sd
 from streamteam.units import galactic
 
-# input_path = "/vega/astro/users/amp2217/projects/nonlinear-dynamics/input/pal5"
-# output_path = "/vega/astro/users/amp2217/projects/nonlinear-dynamics/output/pal5"
-# input_path = "/Users/adrian/projects/nonlinear-dynamics/input/pal5"
-# output_path = "/Users/adrian/projects/nonlinear-dynamics/output/pal5"
-
-def main(filename):
-    norbits = 2000
+def main(file_path, output_path=None):
+    norbits = 1000
     nsteps = 100000
 
-    filename_base = os.path.splitext(os.path.basename(filename))[0]
+    path,filename = os.path.split(file_path)
+    filename_base = os.path.splitext(filename)[0]
+
+    if output_path is None:
+        output_path = path
+
+    if not os.path.exists(output_path):
+        logger.debug("Creating path '{}'".format(output_path))
+        os.mkdir(output_path)
+
     time_file = os.path.join(output_path,"time_{}.npy".format(filename_base))
     orbit_file = os.path.join(output_path,"orbits_{}.array".format(filename_base))
     action_file = os.path.join(output_path,"actions_{}.npy".format(filename_base))
     angle_file =os.path.join(output_path,"angles_{}.npy".format(filename_base))
     freq_file = os.path.join(output_path,"freqs_{}.npy".format(filename_base))
 
-    if not os.path.exists(input_path):
-        logger.error("Input path doesn't exist: {}".format(input_path))
-        sys.exit(1)
+    # TODO: create a reader for NBODY6 snapshots?
+    # TODO: try reading with each reader?
+    # Something like -- for reader in io.readers: ...
+    scf = io.SCFReader(path)
+    tbl = scf.read_snap(filename, units=galactic)
+    w0 = io.tbl_to_w(tbl)
+    unbound = tbl['tub'] > 0.
 
-    if not os.path.exists(output_path):
-        os.mkdir(output_path)
-
-    d = np.loadtxt(os.path.join(input_path, filename))
-    # x = (d[:,1:4]*u.pc).decompose(galactic).value
-    # v = (d[:,4:7]*u.km/u.s).decompose(galactic).value
-    x = d[:,1:4]  # already in kpc
-    v = d[:,4:7]  # already in kpc/Myr
-    w0 = np.hstack((x,v))
+    # TODO: below here is general
+    w0 = w0[unbound]
     w0 = w0[np.random.randint(len(w0),size=norbits)]
 
     # potential = LM10Potential()
-    potential = PW14Potential(q1=1.2, q3=0.9, phi=np.pi/2., theta=np.pi/2., psi=np.pi/2.)
+    potential = PW14Potential(q1=1.3, q3=0.8, phi=np.pi/2., theta=np.pi/2., psi=np.pi/2.)
 
     logger.info("Read initial conditions...")
     if not os.path.exists(time_file):
@@ -165,6 +167,8 @@ if __name__ == "__main__":
 
     parser.add_argument("-f", dest="filename", default=None, required=True,
                         type=str, help="Filename.")
+    parser.add_argument("--output", dest="output", default=None,
+                        type=str, help="Path to save files and plots to.")
 
     args = parser.parse_args()
 
@@ -176,4 +180,4 @@ if __name__ == "__main__":
     else:
         logger.setLevel(logging.INFO)
 
-    main(args.filename)
+    main(args.filename, args.output)
