@@ -28,8 +28,8 @@ from streamteam.units import galactic
 from streamteam.util import get_pool
 
 # Integration parameters
-nsteps = 200000
-dt = 0.75  # Myr
+nsteps = 500000
+dt = 1.  # Myr
 
 def ic_generator(w0, mmap, potential):
     n = 0
@@ -174,14 +174,17 @@ def main(file_path, output_path=None, mpi=False, overwrite=False):
     r1,r2,r3 = ((freqs[1:] - freqs[0])/freqs[0]).T
     # r1,r2,r3 = freqs.T*1000.
 
-    fig,axes = plt.subplots(1,2,figsize=(12,5),sharey=True,sharex=True)
+    fig,axes = plt.subplots(1,3,figsize=(15,5))
     with mpl.rc_context({'lines.marker': '.', 'lines.linestyle': 'none'}):
         axes[0].plot(r1, r3, alpha=0.25)
         axes[1].plot(r2, r3, alpha=0.25)
+        axes[2].plot(r1, r2, alpha=0.25)
 
     axes[0].set_xlabel(r"$(\Omega_1 - \Omega_{1,{\rm sat}})/\Omega_{1,{\rm sat}}$")
     axes[1].set_xlabel(r"$(\Omega_2 - \Omega_{2,{\rm sat}})/\Omega_{2,{\rm sat}}$")
     axes[0].set_ylabel(r"$(\Omega_3 - \Omega_{3,{\rm sat}})/\Omega_{3,{\rm sat}}$")
+    axes[2].set_ylabel(r"$(\Omega_2 - \Omega_{2,{\rm sat}})/\Omega_{2,{\rm sat}}$")
+    axes[2].set_xlabel(r"$(\Omega_1 - \Omega_{1,{\rm sat}})/\Omega_{1,{\rm sat}}$")
     fig.tight_layout()
     fig.savefig(os.path.join(output_path, "frequencies_{}.png".format(filename_base)))
 
@@ -189,14 +192,17 @@ def main(file_path, output_path=None, mpi=False, overwrite=False):
     r1,r2,r3 = ((actions[1:] - actions[0])/actions[0]).T
     # r1,r2,r3 = actions.T
 
-    fig,axes = plt.subplots(1,2,figsize=(12,5),sharey=True)
+    fig,axes = plt.subplots(1,3,figsize=(15,5))
     with mpl.rc_context({'lines.marker': '.', 'lines.linestyle': 'none'}):
         axes[0].plot(r1, r3, alpha=0.25)
         axes[1].plot(r2, r3, alpha=0.25)
+        axes[2].plot(r1, r2, alpha=0.25)
 
     axes[0].set_xlabel(r"$(J_1 - J_{1,{\rm sat}})/J_{1,{\rm sat}}$")
     axes[1].set_xlabel(r"$(J_2 - J_{2,{\rm sat}})/J_{2,{\rm sat}}$")
     axes[0].set_ylabel(r"$(J_3 - J_{3,{\rm sat}})/J_{3,{\rm sat}}$")
+    axes[2].set_xlabel(r"$(J_1 - J_{1,{\rm sat}})/J_{1,{\rm sat}}$")
+    axes[2].set_ylabel(r"$(J_2 - J_{2,{\rm sat}})/J_{2,{\rm sat}}$")
     fig.tight_layout()
     fig.savefig(os.path.join(output_path, "actions_{}.png".format(filename_base)))
 
