@@ -103,6 +103,7 @@ def main(file_path, output_path=None, mpi=False, overwrite=False):
 
         if mpi:
             pool.map(mpi_helper, ic_generator(w0, mmap, potential))
+            pool.close()
         else:
             # Integrate orbits and save
             t,w = potential.integrate_orbit(w0, Integrator=si.DOPRI853Integrator,
