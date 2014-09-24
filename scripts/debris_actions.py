@@ -41,7 +41,7 @@ def mpi_helper(p):
                                     dt=dt, nsteps=nsteps)
     mmap[:,n] = w[:,0]
 
-def main(file_path, output_path=None, mpi=False, overwrite=False):
+def main(file_path, output_path=None, mpi=False, overwrite=False, dt=None, nsteps=None):
     norbits = 1000
 
     path,filename = os.path.split(file_path)
