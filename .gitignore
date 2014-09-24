@@ -7,3 +7,6 @@ SNAP*
 scf
 *.mp4
 *~
+*.array
+*.npy
+*.png
