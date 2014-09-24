@@ -152,8 +152,11 @@ def main(file_path, output_path=None, mpi=False, overwrite=False, dt=None, nstep
         for i in range(norbits):
             logger.debug("Computing actions+ for orbit {}".format(i))
             ww = w[:,i]
-            actions[i],angles[i],freqs[i] = sd.find_actions(t[::25], ww[::25],
-                                                            N_max=6, usys=galactic)
+            try:
+                actions[i],angles[i],freqs[i] = sd.find_actions(t[::25], ww[::25],
+                                                                N_max=6, usys=galactic)
+            except ValueError:
+                actions[i] = angles[i] = freqs[i] = np.nan
 
         np.save(files['actions'], actions)
         np.save(files['angles'], angles)
