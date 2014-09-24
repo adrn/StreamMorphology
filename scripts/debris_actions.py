@@ -72,7 +72,8 @@ def main(file_path, output_path=None, mpi=False, overwrite=False, dt=None, nstep
     # TODO: create a reader for NBODY6 snapshots?
     # TODO: try reading with each reader?
     # Something like -- for reader in io.readers: ...
-    scf = io.SCFReader(path)
+    scf = io.APWSCFReader(path)
+    pparams = scf.read_potential(units=galactic)
     tbl = scf.read_snap(filename, units=galactic)
     cen_w0 = io.tbl_to_w(scf.read_cen(units=galactic))[-1]
     w0 = np.squeeze(io.tbl_to_w(tbl))
@@ -87,7 +88,8 @@ def main(file_path, output_path=None, mpi=False, overwrite=False, dt=None, nstep
     w0 = np.vstack((cen_w0, w0))
 
     # potential = LM10Potential()
-    potential = PW14Potential(q1=1.3, q3=0.8, phi=np.pi/2., theta=np.pi/2., psi=np.pi/2.)
+    potential = PW14Potential(**pparams)
+    logger.info("Potential parameters: {}".formaT(pparams))
 
     logger.info("Read initial conditions...")
     if not os.path.exists(files['time']):
@@ -202,6 +204,8 @@ def main(file_path, output_path=None, mpi=False, overwrite=False, dt=None, nstep
     axes[2].set_ylabel(r"$(J_2 - J_{2,{\rm sat}})/J_{2,{\rm sat}}$")
     fig.tight_layout()
     fig.savefig(os.path.join(output_path, "actions_{}.png".format(filename_base)))
+
+    sys.exit(0)
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
