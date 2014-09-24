@@ -89,7 +89,7 @@ def main(file_path, output_path=None, mpi=False, overwrite=False, dt=None, nstep
 
     # potential = LM10Potential()
     potential = PW14Potential(**pparams)
-    logger.info("Potential parameters: {}".formaT(pparams))
+    logger.info("Potential parameters: {}".format(pparams))
 
     logger.info("Read initial conditions...")
     if not os.path.exists(files['time']):
