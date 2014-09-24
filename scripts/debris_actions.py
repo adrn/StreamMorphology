@@ -31,14 +31,14 @@ from streamteam.util import get_pool
 nsteps = 200000
 dt = 0.75  # Myr
 
-def ic_generator(w0, mmap):
+def ic_generator(w0, mmap, potential):
     n = 0
     while n < w0.shape[0]:
-        yield n, w0, mmap
+        yield n, w0, mmap, potential
         n += 1
 
 def mpi_helper(p):
-    n, w0, mmap = p
+    n, w0, mmap, potential = p
 
     # Integrate single orbit
     t,w = potential.integrate_orbit(w0[n], Integrator=si.DOPRI853Integrator,
@@ -102,7 +102,7 @@ def main(file_path, output_path=None, mpi=False, overwrite=False):
                          shape=(nsteps+1, norbits, 6), dtype=np.float64)
 
         if mpi:
-            pool.map(mpi_helper, ic_generator(w0, mmap))
+            pool.map(mpi_helper, ic_generator(w0, mmap, potential))
         else:
             # Integrate orbits and save
             t,w = potential.integrate_orbit(w0, Integrator=si.DOPRI853Integrator,
