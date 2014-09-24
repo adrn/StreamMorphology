@@ -46,7 +46,7 @@ def mpi_helper(p):
     mmap[:,n] = w[:,0]
 
 def main(file_path, output_path=None, mpi=False, overwrite=False):
-    norbits = 10
+    norbits = 1000
 
     path,filename = os.path.split(file_path)
     filename_base = os.path.splitext(filename)[0]
@@ -137,7 +137,7 @@ def main(file_path, output_path=None, mpi=False, overwrite=False):
 
     # Make energy conservation check plot
     plt.clf()
-    for i in range(norbits//10):
+    for i in range(min(100,norbits)):
         ww = w[:,i]
         E = potential.energy(ww[:,:3], ww[:,3:])
         plt.semilogy(np.abs((E[1:]-E[0])/E[0]), marker=None, alpha=0.25)
@@ -156,7 +156,7 @@ def main(file_path, output_path=None, mpi=False, overwrite=False):
         for i in range(norbits):
             logger.debug("Computing actions+ for orbit {}".format(i))
             ww = w[:,i]
-            actions[i],angles[i],freqs[i] = sd.find_actions(t[::10], ww[::10],
+            actions[i],angles[i],freqs[i] = sd.find_actions(t[::25], ww[::25],
                                                             N_max=6, usys=galactic)
 
         np.save(files['actions'], actions)
@@ -167,9 +167,6 @@ def main(file_path, output_path=None, mpi=False, overwrite=False):
         actions = np.load(files['actions'])
         angles = np.load(files['angles'])
         freqs = np.load(files['freqs'])
-
-    print(actions)
-    print(freqs)
 
     # Make frequency plot
     r1,r2,r3 = ((freqs[1:] - freqs[0])/freqs[0]).T
