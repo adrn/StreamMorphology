@@ -41,9 +41,7 @@ def mpi_helper(p):
                                     dt=dt, nsteps=nsteps)
     mmap[:,n] = w[:,0]
 
-def main(file_path, output_path=None, mpi=False, overwrite=False, dt=None, nsteps=None):
-    norbits = 1000
-
+def main(file_path, norbits, output_path=None, mpi=False, overwrite=False, dt=None, nsteps=None):
     path,filename = os.path.split(file_path)
     filename_base = os.path.splitext(filename)[0]
 
@@ -147,6 +145,9 @@ def main(file_path, output_path=None, mpi=False, overwrite=False, dt=None, nstep
     if not os.path.exists(files['actions']):
         logger.info("Computing actions...")
 
+        # First fit toy potential to the satellite orbit (index 0)
+        toy_potential = sd.fit_toy_potential(w[:,0], usys=galactic)
+
         # Compute actions, etc.
         freqs = np.empty((norbits,3))
         angles = np.empty_like(freqs)
@@ -156,7 +157,8 @@ def main(file_path, output_path=None, mpi=False, overwrite=False, dt=None, nstep
             ww = w[:,i]
             try:
                 actions[i],angles[i],freqs[i] = sd.find_actions(t[::25], ww[::25],
-                                                                N_max=6, usys=galactic)
+                                                                N_max=6, usys=galactic,
+                                                                toy_potential=toy_potential)
             except ValueError:
                 actions[i] = angles[i] = freqs[i] = np.nan
 
@@ -185,6 +187,7 @@ def main(file_path, output_path=None, mpi=False, overwrite=False, dt=None, nstep
     axes[2].set_ylabel(r"$(\Omega_2 - \Omega_{2,{\rm sat}})/\Omega_{2,{\rm sat}}$")
     axes[2].set_xlabel(r"$(\Omega_1 - \Omega_{1,{\rm sat}})/\Omega_{1,{\rm sat}}$")
     fig.tight_layout()
+    plt.tight_layout()
     fig.savefig(os.path.join(output_path, "frequencies_{}.png".format(filename_base)))
 
     # Make action plot
@@ -225,6 +228,8 @@ if __name__ == "__main__":
 
     parser.add_argument("-f", dest="filename", default=None, required=True,
                         type=str, help="Filename.")
+    parser.add_argument("-n", "--norbits", dest="norbits", required=True,
+                        type=int, help="Number of orbits to integrate.")
     parser.add_argument("--output", dest="output", default=None,
                         type=str, help="Path to save files and plots to.")
     parser.add_argument("--nsteps", dest="nsteps", default=400000,
@@ -242,5 +247,5 @@ if __name__ == "__main__":
     else:
         logger.setLevel(logging.INFO)
 
-    main(args.filename, args.output, mpi=args.mpi, overwrite=args.overwrite,
-         dt=args.dt, nsteps=args.nsteps)
+    main(args.filename, norbits=args.norbits, output_path=args.output, mpi=args.mpi,
+         overwrite=args.overwrite, dt=args.dt, nsteps=args.nsteps)
