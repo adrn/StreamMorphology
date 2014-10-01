@@ -152,7 +152,7 @@ def main(file_path, norbits, output_path=None, mpi=False, overwrite=False, dt=No
         logger.info("Computing actions...")
 
         # First fit toy potential to the satellite orbit (index 0)
-        toy_potential = sd.fit_toy_potential(w[:,0], usys=galactic)
+        toy_potential = sd.fit_toy_potential(w[:,0], units=galactic)
 
         # Compute actions, etc.
         freqs = np.empty((norbits,3))
@@ -163,7 +163,7 @@ def main(file_path, norbits, output_path=None, mpi=False, overwrite=False, dt=No
             ww = w[:,i]
             try:
                 actions[i],angles[i],freqs[i] = sd.find_actions(t[::25], ww[::25],
-                                                                N_max=6, usys=galactic,
+                                                                N_max=6, units=galactic,
                                                                 toy_potential=toy_potential)
             except ValueError:
                 actions[i] = angles[i] = freqs[i] = np.nan
