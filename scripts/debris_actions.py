@@ -47,7 +47,8 @@ def mpi_helper(p):
                                     dt=dt, nsteps=nsteps)
     mmap[:,n] = w[:,0]
 
-def main(file_path, norbits, output_path=None, mpi=False, overwrite=False, dt=None, nsteps=None):
+def main(file_path, norbits, output_path=None, mpi=False, overwrite=False, dt=None,
+         nsteps=None, pal5=False):
     path,filename = os.path.split(file_path)
     filename_base = os.path.splitext(filename)[0]
 
@@ -73,27 +74,39 @@ def main(file_path, norbits, output_path=None, mpi=False, overwrite=False, dt=No
                 logger.debug("Nuking {}".format(fn))
                 os.remove(fn)
 
-    # TODO: create a reader for NBODY6 snapshots?
-    # TODO: try reading with each reader?
-    # Something like -- for reader in io.readers: ...
-    scf = io.APWSCFReader(path)
-    pparams = scf.read_potential(units=galactic)
-    tbl = scf.read_snap(filename, units=galactic)
-    cen_w0 = io.tbl_to_w(scf.read_cen(units=galactic))[-1]
-    w0 = np.squeeze(io.tbl_to_w(tbl))
-    unbound = tbl['tub'] > 0.
+    if pal5:
+        logger.info("----- Pal5 special case -----")
+        potential = LM10Potential()
+        logger.info("Using LM10...")
+
+        rdr = io.NBODY6Reader(path)
+        tbl = rdr.read_snapshot(filename, units=galactic)
+
+        w0 = np.squeeze(io.tbl_to_w(tbl))
+        cen_w0 = w0[0].copy()
+        w0 = w0[1:]
+
+    else:
+        # TODO: create a reader for NBODY6 snapshots?
+        # TODO: try reading with each reader?
+        # Something like -- for reader in io.readers: ...
+        scf = io.APWSCFReader(path)
+        pparams = scf.read_potential(units=galactic)
+        tbl = scf.read_snap(filename, units=galactic)
+        cen_w0 = io.tbl_to_w(scf.read_cen(units=galactic))[-1]
+        w0 = np.squeeze(io.tbl_to_w(tbl))
+        unbound = tbl['tub'] > 0.
+        w0 = w0[unbound]
+
+        potential = PW14Potential(**pparams)
+        logger.info("Potential parameters: {}".format(pparams))
 
     # TODO: below here is general
-    w0 = w0[unbound]
     w0 = w0[np.random.randint(len(w0),size=norbits)]
 
     # stack initial conditions for center of satellite on top
     norbits += 1
     w0 = np.vstack((cen_w0, w0))
-
-    # potential = LM10Potential()
-    potential = PW14Potential(**pparams)
-    logger.info("Potential parameters: {}".format(pparams))
 
     logger.info("Read initial conditions...")
     if not os.path.exists(files['time']):
@@ -229,6 +242,10 @@ if __name__ == "__main__":
     parser.add_argument("--dt", dest="dt", default=0.25,
                         type=float, help="Timestep in Myr.")
 
+    # HACK
+    parser.add_argument("--pal5", action="store_true", dest="pal5",
+                        default=False, help="Pal5 hack")
+
     args = parser.parse_args()
 
     # Set logger level based on verbose flags
@@ -240,4 +257,4 @@ if __name__ == "__main__":
         logger.setLevel(logging.INFO)
 
     main(args.filename, norbits=args.norbits, output_path=args.output, mpi=args.mpi,
-         overwrite=args.overwrite, dt=args.dt, nsteps=args.nsteps)
+         overwrite=args.overwrite, dt=args.dt, nsteps=args.nsteps, pal5=args.pal5)
