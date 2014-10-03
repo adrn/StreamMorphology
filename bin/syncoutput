@@ -1,3 +1,4 @@
 #!/bin/bash
 
 echo `rsync -zvr --include="*.mp4" --include="*.png" --include="*/" --exclude="*" yeti:/vega/astro/users/amp2217/projects/morphology/simulations/runs/* ~/projects/morphology/simulations/runs/`
+echo `rsync -zvr --include="*.mp4" --include="*.png" --include="*/" --exclude="*" yeti:/vega/astro/users/amp2217/projects/morphology/simulations/pal5/* ~/projects/morphology/simulations/pal5/`
