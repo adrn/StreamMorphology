@@ -1,10 +1,10 @@
 test           comment
 test            comment
 "../../scf/SCFBI" path to SCFBI file
-15000           nsteps
+30000           nsteps
 10             noutlog
-1000            noutbod
-0.14999430    dtime
+5000            noutbod
+0.07499715    dtime
 1.0             G
 TRUE            self gravitating?
 FALSE           input expansion coefficients?
@@ -15,7 +15,7 @@ FALSE           fix zero CoM acceleration?
 TRUE            orbiting in NFW potential?
 500             how often to re-adjust center?
 500             number of steps to turn on MW potential
-2.0e-02           satellite scale (kpc)
-2.5e+05           satellite mass (Msun)
-20.00000000 2.50000000 0.00000000
-0.00000 0.00000 195.55844
+4.3e-02           satellite scale (kpc)
+2.5e+06           satellite mass (Msun)
+0.00000000 35.00000000 0.00000000
+-195.55844 97.77922 0.00000
