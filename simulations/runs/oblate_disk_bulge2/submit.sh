@@ -16,10 +16,10 @@
 date
 
 #Command to execute Python program
-cd /vega/astro/users/amp2217/projects/morphology/simulations/runs/oblate_disk_bulge
+cd /vega/astro/users/amp2217/projects/morphology/simulations/runs/oblate_disk_bulge2
 make
 ./scf
-/vega/astro/users/amp2217/projects/gary/bin/moviesnap --path=/vega/astro/users/amp2217/projects/morphology/simulations/runs/oblate_disk_bulge
+/vega/astro/users/amp2217/projects/gary/bin/moviesnap --path=/vega/astro/users/amp2217/projects/morphology/simulations/runs/oblate_disk_bulge2
 
 date
 
