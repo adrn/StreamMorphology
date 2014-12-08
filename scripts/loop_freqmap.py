@@ -25,7 +25,7 @@ from streammorphology.initialconditions import loop_grid
 
 # timstep and number of steps
 dt = 1.
-nsteps = 60000
+nsteps = 200000
 nintvec = 15
 
 def ws_to_freqs(naff, ws):
