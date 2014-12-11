@@ -105,7 +105,7 @@ def main(path="", mpi=False, overwrite=False):
         os.mkdir(os.path.join(path,'all'))
 
     # initial conditions
-    E = -0.125
+    E = -0.1
     w0 = loop_grid(E, potential, Naxis=100)
     norbits = len(w0)
     logger.info("Number of orbits: {}".format(norbits))
