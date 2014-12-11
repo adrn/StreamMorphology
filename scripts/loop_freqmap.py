@@ -24,7 +24,7 @@ from gary.util import get_pool
 from streammorphology.initialconditions import loop_grid
 
 # timstep and number of steps
-dt = 1.
+dt = 0.5
 nsteps = 200000
 nintvec = 15
 
@@ -57,7 +57,7 @@ def ws_to_freqs(naff, ws):
 
 def worker(task):
     i,filename,potential = task
-    path = os.path.split(filename)[0]
+    path = os.path.join(os.path.split(filename)[0], 'all')
     freq_fn = os.path.join(path,"{}.npy".format(i))
     if os.path.exists(freq_fn):
         logger.info("Freq file exists.")
@@ -102,9 +102,10 @@ def main(path="", mpi=False, overwrite=False):
     all_freqs_filename = os.path.join(path, "all_freqs.npy")
     if not os.path.exists(path):
         os.mkdir(path)
+        os.mkdir(os.path.join(path,'all'))
 
     # initial conditions
-    E = -0.15
+    E = -0.125
     w0 = loop_grid(E, potential, Naxis=100)
     norbits = len(w0)
     logger.info("Number of orbits: {}".format(norbits))
@@ -130,13 +131,14 @@ def main(path="", mpi=False, overwrite=False):
     all_freqs = np.load(all_freqs_filename)
     return all_freqs
 
-def plot(freqs, path):
-    plt.figure(figsize=(6,6))
-    plt.plot(freqs[:,1]/freqs[:,0], freqs[:,2]/freqs[:,0],
-             linestyle='none', marker='.', alpha=1., ms=2)
-    plt.xlim(0.95, 1.51)
-    plt.ylim(1.25, 2.1)
-    plt.savefig(os.path.join(path,'freqs.png'))
+# def diffusion_rates(freqs):
+#     Econs = freqs[-1,0]
+#     freq_diff = np.abs((freqs[:-1,0] - freqs[:-1,1]) / freqs[:-1,0])
+
+#     fig,axes = plt.subplots(1, 2, figsize=(14,6))
+#     axes[0].scatter()
+#     axes[1].scatter(freqs[4,0]/freqs[3,0], freqs[2,0]/freqs[3,0],
+#                     marker='.', alpha=0.1)
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -167,5 +169,6 @@ if __name__ == '__main__':
 
     all_freqs = main(path=os.path.abspath(args.path), mpi=args.mpi,
                      overwrite=args.overwrite)
-    # plot(freqs=all_freqs, path=args.path)
+
+    plot(all_freqs)
     sys.exit(0)
