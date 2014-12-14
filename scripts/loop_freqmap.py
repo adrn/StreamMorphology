@@ -100,7 +100,7 @@ def worker(task):
     allfreqs[i,:,6] = dEmax
     allfreqs[i,:,7] = 1.
 
-def main(path="", mpi=False, overwrite=False, dt=1., nsteps=100000):
+def main(path="", mpi=False, overwrite=False, dt=None, nsteps=None, ngrid=None):
     np.random.seed(42)
     potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.22, r_s=30.,
                                                a=1., b=0.9, c=0.7, units=galactic)
@@ -116,7 +116,7 @@ def main(path="", mpi=False, overwrite=False, dt=1., nsteps=100000):
 
     # initial conditions
     E = -0.1
-    w0 = loop_grid(E, potential, Naxis=100)
+    w0 = loop_grid(E, potential, Naxis=ngrid)
     norbits = len(w0)
     logger.info("Number of orbits: {}".format(norbits))
 
@@ -171,6 +171,9 @@ if __name__ == '__main__':
                         help="Base orbit timestep.")
     parser.add_argument("--nsteps", dest="nsteps", type=int, default=100000,
                         help="Base number of orbit steps.")
+    parser.add_argument("--ngrid", dest="ngrid", type=int, default=100,
+                        help="Number of grid IC's to generate along the x axis.")
+
 
     args = parser.parse_args()
 
