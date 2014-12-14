@@ -20,12 +20,7 @@ import gary.potential as gp
 import gary.integrate as gi
 from gary.units import galactic
 from gary.util import get_pool
-
 from streammorphology.initialconditions import loop_grid
-
-# timstep and number of steps
-# base_dt = 2.
-# nsteps = 75000
 
 def ws_to_freqs(naff, ws, nintvec=15):
 
@@ -188,7 +183,7 @@ if __name__ == '__main__':
         logger.setLevel(logging.INFO)
 
     all_freqs = main(path=os.path.abspath(args.path), mpi=args.mpi,
-                     overwrite=args.overwrite)
+                     overwrite=args.overwrite, dt=args.dt, nsteps=args.nsteps)
 
     # plot(all_freqs)
     sys.exit(0)
