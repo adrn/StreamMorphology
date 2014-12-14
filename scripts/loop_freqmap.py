@@ -24,11 +24,11 @@ from gary.util import get_pool
 from streammorphology.initialconditions import loop_grid
 
 # timstep and number of steps
-dt = 0.5
-nsteps = 200000
-nintvec = 15
+# base_dt = 2.
+# nsteps = 75000
 
-def ws_to_freqs(naff, ws):
+def ws_to_freqs(naff, ws, nintvec=15):
+
     # first get x,y,z frequencies
     logger.info('Solving for XYZ frequencies...')
     fs = [(ws[:,0,j] + 1j*ws[:,0,j+3]) for j in range(3)]
@@ -56,40 +56,56 @@ def ws_to_freqs(naff, ws):
     return np.append(fxyz, fRphiz)
 
 def worker(task):
-    i,filename,potential = task
-    path = os.path.join(os.path.split(filename)[0], 'all')
-    freq_fn = os.path.join(path,"{}.npy".format(i))
-    if os.path.exists(freq_fn):
-        logger.info("Freq file exists.")
-        return np.load(freq_fn)
+    # unpack input argument dictionary
+    i = task['index']
+    w0_filename = task['w0_filename']
+    allfreqs_filename = task['allfreqs_filename']
+    potential = task['potential']
+    dt = task['dt']
+    nsteps = task['nsteps']
 
-    w0 = np.load(filename)
-    t,ws = potential.integrate_orbit(w0[i].copy(), dt=dt, nsteps=nsteps,
-                                     Integrator=gi.DOPRI853Integrator)
+    # read out just this initial condition
+    w0 = np.load(w0_filename)
+    allfreqs_shape = (len(w0), 2, 8)  # 6 frequencies, max energy diff, done flag
+    allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
 
-    # check energy conservation for the orbit
-    E = potential.total_energy(ws[:,0,:3].copy(), ws[:,0,3:].copy())
-    dE = np.abs(E[1:] - E[0])
+    # short-circuit if this orbit is already done
+    if allfreqs[i,0,7] == 1.:
+        return
+
+    dEmax = 1.
+    maxiter = 5  # maximum number of times to refine integration step
+    for i in range(maxiter):
+        if i > 0:
+            # adjust timestep and duration if necessary
+            dt /= 2.
+            nsteps *= 2
+
+        # integrate orbit
+        t,ws = potential.integrate_orbit(w0[i].copy(), dt=dt, nsteps=nsteps,
+                                         Integrator=gi.DOPRI853Integrator)
+
+        # check energy conservation for the orbit
+        E = potential.total_energy(ws[:,0,:3].copy(), ws[:,0,3:].copy())
+        dE = np.abs(E[1:] - E[0])
+        dEmax = dE.max()
+
+        if dEmax < 1E-9:
+            break
 
     # start finding the frequencies -- do first half then second half
     naff = gd.NAFF(t[:nsteps//2+1])
     freqs1 = ws_to_freqs(naff, ws[:nsteps//2+1])
     freqs2 = ws_to_freqs(naff, ws[nsteps//2:])
 
-    if np.any(np.isnan(freqs1)) or np.any(np.isnan(freqs2)):
-        fig = gd.plot_orbits(ws, marker='.', linestyle='none', alpha=0.1)
-        fig.savefig(os.path.join(path, "{}.png".format(i)))
+    # save to output array
+    allfreqs[i,0,:6] = freqs1
+    allfreqs[i,1,:6] = freqs2
 
-    # return array
-    save_arr = np.zeros((7,2))
-    save_arr[:6,0] = freqs1
-    save_arr[:6,1] = freqs2
-    save_arr[6] = dE.max()
+    allfreqs[i,:,6] = dEmax
+    allfreqs[i,:,7] = 1.
 
-    np.save(freq_fn, save_arr)
-    return save_arr
-
-def main(path="", mpi=False, overwrite=False):
+def main(path="", mpi=False, overwrite=False, dt=1., nsteps=100000):
     np.random.seed(42)
     potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.22, r_s=30.,
                                                a=1., b=0.9, c=0.7, units=galactic)
@@ -99,10 +115,9 @@ def main(path="", mpi=False, overwrite=False):
     if mpi:
         logger.info("Using MPI")
     logger.info("Caching to: {}".format(path))
-    all_freqs_filename = os.path.join(path, "all_freqs.npy")
+    allfreqs_filename = os.path.join(path, "allfreqs.dat")
     if not os.path.exists(path):
         os.mkdir(path)
-        os.mkdir(os.path.join(path,'all'))
 
     # initial conditions
     E = -0.1
@@ -110,25 +125,26 @@ def main(path="", mpi=False, overwrite=False):
     norbits = len(w0)
     logger.info("Number of orbits: {}".format(norbits))
 
+    allfreqs_shape = (norbits, 2, 8)
+    d = np.memmap(allfreqs_filename, mode='w+', dtype='float64', shape=allfreqs_shape)
+
     # save the initial conditions
-    filename = os.path.join(path, 'w0.npy')
-    np.save(filename, w0)
+    w0_filename = os.path.join(path, 'w0.npy')
+    np.save(w0_filename, w0)
 
-    if os.path.exists(all_freqs_filename) and overwrite:
-        os.remove(all_freqs_filename)
+    if os.path.exists(allfreqs_filename) and overwrite:
+        os.remove(allfreqs_filename)
 
-    if not os.path.exists(all_freqs_filename):
-        # for zipping
-        filenames = [filename]*norbits
-        potentials = [potential]*norbits
-
-        tasks = zip(range(norbits), filenames, potentials)
-
-        all_freqs = pool.map(worker, tasks)
-        np.save(all_freqs_filename, np.array(all_freqs))
+    if not os.path.exists(allfreqs_filename):
+        tasks = [dict(i=i, w0_filename=w0_filename,
+                      allfreqs_filename=allfreqs_filename,
+                      potential=potential,
+                      dt=dt,
+                      nsteps=nsteps) for i in range(norbits)]
+        pool.map(worker, tasks)
 
     pool.close()
-    all_freqs = np.load(all_freqs_filename)
+
     return all_freqs
 
 # def diffusion_rates(freqs):
@@ -156,6 +172,10 @@ if __name__ == '__main__':
     parser.add_argument("--mpi", dest="mpi", default=False, action="store_true",
                         help="Use an MPI pool.")
     parser.add_argument("--path", dest="path", default='', help="Cache path.")
+    parser.add_argument("--dt", dest="dt", type=float, default=3.,
+                        help="Base orbit timestep.")
+    parser.add_argument("--nsteps", dest="nsteps", type=int, default=100000,
+                        help="Base number of orbit steps.")
 
     args = parser.parse_args()
 
@@ -170,5 +190,5 @@ if __name__ == '__main__':
     all_freqs = main(path=os.path.abspath(args.path), mpi=args.mpi,
                      overwrite=args.overwrite)
 
-    plot(all_freqs)
+    # plot(all_freqs)
     sys.exit(0)
