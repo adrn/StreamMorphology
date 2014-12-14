@@ -63,7 +63,7 @@ def loop_grid(E, potential, Naxis=100):
             plt.clf()
             plt.plot(vals,[func([derp]) for derp in vals])
             plt.show()
-            raise ValueError("Failed to find boundary of ZVC for x={}.".format(xx))
+            raise ValueError("Failed to find boundary of ZVC for x={}.".format(xg))
 
         logger.debug("Max. z: {}".format(max_z))
         if dz is None:
