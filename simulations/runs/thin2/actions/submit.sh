@@ -16,7 +16,7 @@
 date
 
 #Command to execute Python program
-/vega/astro/users/amp2217/anaconda/bin/python /vega/astro/users/amp2217/projects/morphology/scripts/debris_actions.py -f /vega/astro/users/amp2217/projects/morphology/simulations/runs/thin2/SNAP020 --output=/vega/astro/users/amp2217/projects/morphology/simulations/runs/thin2/actions -v --nsteps=500000 
+/vega/astro/users/amp2217/anaconda/bin/python /vega/astro/users/amp2217/projects/morphology/scripts/debris_actions.py -f /vega/astro/users/amp2217/projects/morphology/simulations/runs/thin2/SNAP020 --output=/vega/astro/users/amp2217/projects/morphology/simulations/runs/thin2/actions -v --nsteps=100000 --dt=0.2 --norbits=1000 -o 
 
 date
 
