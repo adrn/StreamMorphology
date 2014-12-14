@@ -174,7 +174,6 @@ if __name__ == '__main__':
     parser.add_argument("--ngrid", dest="ngrid", type=int, default=100,
                         help="Number of grid IC's to generate along the x axis.")
 
-
     args = parser.parse_args()
 
     # Set logger level based on verbose flags
@@ -186,7 +185,8 @@ if __name__ == '__main__':
         logger.setLevel(logging.INFO)
 
     all_freqs = main(path=os.path.abspath(args.path), mpi=args.mpi,
-                     overwrite=args.overwrite, dt=args.dt, nsteps=args.nsteps)
+                     overwrite=args.overwrite, dt=args.dt, nsteps=args.nsteps,
+                     ngrid=args.ngrid)
 
     # plot(all_freqs)
     sys.exit(0)
