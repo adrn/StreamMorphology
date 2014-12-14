@@ -1,10 +1,10 @@
 test           comment
 test            comment
 "../../scf/SCFBI" path to SCFBI file
-20000           nsteps
-10             noutlog
+60000           nsteps
+10              noutlog
 1000            noutbod
-0.14999430    dtime
+0.0375          dtime
 1.0             G
 TRUE            self gravitating?
 FALSE           input expansion coefficients?
