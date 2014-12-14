@@ -57,21 +57,23 @@ def loop_grid(E, potential, Naxis=100):
         def func(x):
             return (E - potential.value(np.array([[xg,0,x[0]]])))**2
         res = minimize(func, x0=[25.], method='powell')
-        if not res.success or res.x == 25.:
+        max_z = np.abs(res.x)
+        if not res.success or max_z == 25.:
             vals = np.linspace(0.1,100)
             plt.clf()
             plt.plot(vals,[func([derp]) for derp in vals])
             plt.show()
             raise ValueError("Failed to find boundary of ZVC for x={}.".format(xx))
 
+        logger.debug("Max. z: {}".format(max_z))
         if dz is None:
-            zgrid = np.linspace(0.1, res.x, Naxis)
+            zgrid = np.linspace(0.1, max_z, Naxis)
             dz = zgrid[1] - zgrid[0]
 
             xs = np.zeros_like(zgrid) + xg
             xz = np.vstack((xs,zgrid))
         else:
-            zgrid = np.arange(0.1, res.x, dz)
+            zgrid = np.arange(0.1, max_z, dz)
             xs = np.zeros_like(zgrid) + xg
             xz = np.hstack((xz, np.vstack((xs,zgrid))))
 
