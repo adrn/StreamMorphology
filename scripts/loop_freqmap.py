@@ -120,6 +120,12 @@ def main(path="", mpi=False, overwrite=False, dt=1., nsteps=100000):
     norbits = len(w0)
     logger.info("Number of orbits: {}".format(norbits))
 
+    if os.path.exists(allfreqs_filename):
+        if overwrite:
+            os.remove(allfreqs_filename)
+        else:
+            return
+
     allfreqs_shape = (norbits, 2, 8)
     d = np.memmap(allfreqs_filename, mode='w+', dtype='float64', shape=allfreqs_shape)
 
@@ -127,20 +133,14 @@ def main(path="", mpi=False, overwrite=False, dt=1., nsteps=100000):
     w0_filename = os.path.join(path, 'w0.npy')
     np.save(w0_filename, w0)
 
-    if os.path.exists(allfreqs_filename) and overwrite:
-        os.remove(allfreqs_filename)
-
-    if not os.path.exists(allfreqs_filename):
-        tasks = [dict(i=i, w0_filename=w0_filename,
-                      allfreqs_filename=allfreqs_filename,
-                      potential=potential,
-                      dt=dt,
-                      nsteps=nsteps) for i in range(norbits)]
-        pool.map(worker, tasks)
+    tasks = [dict(index=i, w0_filename=w0_filename,
+                  allfreqs_filename=allfreqs_filename,
+                  potential=potential,
+                  dt=dt,
+                  nsteps=nsteps) for i in range(norbits)]
+    pool.map(worker, tasks)
 
     pool.close()
-
-    return all_freqs
 
 # def diffusion_rates(freqs):
 #     Econs = freqs[-1,0]
