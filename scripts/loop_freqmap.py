@@ -85,6 +85,8 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--overwrite", action="store_true", dest="overwrite",
                         default=False, help="DESTROY. DESTROY. (default = False)")
 
+    parser.add_argument("-E", "--energy", dest="energy", type=float, required=True,
+                        help="Energy of the orbits.")
     parser.add_argument("--mpi", dest="mpi", default=False, action="store_true",
                         help="Use an MPI pool.")
     parser.add_argument("--ngrid", dest="ngrid", type=int, default=100,
