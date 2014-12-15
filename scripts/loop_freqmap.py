@@ -107,7 +107,7 @@ if __name__ == '__main__':
     else:
         logger.setLevel(logging.INFO)
 
-    all_freqs = main(E=args.E, loop=args.type.strip(),
+    all_freqs = main(E=args.energy, loop=args.type.strip(),
                      mpi=args.mpi, overwrite=args.overwrite, ngrid=args.ngrid)
 
     # plot(all_freqs)
