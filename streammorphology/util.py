@@ -11,12 +11,50 @@ import sys
 # Third-party
 from astropy import log as logger
 import numpy as np
+from scipy.signal import argrelmax, argrelmin
 
 # Project
 import gary.dynamics as gd
 import gary.integrate as gi
 
 __all__ = ['ws_to_freqs', 'worker']
+
+def ptp_freqs(t, *args):
+    freqs = []
+    for x in args:
+        ix = argrelmax(x, mode='wrap')[0]
+        f_max = np.mean(2*np.pi / (t[ix[1:]] - t[ix[:-1]]))
+
+        ix = argrelmin(x, mode='wrap')[0]
+        f_min = np.mean(2*np.pi / (t[ix[1:]] - t[ix[:-1]]))
+
+        freqs.append(np.mean([f_max, f_min]))
+    return np.array(freqs)
+
+def estimate_max_period(t, w):
+    if w.ndim < 3:
+        w = w[:,np.newaxis]
+
+    norbits = w.shape[1]
+    periods = []
+    for i in range(norbits):
+        loop = gd.classify_orbit(w[:,i])
+        if np.any(loop):
+            # flip coords
+            new_w = gd.flip_coords(w[:,i], loop[0])
+
+            # convert to cylindrical
+            R = np.sqrt(new_w[:,0]**2 + new_w[:,1]**2)
+            phi = np.arctan2(new_w[:,1], new_w[:,0])
+            z = new_w[:,2]
+
+            T = 2*np.pi / ptp_freqs(t, R, phi, z)
+        else:
+            T = 2*np.pi / ptp_freqs(t, *w[:,i,:3].T)
+
+        periods.append(T)
+
+    return np.array(periods)
 
 def ws_to_freqs(naff, ws, nintvec=15):
 
@@ -46,14 +84,24 @@ def ws_to_freqs(naff, ws, nintvec=15):
 
     return np.append(fxyz, fRphiz)
 
+def estimate_dt_nsteps(potential, w0, nperiods=100):
+    # integrate orbit
+    t,ws = potential.integrate_orbit(w0, dt=1., nsteps=20000,
+                                     Integrator=gi.DOPRI853Integrator)
+
+    # estimate the maximum period
+    max_T = round(estimate_max_period(t, ws).max() * 100, -4)
+    dt = round(max_T * 1.5E-5, 0)
+    nsteps = int(max_T / dt)
+
+    return dt, nsteps
+
 def worker(task):
     # unpack input argument dictionary
     index = task['index']
     w0_filename = task['w0_filename']
     allfreqs_filename = task['allfreqs_filename']
     potential = task['potential']
-    dt = task['dt']
-    nsteps = task['nsteps']
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
@@ -64,6 +112,16 @@ def worker(task):
     if allfreqs[index,0,7] == 1.:
         return
 
+    # automatically estimate dt, nsteps
+    try:
+        dt, nsteps = estimate_dt_nsteps(potential, w0[index].copy())
+    except RuntimeError:
+        allfreqs[index,:,:] = np.nan
+        allfreqs[index,:,7] = 1.
+        return
+
+    logger.info("Orbit {}: initial dt={}, nsteps={}".format(dt,nsteps))
+
     dEmax = 1.
     maxiter = 3  # maximum number of times to refine integration step
     for i in range(maxiter):
@@ -71,7 +129,7 @@ def worker(task):
             # adjust timestep and duration if necessary
             dt /= 2.
             nsteps *= 2
-            logger.info("Refining timestep for orbit {} ({}, {})".format(index, dt, nsteps))
+            logger.debug("Refining timestep for orbit {} ({}, {})".format(index, dt, nsteps))
 
         # integrate orbit
         try:
