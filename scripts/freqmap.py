@@ -58,7 +58,7 @@ def main(E, loopbox, mpi=False, overwrite=False, ngrid=None):
             pool.close()
             return
 
-    allfreqs_shape = (norbits, 2, 8)
+    allfreqs_shape = (norbits, 2, 9)
     d = np.memmap(allfreqs_filename, mode='w+', dtype='float64', shape=allfreqs_shape)
 
     # save the initial conditions
