@@ -15,92 +15,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Project
-import gary.dynamics as gd
 import gary.potential as gp
-import gary.integrate as gi
 from gary.units import galactic
 from gary.util import get_pool
+
 from streammorphology.initialconditions import loop_grid
+from streammorphology.util import worker
 
-def ws_to_freqs(naff, ws, nintvec=15):
+path = "/vega/astro/users/amp2217/projects/morphology/output"
 
-    # first get x,y,z frequencies
-    logger.info('Solving for XYZ frequencies...')
-    fs = [(ws[:,0,j] + 1j*ws[:,0,j+3]) for j in range(3)]
-    try:
-        fxyz,d,ixes = naff.find_fundamental_frequencies(fs, nintvec=nintvec)
-    except:
-        fxyz = np.ones(3)*np.nan
-
-    # now get other frequencies
-    loop = gd.classify_orbit(ws)
-    if np.any(loop):
-        # need to flip coordinates until circulation is around z axis
-        new_ws = gd.flip_coords(ws, loop[0])
-
-        fs = gd.poincare_polar(new_ws[:,0])
-        try:
-            logger.info('Solving for Rφz frequencies...')
-            fRphiz,d,ixes = naff.find_fundamental_frequencies(fs, nintvec=nintvec)
-        except:
-            fRphiz = np.ones(3)*np.nan
-
-    else:
-        fRphiz = np.ones(3)*np.nan
-
-    return np.append(fxyz, fRphiz)
-
-def worker(task):
-    # unpack input argument dictionary
-    i = task['index']
-    w0_filename = task['w0_filename']
-    allfreqs_filename = task['allfreqs_filename']
-    potential = task['potential']
-    dt = task['dt']
-    nsteps = task['nsteps']
-
-    # read out just this initial condition
-    w0 = np.load(w0_filename)
-    allfreqs_shape = (len(w0), 2, 8)  # 6 frequencies, max energy diff, done flag
-    allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
-
-    # short-circuit if this orbit is already done
-    if allfreqs[i,0,7] == 1.:
-        return
-
-    dEmax = 1.
-    maxiter = 5  # maximum number of times to refine integration step
-    for i in range(maxiter):
-        if i > 0:
-            # adjust timestep and duration if necessary
-            dt /= 2.
-            nsteps *= 2
-
-        # integrate orbit
-        t,ws = potential.integrate_orbit(w0[i].copy(), dt=dt, nsteps=nsteps,
-                                         Integrator=gi.DOPRI853Integrator)
-
-        # check energy conservation for the orbit
-        E = potential.total_energy(ws[:,0,:3].copy(), ws[:,0,3:].copy())
-        dE = np.abs(E[1:] - E[0])
-        dEmax = dE.max()
-
-        if dEmax < 1E-9:
-            break
-
-    # start finding the frequencies -- do first half then second half
-    naff = gd.NAFF(t[:nsteps//2+1])
-    freqs1 = ws_to_freqs(naff, ws[:nsteps//2+1])
-    freqs2 = ws_to_freqs(naff, ws[nsteps//2:])
-
-    # save to output array
-    allfreqs[i,0,:6] = freqs1
-    allfreqs[i,1,:6] = freqs2
-
-    allfreqs[i,:,6] = dEmax
-    allfreqs[i,:,7] = 1.
-
-def main(path="", mpi=False, overwrite=False, dt=None, nsteps=None, ngrid=None):
+def main(mpi=False, overwrite=False, dt=None, nsteps=None, ngrid=None):
     np.random.seed(42)
     potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.22, r_s=30.,
                                                a=1., b=0.9, c=0.7, units=galactic)
@@ -184,8 +108,8 @@ if __name__ == '__main__':
     else:
         logger.setLevel(logging.INFO)
 
-    all_freqs = main(path=os.path.abspath(args.path), mpi=args.mpi,
-                     overwrite=args.overwrite, dt=args.dt, nsteps=args.nsteps,
+    all_freqs = main(mpi=args.mpi, overwrite=args.overwrite,
+                     dt=args.dt, nsteps=args.nsteps,
                      ngrid=args.ngrid)
 
     # plot(all_freqs)
