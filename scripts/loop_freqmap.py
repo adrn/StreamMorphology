@@ -52,7 +52,7 @@ def ws_to_freqs(naff, ws, nintvec=15):
 
 def worker(task):
     # unpack input argument dictionary
-    i = task['index']
+    index = task['index']
     w0_filename = task['w0_filename']
     allfreqs_filename = task['allfreqs_filename']
     potential = task['potential']
@@ -62,7 +62,8 @@ def worker(task):
     # read out just this initial condition
     w0 = np.load(w0_filename)
     allfreqs_shape = (len(w0), 2, 8)  # 6 frequencies, max energy diff, done flag
-    allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
+    allfreqs = np.memmap(allfreqs_filename, mode='r+', 
+                         shape=allfreqs_shape, dtype='float64')
 
     # short-circuit if this orbit is already done
     if allfreqs[i,0,7] == 1.:
@@ -75,9 +76,10 @@ def worker(task):
             # adjust timestep and duration if necessary
             dt /= 2.
             nsteps *= 2
+            logger.info('Refining timestep for orbit {}.'.format(index))
 
         # integrate orbit
-        t,ws = potential.integrate_orbit(w0[i].copy(), dt=dt, nsteps=nsteps,
+        t,ws = potential.integrate_orbit(w0[index].copy(), dt=dt, nsteps=nsteps,
                                          Integrator=gi.DOPRI853Integrator)
 
         # check energy conservation for the orbit
@@ -94,11 +96,11 @@ def worker(task):
     freqs2 = ws_to_freqs(naff, ws[nsteps//2:])
 
     # save to output array
-    allfreqs[i,0,:6] = freqs1
-    allfreqs[i,1,:6] = freqs2
+    allfreqs[index,0,:6] = freqs1
+    allfreqs[index,1,:6] = freqs2
 
-    allfreqs[i,:,6] = dEmax
-    allfreqs[i,:,7] = 1.
+    allfreqs[index,:,6] = dEmax
+    allfreqs[index,:,7] = 1.
 
 def main(path="", mpi=False, overwrite=False, dt=None, nsteps=None, ngrid=None):
     np.random.seed(42)
