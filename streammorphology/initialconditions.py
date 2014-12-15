@@ -18,9 +18,8 @@ import numpy as np
 from scipy.optimize import minimize
 
 # Project
-# ...
 
-__all__ = ['']
+__all__ = ['loop_grid']
 
 def loop_grid(E, potential, Naxis=100):
     """ Generate a grid of points in the x-z plane (y=0), starting with initial
