@@ -25,7 +25,7 @@ from streammorphology.util import worker
 base_path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
 path = os.path.join(base_path, 'output')
 
-def main(mpi=False, overwrite=False, dt=None, nsteps=None, ngrid=None):
+def main(mpi=False, overwrite=False, ngrid=None):
     np.random.seed(42)
     potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.22, r_s=30.,
                                                a=1., b=0.9, c=0.7, units=galactic)
@@ -60,9 +60,7 @@ def main(mpi=False, overwrite=False, dt=None, nsteps=None, ngrid=None):
 
     tasks = [dict(index=i, w0_filename=w0_filename,
                   allfreqs_filename=allfreqs_filename,
-                  potential=potential,
-                  dt=dt,
-                  nsteps=nsteps) for i in range(norbits)]
+                  potential=potential) for i in range(norbits)]
     pool.map(worker, tasks)
 
     pool.close()
@@ -91,10 +89,6 @@ if __name__ == '__main__':
 
     parser.add_argument("--mpi", dest="mpi", default=False, action="store_true",
                         help="Use an MPI pool.")
-    parser.add_argument("--dt", dest="dt", type=float, default=3.,
-                        help="Base orbit timestep.")
-    parser.add_argument("--nsteps", dest="nsteps", type=int, default=100000,
-                        help="Base number of orbit steps.")
     parser.add_argument("--ngrid", dest="ngrid", type=int, default=100,
                         help="Number of grid IC's to generate along the x axis.")
 
@@ -109,7 +103,6 @@ if __name__ == '__main__':
         logger.setLevel(logging.INFO)
 
     all_freqs = main(mpi=args.mpi, overwrite=args.overwrite,
-                     dt=args.dt, nsteps=args.nsteps,
                      ngrid=args.ngrid)
 
     # plot(all_freqs)
