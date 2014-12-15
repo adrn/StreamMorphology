@@ -22,7 +22,8 @@ from gary.util import get_pool
 from streammorphology.initialconditions import loop_grid
 from streammorphology.util import worker
 
-path = "/vega/astro/users/amp2217/projects/morphology/output"
+base_path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
+path = os.path.join(base_path, 'output')
 
 def main(mpi=False, overwrite=False, dt=None, nsteps=None, ngrid=None):
     np.random.seed(42)
@@ -90,7 +91,6 @@ if __name__ == '__main__':
 
     parser.add_argument("--mpi", dest="mpi", default=False, action="store_true",
                         help="Use an MPI pool.")
-    parser.add_argument("--path", dest="path", default='', help="Cache path.")
     parser.add_argument("--dt", dest="dt", type=float, default=3.,
                         help="Base orbit timestep.")
     parser.add_argument("--nsteps", dest="nsteps", type=int, default=100000,
