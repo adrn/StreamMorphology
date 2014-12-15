@@ -71,6 +71,7 @@ def worker(task):
             # adjust timestep and duration if necessary
             dt /= 2.
             nsteps *= 2
+            logger.info("Refining timestep for orbit {}".format(index))
 
         # integrate orbit
         t,ws = potential.integrate_orbit(w0[index].copy(), dt=dt, nsteps=nsteps,
