@@ -11,3 +11,4 @@ scf
 *.npy
 *.png
 old
+output
