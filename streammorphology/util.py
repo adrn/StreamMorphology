@@ -65,13 +65,13 @@ def worker(task):
         return
 
     dEmax = 1.
-    maxiter = 5  # maximum number of times to refine integration step
+    maxiter = 3  # maximum number of times to refine integration step
     for i in range(maxiter):
         if i > 0:
             # adjust timestep and duration if necessary
             dt /= 2.
             nsteps *= 2
-            logger.info("Refining timestep for orbit {}".format(index))
+            logger.info("Refining timestep for orbit {} ({}, {})".format(index, dt, nsteps))
 
         # integrate orbit
         t,ws = potential.integrate_orbit(w0[index].copy(), dt=dt, nsteps=nsteps,
@@ -85,6 +85,11 @@ def worker(task):
 
         if dEmax < 1E-9:
             break
+
+    if dEmax > 1E-9:
+        allfreqs[index,:,:] = np.nan
+        allfreqs[index,:,7] = 1.
+        return
 
     # start finding the frequencies -- do first half then second half
     naff = gd.NAFF(t[:nsteps//2+1])
