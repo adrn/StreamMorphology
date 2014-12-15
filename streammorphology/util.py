@@ -74,8 +74,14 @@ def worker(task):
             logger.info("Refining timestep for orbit {} ({}, {})".format(index, dt, nsteps))
 
         # integrate orbit
-        t,ws = potential.integrate_orbit(w0[index].copy(), dt=dt, nsteps=nsteps,
-                                         Integrator=gi.DOPRI853Integrator)
+        try:
+            t,ws = potential.integrate_orbit(w0[index].copy(), dt=dt, nsteps=nsteps,
+                                             Integrator=gi.DOPRI853Integrator)
+        except RuntimeError:
+            # ODE integration failed
+            logger.warning("Orbit integration failed.")
+            continue
+
         logger.debug('Orbit integrated')
 
         # check energy conservation for the orbit
