@@ -121,8 +121,11 @@ def worker(task):
         dt, nsteps = estimate_dt_nsteps(potential, w0[index].copy())
     except RuntimeError:
         logger.warning("Failed to integrate orbit when estimating dt,nsteps")
+        allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
         tmp[:,:] = np.nan
         tmp[:,7] = 1.
+        allfreqs[index] = tmp
+        allfreqs.flush()
         return
 
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
@@ -156,8 +159,11 @@ def worker(task):
             break
 
     if dEmax > 1E-9:
+        allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
         tmp[:,:] = np.nan
         tmp[:,7] = 1.
+        allfreqs[index] = tmp
+        allfreqs.flush()
         return
 
     # start finding the frequencies -- do first half then second half
