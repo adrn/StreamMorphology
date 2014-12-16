@@ -107,7 +107,7 @@ if __name__ == '__main__':
     else:
         logger.setLevel(logging.INFO)
 
-    main(E=args.energy, loop=args.orbit_type.strip(),
+    main(E=args.energy, loopbox=args.orbit_type.strip(),
          mpi=args.mpi, overwrite=args.overwrite, ngrid=args.ngrid)
 
     sys.exit(0)
