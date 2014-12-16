@@ -96,7 +96,7 @@ def estimate_dt_nsteps(potential, w0, nperiods=100):
     nsteps = int(max_T / dt)
 
     return dt, nsteps
-
+import time
 def worker(task):
     # unpack input argument dictionary
     index = task['index']
@@ -107,19 +107,22 @@ def worker(task):
     # read out just this initial condition
     w0 = np.load(w0_filename)
     allfreqs_shape = (len(w0), 2, 9)  # 6 frequencies, max energy diff, done flag, loop
-    allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
+    allfreqs = np.memmap(allfreqs_filename, mode='r', shape=allfreqs_shape, dtype='float64')
 
     # short-circuit if this orbit is already done
     if allfreqs[index,0,7] == 1.:
         return
+
+    # temporary array for results
+    tmp = np.zeros((2,9))
 
     # automatically estimate dt, nsteps
     try:
         dt, nsteps = estimate_dt_nsteps(potential, w0[index].copy())
     except RuntimeError:
         logger.warning("Failed to integrate orbit when estimating dt,nsteps")
-        allfreqs[index,:,:] = np.nan
-        allfreqs[index,:,7] = 1.
+        tmp[:,:] = np.nan
+        tmp[:,7] = 1.
         return
 
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
@@ -153,8 +156,8 @@ def worker(task):
             break
 
     if dEmax > 1E-9:
-        allfreqs[index,:,:] = np.nan
-        allfreqs[index,:,7] = 1.
+        tmp[:,:] = np.nan
+        tmp[:,7] = 1.
         return
 
     # start finding the frequencies -- do first half then second half
@@ -163,9 +166,13 @@ def worker(task):
     freqs2,is_loop = ws_to_freqs(naff, ws[nsteps//2:])
 
     # save to output array
-    allfreqs[index,0,:6] = freqs1
-    allfreqs[index,1,:6] = freqs2
+    tmp[0,:6] = freqs1
+    tmp[1,:6] = freqs2
 
-    allfreqs[index,:,6] = dEmax
-    allfreqs[index,:,7] = 1.
-    allfreqs[index,:,8] = float(is_loop)
+    tmp[:,6] = dEmax
+    tmp[:,7] = 1.
+    tmp[:,8] = float(is_loop)
+
+    allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
+    allfreqs[index] = tmp
+    allfreqs.flush()
