@@ -19,7 +19,7 @@ def main(path):
     w0 = np.load(w0_path)
     d = np.memmap(path, mode='r', shape=(len(w0),2,8), dtype='float64')
 
-    n_done = int(np.any(d[:,0] != 0., axis=1).sum())
+    n_done = int((d[:,0,7] == 1).sum())
     n_fail_some = int((np.any(np.isnan(d[:,0,:6]), axis=1) | np.any(np.isnan(d[:,1,:6]), axis=1)).sum())
     n_total_fail = int(np.all(np.isnan(d[:,0,:6]), axis=1).sum())
 
