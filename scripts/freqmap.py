@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.type.strip() not in ['loop','box']:
+    if args.orbit_type.strip() not in ['loop','box']:
         raise ValueError("'--type' argument must be one of 'loop' or 'box'")
 
     # Set logger level based on verbose flags
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     else:
         logger.setLevel(logging.INFO)
 
-    main(E=args.energy, loop=args.type.strip(),
+    main(E=args.energy, loop=args.orbit_type.strip(),
          mpi=args.mpi, overwrite=args.overwrite, ngrid=args.ngrid)
 
     sys.exit(0)
