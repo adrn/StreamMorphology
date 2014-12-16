@@ -68,7 +68,8 @@ def ws_to_freqs(naff, ws, nintvec=15):
 
     # now get other frequencies
     loop = gd.classify_orbit(ws)
-    if np.any(loop):
+    is_loop = np.any(loop)
+    if is_loop:
         # need to flip coordinates until circulation is around z axis
         new_ws = gd.flip_coords(ws, loop[0])
 
@@ -82,7 +83,7 @@ def ws_to_freqs(naff, ws, nintvec=15):
     else:
         fRphiz = np.ones(3)*np.nan
 
-    return np.append(fxyz, fRphiz)
+    return np.append(fxyz, fRphiz), is_loop
 
 def estimate_dt_nsteps(potential, w0, nperiods=100):
     # integrate orbit
@@ -105,7 +106,7 @@ def worker(task):
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
-    allfreqs_shape = (len(w0), 2, 8)  # 6 frequencies, max energy diff, done flag
+    allfreqs_shape = (len(w0), 2, 9)  # 6 frequencies, max energy diff, done flag, loop
     allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
 
     # short-circuit if this orbit is already done
@@ -158,8 +159,8 @@ def worker(task):
 
     # start finding the frequencies -- do first half then second half
     naff = gd.NAFF(t[:nsteps//2+1])
-    freqs1 = ws_to_freqs(naff, ws[:nsteps//2+1])
-    freqs2 = ws_to_freqs(naff, ws[nsteps//2:])
+    freqs1,is_loop = ws_to_freqs(naff, ws[:nsteps//2+1])
+    freqs2,is_loop = ws_to_freqs(naff, ws[nsteps//2:])
 
     # save to output array
     allfreqs[index,0,:6] = freqs1
@@ -167,3 +168,4 @@ def worker(task):
 
     allfreqs[index,:,6] = dEmax
     allfreqs[index,:,7] = 1.
+    allfreqs[index,:,8] = float(is_loop)

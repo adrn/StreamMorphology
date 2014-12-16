@@ -23,9 +23,8 @@ from streammorphology.initialconditions import loop_grid
 from streammorphology.util import worker
 
 base_path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
-path = os.path.join(base_path, 'output')
 
-def main(mpi=False, overwrite=False, ngrid=None):
+def main(E, loopbox, mpi=False, overwrite=False, ngrid=None):
     np.random.seed(42)
     potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.22, r_s=30.,
                                                a=1., b=0.9, c=0.7, units=galactic)
@@ -34,14 +33,21 @@ def main(mpi=False, overwrite=False, ngrid=None):
     pool = get_pool(mpi=mpi)
     if mpi:
         logger.info("Using MPI")
+
+    path = os.path.join(base_path, 'output',
+                        'E{:.3f}_{}_{}'.format(E, potential.__class__.__name__, loopbox))
     logger.info("Caching to: {}".format(path))
     allfreqs_filename = os.path.join(path, "allfreqs.dat")
     if not os.path.exists(path):
         os.mkdir(path)
 
     # initial conditions
-    E = -0.1
-    w0 = loop_grid(E, potential, Naxis=ngrid)
+    if loopbox == 'loop':
+        w0 = loop_grid(E, potential, Naxis=ngrid)
+    else:
+        raise NotImplementedError("No support for box orbit grid!")
+        w0 = box_grid(E, potential, Naxis=ngrid)
+
     norbits = len(w0)
     logger.info("Number of orbits: {}".format(norbits))
 
@@ -49,9 +55,10 @@ def main(mpi=False, overwrite=False, ngrid=None):
         if overwrite:
             os.remove(allfreqs_filename)
         else:
+            pool.close()
             return
 
-    allfreqs_shape = (norbits, 2, 8)
+    allfreqs_shape = (norbits, 2, 9)
     d = np.memmap(allfreqs_filename, mode='w+', dtype='float64', shape=allfreqs_shape)
 
     # save the initial conditions
@@ -64,15 +71,6 @@ def main(mpi=False, overwrite=False, ngrid=None):
     pool.map(worker, tasks)
 
     pool.close()
-
-# def diffusion_rates(freqs):
-#     Econs = freqs[-1,0]
-#     freq_diff = np.abs((freqs[:-1,0] - freqs[:-1,1]) / freqs[:-1,0])
-
-#     fig,axes = plt.subplots(1, 2, figsize=(14,6))
-#     axes[0].scatter()
-#     axes[1].scatter(freqs[4,0]/freqs[3,0], freqs[2,0]/freqs[3,0],
-#                     marker='.', alpha=0.1)
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -87,12 +85,19 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--overwrite", action="store_true", dest="overwrite",
                         default=False, help="DESTROY. DESTROY. (default = False)")
 
+    parser.add_argument("-E", "--energy", dest="energy", type=float, required=True,
+                        help="Energy of the orbits.")
     parser.add_argument("--mpi", dest="mpi", default=False, action="store_true",
                         help="Use an MPI pool.")
     parser.add_argument("--ngrid", dest="ngrid", type=int, default=100,
                         help="Number of grid IC's to generate along the x axis.")
+    parser.add_argument("--type", dest="orbit_type", type=str, required=True,
+                        help="Orbit type - can be either 'loop' or 'box'.")
 
     args = parser.parse_args()
+
+    if args.type.strip() not in ['loop','box']:
+        raise ValueError("'--type' argument must be one of 'loop' or 'box'")
 
     # Set logger level based on verbose flags
     if args.verbose:
@@ -102,8 +107,7 @@ if __name__ == '__main__':
     else:
         logger.setLevel(logging.INFO)
 
-    all_freqs = main(mpi=args.mpi, overwrite=args.overwrite,
-                     ngrid=args.ngrid)
+    main(E=args.energy, loop=args.type.strip(),
+         mpi=args.mpi, overwrite=args.overwrite, ngrid=args.ngrid)
 
-    # plot(all_freqs)
     sys.exit(0)
