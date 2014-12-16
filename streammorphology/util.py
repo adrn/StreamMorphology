@@ -19,7 +19,7 @@ import gary.integrate as gi
 
 __all__ = ['ws_to_freqs', 'worker']
 
-_shape = (2, 10)  # 6 frequencies, max energy diff, done flag, loop bit, integration time
+_shape = (2, 11)  # 6 frequencies, max energy diff, done flag, loop bit, dt, nsteps
 
 def ptp_freqs(t, *args):
     freqs = []
@@ -180,6 +180,8 @@ def worker(task):
     tmp[:,6] = dEmax
     tmp[:,7] = 1.
     tmp[:,8] = float(is_loop)
+    tmp[:,9] = float(dt)
+    tmp[:,10] = nsteps//2
 
     allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
     allfreqs[index] = tmp
