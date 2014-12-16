@@ -17,12 +17,13 @@ def main(path):
     w0_path = os.path.join(basepath, 'w0.npy')
 
     w0 = np.load(w0_path)
-    d = np.memmap(path, mode='r', shape=(len(w0),2,8), dtype='float64')
+    d = np.memmap(path, mode='r', shape=(len(w0),2,9), dtype='float64')
 
     n_done = int((d[:,0,7] == 1).sum())
     n_fail_some = int((np.any(np.isnan(d[:,0,:6]), axis=1) | np.any(np.isnan(d[:,1,:6]), axis=1)).sum())
     n_total_fail = int(np.all(np.isnan(d[:,0,:6]), axis=1).sum())
 
+    print("Number of orbits: {}".format(len(w0)))
     print("Completed: {}".format(n_done))
     print("Some failures: {}".format(n_fail_some))
     print("Total failures: {}".format(n_total_fail))
