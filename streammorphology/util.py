@@ -19,6 +19,8 @@ import gary.integrate as gi
 
 __all__ = ['ws_to_freqs', 'worker']
 
+_shape = (2, 10)  # 6 frequencies, max energy diff, done flag, loop bit, integration time
+
 def ptp_freqs(t, *args):
     freqs = []
     for x in args:
@@ -96,7 +98,7 @@ def estimate_dt_nsteps(potential, w0, nperiods=100):
     nsteps = int(max_T / dt)
 
     return dt, nsteps
-import time
+
 def worker(task):
     # unpack input argument dictionary
     index = task['index']
@@ -106,7 +108,7 @@ def worker(task):
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
-    allfreqs_shape = (len(w0), 2, 9)  # 6 frequencies, max energy diff, done flag, loop
+    allfreqs_shape = (len(w0),) + _shape
     allfreqs = np.memmap(allfreqs_filename, mode='r', shape=allfreqs_shape, dtype='float64')
 
     # short-circuit if this orbit is already done
@@ -114,7 +116,7 @@ def worker(task):
         return
 
     # temporary array for results
-    tmp = np.zeros((2,9))
+    tmp = np.zeros(_shape)
 
     # automatically estimate dt, nsteps
     try:

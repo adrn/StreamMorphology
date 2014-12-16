@@ -19,13 +19,16 @@ from gary.util import get_pool
 
 from streammorphology.initialconditions import loop_grid
 from streammorphology.util import worker
+from streammorphology.util import _shape
 
 base_path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
 
 def main(E, loopbox, mpi=False, overwrite=False, ngrid=None):
     np.random.seed(42)
-    potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.22, r_s=30.,
-                                               a=1., b=0.9, c=0.7, units=galactic)
+    potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.239225, r_s=30.,
+                                               a=1., b=0.75, c=0.55,
+                                               units=galactic)
+    # potential = gp.OblateMWPotential()
 
     # get a pool object for multiprocessing / MPI
     pool = get_pool(mpi=mpi)
@@ -56,7 +59,7 @@ def main(E, loopbox, mpi=False, overwrite=False, ngrid=None):
             pool.close()
             return
 
-    allfreqs_shape = (norbits, 2, 9)
+    allfreqs_shape = (norbits,) + _shape
     d = np.memmap(allfreqs_filename, mode='w+', dtype='float64', shape=allfreqs_shape)
 
     # save the initial conditions
