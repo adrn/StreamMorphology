@@ -116,11 +116,12 @@ def worker(task):
     try:
         dt, nsteps = estimate_dt_nsteps(potential, w0[index].copy())
     except RuntimeError:
+        logger.warning("Failed to integrate orbit when estimating dt,nsteps")
         allfreqs[index,:,:] = np.nan
         allfreqs[index,:,7] = 1.
         return
 
-    logger.info("Orbit {}: initial dt={}, nsteps={}".format(dt,nsteps))
+    logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
     dEmax = 1.
     maxiter = 3  # maximum number of times to refine integration step
