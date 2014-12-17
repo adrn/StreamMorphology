@@ -18,7 +18,7 @@ def main(path):
 
     w0 = np.load(os.path.join(path, 'w0.npy'))
     allfreqs_filename = os.path.join(path, 'allfreqs.dat')
-    d = np.memmap(allfreqs_filename, shape=(len(w0),2,9), dtype='float64', mode='r')
+    d = np.memmap(allfreqs_filename, shape=(len(w0),2,11), dtype='float64', mode='r')
 
     done_ix = d[:,0,7] == 1.
     logger.info("{} total orbits".format(len(w0)))
@@ -47,6 +47,19 @@ def main(path):
     ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
     ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
     fig.savefig(os.path.join(path,"diffusion_ics.png"))
+
+    fig,ax = plt.subplots(1,1,figsize=(9,8))
+    ax.scatter(w0[box_ix,0], w0[box_ix,2], c=box_freq_diff,
+               vmin=vmin, vmax=vmax, cmap='cubehelix', s=12, marker='s')
+    c = ax.scatter(w0[loop_ix,0], w0[loop_ix,2], c=loop_freq_diff,
+                   vmin=vmin, vmax=vmax, cmap='cubehelix', s=12, marker='s')
+    ax.set_xlim(-1, w0[:,0].max()+5)
+    ax.set_ylim(-1, w0[:,2].max()+5)
+    ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
+    ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
+    fig.colorbar(c)
+    fig.tight_layout()
+    fig.savefig(os.path.join(path,"diffusion_ics_ugly.png"))
 
     # plot histograms of diffusion rates
     fig,ax = plt.subplots(1,1,figsize=(8,6))
