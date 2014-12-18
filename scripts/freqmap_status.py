@@ -12,12 +12,14 @@ import os
 # Third-party
 import numpy as np
 
+from streammorphology.util import _shape
+
 def main(path):
     basepath = os.path.split(path)[0]
     w0_path = os.path.join(basepath, 'w0.npy')
 
     w0 = np.load(w0_path)
-    d = np.memmap(path, mode='r', shape=(len(w0),2,9), dtype='float64')
+    d = np.memmap(path, mode='r', shape=(len(w0),)+_shape, dtype='float64')
 
     n_done = int((d[:,0,7] == 1).sum())
     n_fail_some = int((np.any(np.isnan(d[:,0,:6]), axis=1) | np.any(np.isnan(d[:,1,:6]), axis=1)).sum())
