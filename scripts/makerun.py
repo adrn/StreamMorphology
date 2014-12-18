@@ -87,10 +87,10 @@ base_submit = """#!/bin/sh
 date
 
 #Command to execute Python program
-cd {path}
+cd /vega/astro/users/amp2217/projects/morphology/simulations/runs/{name}
 make
 ./scf
-/vega/astro/users/amp2217/projects/gary/bin/moviesnap --path={path}
+/vega/astro/users/amp2217/projects/gary/bin/moviesnap --path=/vega/astro/users/amp2217/projects/morphology/simulations/runs/{name}
 
 date
 

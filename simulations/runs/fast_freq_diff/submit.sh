@@ -16,10 +16,10 @@
 date
 
 #Command to execute Python program
-cd /Users/adrian/projects/morphology/simulations/runs/fast_freq_diff
+cd /vega/astro/users/amp2217/projects/morphology/simulations/runs/fast_freq_diff
 make
 ./scf
-/vega/astro/users/amp2217/projects/gary/bin/moviesnap --path=/Users/adrian/projects/morphology/simulations/runs/fast_freq_diff
+/vega/astro/users/amp2217/projects/gary/bin/moviesnap --path=/vega/astro/users/amp2217/projects/morphology/simulations/runs/fast_freq_diff
 
 date
 
