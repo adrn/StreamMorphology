@@ -28,8 +28,13 @@ def main(path):
     box_ix = done_ix & (d[:,0,8] == 0.) & np.all(np.isfinite(d[:,0,:3]), axis=1)
     loop_ix = done_ix & (d[:,0,8] == 1.) & np.all(np.isfinite(d[:,0,3:6]), axis=1)
 
-    box_freq_diff = np.log10(np.abs((d[box_ix,1,:3] - d[box_ix,0,:3]) / d[box_ix,0,:3]).max(axis=1))
-    loop_freq_diff = np.log10(np.abs((d[loop_ix,1,3:6] - d[loop_ix,0,3:6]) / d[loop_ix,0,3:6]).max(axis=1))
+    nperiods = d[box_ix,0,9]*d[box_ix,0,10] / (2*np.pi/np.abs(d[box_ix,0,:3]).max(axis=1))
+    max_frac_diff = np.abs((d[box_ix,1,:3] - d[box_ix,0,:3]) / d[box_ix,0,:3]).max(axis=1)
+    box_freq_diff = np.log10(max_frac_diff / nperiods / 2.)
+
+    nperiods = d[loop_ix,0,9]*d[loop_ix,0,10] / (2*np.pi/np.abs(d[loop_ix,0,3:6]).max(axis=1))
+    max_frac_diff = np.abs((d[loop_ix,1,3:6] - d[loop_ix,0,3:6]) / d[loop_ix,0,3:6]).max(axis=1)
+    loop_freq_diff = np.log10(max_frac_diff / nperiods / 2.)
 
     # color scaling
     delta = np.abs(loop_freq_diff.max() - loop_freq_diff.min())
