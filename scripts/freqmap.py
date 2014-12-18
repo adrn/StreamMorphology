@@ -23,12 +23,15 @@ from streammorphology.util import _shape
 
 base_path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
 
-def main(E, loopbox, mpi=False, overwrite=False, ngrid=None):
+def main(E, loopbox, mpi=False, overwrite=False, ngrid=None, disk=False):
     np.random.seed(42)
-    potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.239225, r_s=30.,
-                                               a=1., b=0.75, c=0.55,
-                                               units=galactic)
-    # potential = gp.OblateMWPotential()
+
+    if disk:
+        potential = gp.OblateMWPotential()
+    else:
+        potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.239225, r_s=30.,
+                                                   a=1., b=0.75, c=0.55,
+                                                   units=galactic)
 
     # get a pool object for multiprocessing / MPI
     pool = get_pool(mpi=mpi)
@@ -94,6 +97,8 @@ if __name__ == '__main__':
                         help="Number of grid IC's to generate along the x axis.")
     parser.add_argument("--type", dest="orbit_type", type=str, required=True,
                         help="Orbit type - can be either 'loop' or 'box'.")
+    parser.add_argument("--disk", action="store_true", dest="disk",
+                        default=False, help="Use potential with added disk and bulge.")
 
     args = parser.parse_args()
 
@@ -109,6 +114,7 @@ if __name__ == '__main__':
         logger.setLevel(logging.INFO)
 
     main(E=args.energy, loopbox=args.orbit_type.strip(),
-         mpi=args.mpi, overwrite=args.overwrite, ngrid=args.ngrid)
+         mpi=args.mpi, overwrite=args.overwrite, ngrid=args.ngrid,
+         disk=args.disk)
 
     sys.exit(0)
