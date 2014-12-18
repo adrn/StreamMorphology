@@ -3,7 +3,7 @@ test            comment
 "../../scf/SCFBI" path to SCFBI file
 50000           nsteps
 10             noutlog
-50            noutbod
+1000            noutbod
 0.07499715    dtime
 1.0             G
 TRUE            self gravitating?
@@ -17,5 +17,5 @@ TRUE            orbiting in NFW potential?
 500             number of steps to turn on MW potential
 2.0e-02           satellite scale (kpc)
 2.5e+05           satellite mass (Msun)
-20.84344293 0.00000000 20.77194881
-0.00000 195.83284 0.00000
+34.81351673 0.00000000 26.62900097
+0.00000 100.84640 0.00000
