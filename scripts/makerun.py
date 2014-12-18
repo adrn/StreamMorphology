@@ -90,7 +90,7 @@ date
 cd {path}
 make
 ./scf
-/vega/astro/users/amp2217/projects/gary /bin/moviesnap --path={path}
+/vega/astro/users/amp2217/projects/gary/bin/moviesnap --path={path}
 
 date
 
