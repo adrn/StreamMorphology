@@ -54,19 +54,19 @@ clean:
 base_SCFPOT = """(comment) Miyamoto-Nagai disk parameters
 6.5             a [kpc]
 0.26            b [kpc]
-6.5e10          mass scale [Msun]
+0          mass scale [Msun]
 (comment) Hernquist spheroid parameters
 0.3             c [kpc]
-2e10            mass scale [Msun]
+0            mass scale [Msun]
 (comment) Triaxial NFW halo parameters
 30.             rs (scale radius) [kpc]
 547.6           vh (scale velocity) [km/s]
-1.3             a (major axis)
-1.              b (intermediate axis)
-0.8             c (minor axis)
-1.570796        phi (use for rotating halo) [radian]
-1.570796        theta (use for rotating halo) [radian]
-1.570796        psi (use for rotating halo) [radian]
+1.             a (major axis)
+0.75              b (intermediate axis)
+0.55             c (minor axis)
+0        phi (use for rotating halo) [radian]
+0        theta (use for rotating halo) [radian]
+0        psi (use for rotating halo) [radian]
 """
 
 base_submit = """#!/bin/sh
@@ -90,7 +90,7 @@ date
 cd {path}
 make
 ./scf
-/vega/astro/users/amp2217/projects/streamteam/bin/moviesnap --path={path}
+/vega/astro/users/amp2217/projects/gary /bin/moviesnap --path={path}
 
 date
 
@@ -136,8 +136,8 @@ def main(name, x, v, scfpars, overwrite=False, submit=False):
     with open(os.path.join(path, "Makefile"), 'w') as f:
         f.write(base_Makefile)
 
-    sed_cmd = "sed 's/ \+ /\t/g' {fn} > {fn}2".format(fn=os.path.join(path, "Makefile"))
-    os.system(sed_cmd)
+    cmd = "unexpand {fn} > {fn}2".format(fn=os.path.join(path, "Makefile"))
+    os.system(cmd)
     cmd = "mv {fn}2 {fn}".format(fn=os.path.join(path, "Makefile"))
     os.system(cmd)
 
@@ -163,7 +163,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--name", dest="name", type=str, help="Name.", required=True)
     parser.add_argument("-s", "--submit", action="store_true", dest="submit",
-                        default=False, help="Generate a submit.sh file as well.")
+                        default=True, help="Generate a submit.sh file as well.")
     parser.add_argument("--pos", dest="x", required=True,
                         type=str, help="Initial position in 3 space. Must specify a "
                                        "unit, e.g., --x='15.324,123.314,51.134 kpc'")
