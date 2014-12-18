@@ -43,7 +43,7 @@ def estimate_max_period(t, w):
         loop = gd.classify_orbit(w[:,i])
         if np.any(loop):
             # flip coords
-            new_w = gd.flip_coords(w[:,i], loop[0])
+            new_w = gd.align_circulation_with_z(w[:,i], loop[0])
 
             # convert to cylindrical
             R = np.sqrt(new_w[:,0]**2 + new_w[:,1]**2)
@@ -73,7 +73,7 @@ def ws_to_freqs(naff, ws, nintvec=15):
     is_loop = np.any(loop)
     if is_loop:
         # need to flip coordinates until circulation is around z axis
-        new_ws = gd.flip_coords(ws, loop[0])
+        new_ws = gd.align_circulation_with_z(ws, loop[0])
 
         fs = gd.poincare_polar(new_ws[:,0])
         try:
