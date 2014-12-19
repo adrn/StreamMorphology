@@ -49,7 +49,6 @@ def main(E, loopbox, mpi=False, overwrite=False, ngrid=None, disk=False):
     if loopbox == 'loop':
         w0 = loop_grid(E, potential, Naxis=ngrid)
     else:
-        raise NotImplementedError("No support for box orbit grid!")
         w0 = box_grid(E, potential, Naxis=ngrid)
 
     norbits = len(w0)
