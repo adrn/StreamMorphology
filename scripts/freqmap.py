@@ -17,7 +17,7 @@ import gary.potential as gp
 from gary.units import galactic
 from gary.util import get_pool
 
-from streammorphology.initialconditions import loop_grid
+from streammorphology.initialconditions import loop_grid, box_grid
 from streammorphology.util import worker
 from streammorphology.util import _shape
 
@@ -49,7 +49,7 @@ def main(E, loopbox, mpi=False, overwrite=False, ngrid=None, disk=False):
     if loopbox == 'loop':
         w0 = loop_grid(E, potential, Naxis=ngrid)
     else:
-        w0 = box_grid(E, potential, Naxis=ngrid)
+        w0 = box_grid(E, potential, Ntotal=ngrid*ngrid)
 
     norbits = len(w0)
     logger.info("Number of orbits: {}".format(norbits))
