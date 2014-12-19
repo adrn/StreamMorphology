@@ -90,7 +90,8 @@ def ws_to_freqs(naff, ws, nintvec=15):
 def estimate_dt_nsteps(potential, w0, nperiods=100):
     # integrate orbit
     t,ws = potential.integrate_orbit(w0, dt=1., nsteps=20000,
-                                     Integrator=gi.DOPRI853Integrator)
+                                     Integrator=gi.DOPRI853Integrator,
+                                     Integrator_kwargs=dict(nsteps=256))
 
     # estimate the maximum period
     max_T = round(estimate_max_period(t, ws).max() * 100, -4)
@@ -144,7 +145,8 @@ def worker(task):
         # integrate orbit
         try:
             t,ws = potential.integrate_orbit(w0[index].copy(), dt=dt, nsteps=nsteps,
-                                             Integrator=gi.DOPRI853Integrator)
+                                             Integrator=gi.DOPRI853Integrator,
+                                             Integrator_kwargs=dict(nsteps=256))
         except RuntimeError:
             # ODE integration failed
             logger.warning("Orbit integration failed.")
