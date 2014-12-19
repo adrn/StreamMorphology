@@ -6,18 +6,11 @@ from __future__ import division, print_function
 
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
-# Standard library
-import os
-import sys
-
 # Third-party
 from astropy import log as logger
-import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize
-
-# Project
 
 __all__ = ['loop_grid']
 
@@ -86,5 +79,57 @@ def loop_grid(E, potential, Naxis=100):
 
     return np.hstack((xyz, vxyz))
 
-def box_grid():
-    pass
+def box_grid(E, potential, Ntotal=128**2):
+    """ Generate a grid of points on an equipotential surface starting with
+        zero initial velocity.
+
+        Parameters
+        ----------
+        E : numeric
+            Energy of the orbits - defines the zero-velocity curve within
+            which the initial conditions are drawn.
+        potential : gary.Potential
+            A `gary.Potential` subclass instance.
+        Ntotal : int
+            Total number of grid points to generate. Final grid of initial
+            conditions might have slightly less than Ntotal points.
+    """
+
+    Ntotal *= 8
+
+    # generate points roughly evenly distributed on an octant using the golden
+    #   ratio / spiral method
+    golden_angle = np.pi * (3 - np.sqrt(5))
+    theta = golden_angle * np.arange(Ntotal)
+    z = np.linspace(1 - 1.0 / Ntotal, 1.0 / Ntotal - 1, Ntotal)
+    radius = np.sqrt(1 - z * z)
+    x = radius * np.cos(theta)
+    y = radius * np.sin(theta)
+
+    # convert to usual spherical angles
+    phi = np.arctan2(y, x)
+    theta = np.arccos(z)
+
+    # only take one octant
+    ix = (phi > 0) & (phi < np.pi/2.) & (theta < np.pi/2.)
+    phi = phi[ix]
+    theta = theta[ix]
+    # phi,theta = map(np.ravel, np.meshgrid(phi,theta))
+
+    def func(r,phi,theta):
+        x = r[0]*np.cos(phi)*np.sin(theta)
+        y = r[0]*np.sin(phi)*np.sin(theta)
+        z = r[0]*np.cos(theta)
+        return (E - potential.value(np.array([[x,y,z]])))**2
+
+    r = np.zeros_like(phi)
+    for i,p,t in zip(np.arange(len(phi)),phi,theta):
+        res = minimize(func, x0=[25.], method='powell', args=(p,t))
+        r[i] = res.x
+
+    x = r*np.cos(phi)*np.sin(theta)
+    y = r*np.sin(phi)*np.sin(theta)
+    z = r*np.cos(theta)
+    v = np.zeros_like(x)
+
+    return np.array([x,y,z,v,v,v]).T.copy()

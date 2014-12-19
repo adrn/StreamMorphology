@@ -20,7 +20,7 @@ import gary.potential as gp
 from gary.units import galactic
 from ..initialconditions import loop_grid, box_grid
 
-def test_call():
+def test_call_loop():
     E = -0.15
 
     potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.22, r_s=30.,
@@ -44,3 +44,31 @@ def test_call():
             plt.semilogy(dE)
             plt.show()
             raise ValueError("Energy conservation failed!")
+
+def test_call_box():
+    E = -0.15
+
+    potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.22, r_s=30.,
+                                               a=1., b=1., c=0.8, units=galactic)
+
+    w0 = box_grid(E=E, potential=potential, Ntotal=16)
+
+    for i in range(len(w0)):
+        print(i)
+        try:
+            t,w = potential.integrate_orbit(w0[i], dt=1., nsteps=60000,
+                                            Integrator=gi.DOPRI853Integrator,
+                                            Integrator_kwargs=dict(nsteps=256))
+
+            fig = gd.plot_orbits(w, linestyle='none', alpha=0.1)
+
+            E = potential.total_energy(w[:,0,:3].copy(), w[:,0,3:].copy())
+            dE = np.abs(E[1:] - E[0])
+            print(dE.max())
+
+            plt.figure()
+            plt.semilogy(dE)
+            plt.show()
+
+        except RuntimeError:
+            print("Failed.")
