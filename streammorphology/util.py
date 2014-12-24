@@ -39,7 +39,7 @@ def estimate_max_period(t, w):
         loop = gd.classify_orbit(w[:,i])
         if np.any(loop):
             # flip coords
-            new_w = gd.align_circulation_with_z(w[:,i], loop[0])
+            new_w = gd.align_circulation_with_z(w[:,i], loop[0])[:,0]
 
             # convert to cylindrical
             R = np.sqrt(new_w[:,0]**2 + new_w[:,1]**2)
