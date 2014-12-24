@@ -91,9 +91,9 @@ def estimate_dt_nsteps(potential, w0, nperiods=100):
     # estimate the maximum period
     max_T = round(estimate_max_period(t, ws).max() * 200, -4)
     dt = round(max_T * 1.E-5, 0)
-    nsteps = int(max_T / dt)
-
-    if np.isnan(nsteps):
+    try:
+        nsteps = int(max_T / dt)
+    except ValueError:
         dt = 1.
         nsteps = 150000
 
