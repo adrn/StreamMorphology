@@ -36,6 +36,8 @@ def main(path):
     max_frac_diff = np.abs((d[loop_ix,1,3:6] - d[loop_ix,0,3:6]) / d[loop_ix,0,3:6]).max(axis=1)
     loop_freq_diff = np.log10(max_frac_diff / nperiods / 2.)
 
+    print(w0[loop_freq_diff.argmax()])
+
     # color scaling
     delta = np.abs(loop_freq_diff.max() - loop_freq_diff.min())
     vmin = loop_freq_diff.min() + delta/10.
