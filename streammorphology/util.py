@@ -130,7 +130,7 @@ def worker(task):
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
     dEmax = 1.
-    maxiter = 5  # maximum number of times to refine integration step
+    maxiter = 3  # maximum number of times to refine integration step
     for i in range(maxiter+1):
         if i > 0:
             # adjust timestep and duration if necessary
