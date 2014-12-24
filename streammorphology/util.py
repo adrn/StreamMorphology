@@ -86,13 +86,16 @@ def ws_to_freqs(naff, ws, nintvec=15):
 def estimate_dt_nsteps(potential, w0, nperiods=100):
     # integrate orbit
     t,ws = potential.integrate_orbit(w0, dt=1., nsteps=20000,
-                                     Integrator=gi.DOPRI853Integrator,
-                                     Integrator_kwargs=dict(nsteps=256))
+                                     Integrator=gi.DOPRI853Integrator)
 
     # estimate the maximum period
     max_T = round(estimate_max_period(t, ws).max() * 200, -4)
     dt = round(max_T * 1.E-5, 0)
     nsteps = int(max_T / dt)
+
+    if np.isnan(nsteps):
+        dt = 1.
+        nsteps = 150000
 
     return dt, nsteps
 
