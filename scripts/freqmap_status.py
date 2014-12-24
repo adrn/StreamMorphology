@@ -14,7 +14,7 @@ import numpy as np
 
 from streammorphology.util import _shape
 
-def main(path):
+def main(path, index=None):
     basepath = os.path.split(path)[0]
     w0_path = os.path.join(basepath, 'w0.npy')
 
@@ -30,6 +30,22 @@ def main(path):
     print("Some failures: {}".format(n_fail_some))
     print("Total failures: {}".format(n_total_fail))
 
+    if index is not None:
+        print("-"*79)
+        print("w0: {}".format(w0[index]))
+        print("max(∆E): {}".format(d[index,0,6]))
+        print("dt, nsteps: {}, {}".format(d[index,0,9],d[index,0,10]))
+        if d[index,0,8] == 1.:
+            print("Loop orbit")
+        else:
+            print("Box orbit")
+        print("1st half freqs.:")
+        print("\t xyz: {}".format(d[index,0,:3]))
+        print("\t rφz: {}".format(d[index,0,3:6]))
+        print("2nd half freqs.:")
+        print("\t xyz: {}".format(d[index,1,:3]))
+        print("\t rφz: {}".format(d[index,1,3:6]))
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
 
@@ -38,7 +54,9 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--path", dest="path", required=True,
                         help="Path to a Numpy memmap file containing the results "
                              "of frequency mapping.")
+    parser.add_argument("-i", "--index", dest="index", default=None,
+                        help="Index of an orbit to check.")
 
     args = parser.parse_args()
 
-    main(args.path)
+    main(args.path, index=args.index)
