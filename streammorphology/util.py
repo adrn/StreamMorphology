@@ -4,10 +4,6 @@ from __future__ import division, print_function
 
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
-# Standard library
-import os
-import sys
-
 # Third-party
 from astropy import log as logger
 import numpy as np
@@ -94,7 +90,7 @@ def estimate_dt_nsteps(potential, w0, nperiods=100):
                                      Integrator_kwargs=dict(nsteps=256))
 
     # estimate the maximum period
-    max_T = round(estimate_max_period(t, ws).max() * 100, -4)
+    max_T = round(estimate_max_period(t, ws).max() * 200, -4)
     dt = round(max_T * 1.5E-5, 0)
     nsteps = int(max_T / dt)
 
