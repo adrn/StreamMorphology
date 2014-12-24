@@ -91,7 +91,7 @@ def estimate_dt_nsteps(potential, w0, nperiods=100):
 
     # estimate the maximum period
     max_T = round(estimate_max_period(t, ws).max() * 200, -4)
-    dt = round(max_T * 1.5E-5, 0)
+    dt = round(max_T * 1.E-5, 0)
     nsteps = int(max_T / dt)
 
     return dt, nsteps
