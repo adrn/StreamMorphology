@@ -69,7 +69,7 @@ def ws_to_freqs(naff, ws, nintvec=15):
     is_loop = np.any(loop)
     if is_loop:
         # need to flip coordinates until circulation is around z axis
-        new_ws = gd.align_circulation_with_z(ws, loop[0])
+        new_ws = gd.align_circulation_with_z(ws[:,0], loop[0])
 
         fs = gd.poincare_polar(new_ws[:,0])
         try:
