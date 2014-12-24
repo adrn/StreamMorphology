@@ -130,19 +130,20 @@ def worker(task):
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
     dEmax = 1.
-    maxiter = 3  # maximum number of times to refine integration step
-    for i in range(maxiter):
+    maxiter = 5  # maximum number of times to refine integration step
+    for i in range(maxiter+1):
         if i > 0:
             # adjust timestep and duration if necessary
             dt /= 2.
             nsteps *= 2
-            logger.debug("Refining timestep for orbit {} ({}, {})".format(index, dt, nsteps))
+            logger.debug("Refining orbit {} to: dt,nsteps=({},{}). Max. dE={}"
+                         .format(index, dt, nsteps, dEmax))
 
         # integrate orbit
         try:
             t,ws = potential.integrate_orbit(w0[index].copy(), dt=dt, nsteps=nsteps,
                                              Integrator=gi.DOPRI853Integrator,
-                                             Integrator_kwargs=dict(nsteps=256))
+                                             Integrator_kwargs=dict(nsteps=8192,atol=1E-14,rtol=1E-9))
         except RuntimeError:
             # ODE integration failed
             logger.warning("Orbit integration failed.")
@@ -153,7 +154,7 @@ def worker(task):
         # check energy conservation for the orbit
         E = potential.total_energy(ws[:,0,:3].copy(), ws[:,0,3:].copy())
         dE = np.abs(E[1:] - E[0])
-        dEmax = dE.max()
+        dEmax = dE.max() / np.abs(E[0])
 
         if dEmax < 1E-9:
             break
