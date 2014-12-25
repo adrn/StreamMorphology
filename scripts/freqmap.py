@@ -54,25 +54,28 @@ def main(E, loopbox, mpi=False, overwrite=False, ngrid=None, disk=False):
     norbits = len(w0)
     logger.info("Number of orbits: {}".format(norbits))
 
-    if os.path.exists(allfreqs_filename):
-        if overwrite:
-            os.remove(allfreqs_filename)
-        else:
-            pool.close()
-            return
-
-    allfreqs_shape = (norbits,) + _shape
-    d = np.memmap(allfreqs_filename, mode='w+', dtype='float64', shape=allfreqs_shape)
-
     # save the initial conditions
     w0_filename = os.path.join(path, 'w0.npy')
     np.save(w0_filename, w0)
 
-    tasks = [dict(index=i, w0_filename=w0_filename,
-                  allfreqs_filename=allfreqs_filename,
-                  potential=potential) for i in range(norbits)]
-    pool.map(worker, tasks)
+    if os.path.exists(allfreqs_filename) and overwrite:
+        os.remove(allfreqs_filename)
 
+    allfreqs_shape = (norbits,) + _shape
+    if not os.path.exists(allfreqs_filename):
+        d = np.memmap(allfreqs_filename, mode='w+', dtype='float64', shape=allfreqs_shape)
+        tasks = [dict(index=i, w0_filename=w0_filename,
+                      allfreqs_filename=allfreqs_filename,
+                      potential=potential) for i in range(norbits)]
+
+    else:
+        d = np.memmap(allfreqs_filename, mode='r', dtype='float64', shape=allfreqs_shape)
+        not_done = np.where(d[:,0,7] != 1)[0]
+        tasks = [dict(index=i, w0_filename=w0_filename,
+                      allfreqs_filename=allfreqs_filename,
+                      potential=potential) for i in not_done]
+
+    pool.map(worker, tasks)
     pool.close()
 
 if __name__ == '__main__':
