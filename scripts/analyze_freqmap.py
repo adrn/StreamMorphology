@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def main(path):
-
+    # TODO: auto detect loop or box in filename, decide what to do accordingly
     w0 = np.load(os.path.join(path, 'w0.npy'))
     allfreqs_filename = os.path.join(path, 'allfreqs.dat')
     d = np.memmap(allfreqs_filename, shape=(len(w0),2,11), dtype='float64', mode='r')
@@ -25,8 +25,10 @@ def main(path):
     logger.info("{} box orbits".format((d[done_ix,0,8] == 0).sum()))
     logger.info("{} loop orbits".format((d[done_ix,0,8] == 1).sum()))
 
-    box_ix = done_ix & (d[:,0,8] == 0.) & np.all(np.isfinite(d[:,0,:3]), axis=1)
-    loop_ix = done_ix & (d[:,0,8] == 1.) & np.all(np.isfinite(d[:,0,3:6]), axis=1)
+    box_ix = (done_ix & (d[:,0,8] == 0.) & np.all(np.isfinite(d[:,0,:3]), axis=1)
+              & np.all(np.isfinite(d[:,1,:3]), axis=1))
+    loop_ix = (done_ix & (d[:,0,8] == 1.) & np.all(np.isfinite(d[:,0,3:6]), axis=1)
+               & np.all(np.isfinite(d[:,1,3:6]), axis=1))
 
     nperiods = d[box_ix,0,9]*d[box_ix,0,10] / (2*np.pi/np.abs(d[box_ix,0,:3]).max(axis=1))
     max_frac_diff = np.abs((d[box_ix,1,:3] - d[box_ix,0,:3]) / d[box_ix,0,:3]).max(axis=1)
