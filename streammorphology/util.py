@@ -55,19 +55,12 @@ def estimate_max_period(t, w):
     return np.array(periods)
 
 def ws_to_freqs(naff, ws, nintvec=15):
-
-    # first get x,y,z frequencies
-    logger.info('Solving for XYZ frequencies...')
-    fs = [(ws[:,0,j] + 1j*ws[:,0,j+3]) for j in range(3)]
-    try:
-        fxyz,d,ixes = naff.find_fundamental_frequencies(fs, nintvec=nintvec)
-    except:
-        fxyz = np.ones(3)*np.nan
-
     # now get other frequencies
     loop = gd.classify_orbit(ws)
     is_loop = np.any(loop)
+
     if is_loop:
+        fxyz = np.ones(3)*np.nan
         # need to flip coordinates until circulation is around z axis
         new_ws = gd.align_circulation_with_z(ws[:,0], loop[0])
 
@@ -81,21 +74,34 @@ def ws_to_freqs(naff, ws, nintvec=15):
     else:
         fRphiz = np.ones(3)*np.nan
 
+        # first get x,y,z frequencies
+        logger.info('Solving for XYZ frequencies...')
+        fs = [(ws[:,0,j] + 1j*ws[:,0,j+3]) for j in range(3)]
+        try:
+            fxyz,d,ixes = naff.find_fundamental_frequencies(fs, nintvec=nintvec)
+        except:
+            fxyz = np.ones(3)*np.nan
+
     return np.append(fxyz, fRphiz), is_loop
 
 def estimate_dt_nsteps(potential, w0, nperiods=100):
     # integrate orbit
-    t,ws = potential.integrate_orbit(w0, dt=1., nsteps=20000,
+    t,ws = potential.integrate_orbit(w0, dt=2., nsteps=20000,
                                      Integrator=gi.DOPRI853Integrator)
 
     # estimate the maximum period
-    max_T = round(estimate_max_period(t, ws).max() * 200, -4)
+    max_T = round(estimate_max_period(t, ws).max() * 100, -4)
+
+    # integrate for 400 times the max period
+    max_T *= 400
+
+    # arbitrarily choose the timestep...
     dt = round(max_T * 1.E-5, 0)
     try:
         nsteps = int(max_T / dt)
     except ValueError:
-        dt = 1.
-        nsteps = 150000
+        dt = 2.
+        nsteps = 200000
 
     return dt, nsteps
 
