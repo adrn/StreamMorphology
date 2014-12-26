@@ -54,21 +54,20 @@ def test_call_box():
     w0 = box_grid(E=E, potential=potential, Ntotal=16)
 
     for i in range(len(w0)):
-        print(i)
         try:
             t,w = potential.integrate_orbit(w0[i], dt=1., nsteps=60000,
                                             Integrator=gi.DOPRI853Integrator,
-                                            Integrator_kwargs=dict(nsteps=256))
+                                            Integrator_kwargs=dict(nsteps=128))
 
             fig = gd.plot_orbits(w, linestyle='none', alpha=0.1)
 
             E = potential.total_energy(w[:,0,:3].copy(), w[:,0,3:].copy())
             dE = np.abs(E[1:] - E[0])
-            print(dE.max())
+            print(i,dE.max())
 
-            plt.figure()
-            plt.semilogy(dE)
-            plt.show()
+            # plt.figure()
+            # plt.semilogy(dE)
+            # plt.show()
 
         except RuntimeError:
             print("Failed.")
