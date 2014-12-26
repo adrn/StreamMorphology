@@ -29,7 +29,7 @@ def main(E, loopbox, mpi=False, overwrite=False, ngrid=None, disk=False):
         potential = gp.OblateMWPotential()
     else:
         potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.239225, r_s=30.,
-                                                   a=1., b=0.75, c=0.55,
+                                                   a=1., b=0.8, c=0.6,
                                                    units=galactic)
 
     # get a pool object for multiprocessing / MPI

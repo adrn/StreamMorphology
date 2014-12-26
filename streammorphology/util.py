@@ -20,7 +20,7 @@ import gary.integrate as gi
 __all__ = ['ws_to_freqs', 'worker', 'read_allfreqs']
 
 # define indices of columns
-colmap = OrderedDict(fxyz=(0,1,2), fRphiz=(3,4,5), dEmax=6, done=7, loop=8, dt=9, nsteps=10, success=11)
+colmap = OrderedDict(fxyz=(0,1,2), fRphiz=(3,4,5), dEmax=6, success=7, loop=8, dt=9, nsteps=10)
 l = np.concatenate([[x] if not isiterable(x) else list(x) for x in colmap.values()]).max()+1
 _shape = (2, l)
 
@@ -97,14 +97,14 @@ def estimate_dt_nsteps(potential, w0, nperiods=100):
                                      Integrator=gi.DOPRI853Integrator)
 
     # estimate the maximum period
-    max_T = round(estimate_max_period(t, ws).max() * 100, -4)
+    max_T = round(estimate_max_period(t, ws).max(), -4)
 
     # integrate for 400 times the max period
     max_T *= 400
 
     # arbitrarily choose the timestep...
-    dt = round(max_T * 1.E-5, 0)
     try:
+        dt = round(max_T * 1.E-5, 0)
         nsteps = int(max_T / dt)
     except ValueError:
         dt = 2.
@@ -125,7 +125,7 @@ def worker(task):
     allfreqs = np.memmap(allfreqs_filename, mode='r', shape=allfreqs_shape, dtype='float64')
 
     # short-circuit if this orbit is already done
-    if allfreqs[index,0,7] == 1.:
+    if allfreqs[index,0,colmap['success']] == 1.:
         return
 
     # temporary array for results
@@ -138,7 +138,6 @@ def worker(task):
         logger.warning("Failed to integrate orbit when estimating dt,nsteps")
         allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
         tmp[:,:] = np.nan
-        tmp[:,7] = 1.
         allfreqs[index] = tmp
         allfreqs.flush()
         return
@@ -178,7 +177,6 @@ def worker(task):
     if dEmax > 1E-9:
         allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
         tmp[:,:] = np.nan
-        tmp[:,7] = 1.
         allfreqs[index] = tmp
         allfreqs.flush()
         return
@@ -193,7 +191,6 @@ def worker(task):
     tmp[1,:6] = freqs2
 
     tmp[:,colmap['dEmax']] = dEmax
-    tmp[:,colmap['done']] = 1.
     tmp[:,colmap['loop']] = float(is_loop)
     tmp[:,colmap['dt']] = float(dt)
     tmp[:,colmap['nsteps']] = nsteps
@@ -225,7 +222,7 @@ def read_allfreqs(f, norbits):
 
     # replace NAN nsteps with 0
     allfreqs[np.isnan(allfreqs[:,0,colmap['nsteps']]),0,colmap['nsteps']] = 0
-    dtype = [('fxyz','f8',(2,3)), ('fRphiz','f8',(2,3)), ('dEmax','f8'), ('done','b1'),
-             ('loop','b1'), ('dt','f8'), ('nsteps','i8'), ('success','b1')]
+    dtype = [('fxyz','f8',(2,3)), ('fRphiz','f8',(2,3)), ('dEmax','f8'), ('success','b1'),
+             ('loop','b1'), ('dt','f8'), ('nsteps','i8')]
     data = [(allfreqs[i,:,:3],allfreqs[i,:,3:6])+tuple(allfreqs[i,0,6:]) for i in range(norbits)]
     return np.array(data, dtype=dtype)
