@@ -20,7 +20,7 @@ import gary.integrate as gi
 __all__ = ['ws_to_freqs', 'worker', 'read_allfreqs']
 
 # define indices of columns
-colmap = OrderedDict(fxyz=(0,1,2), fRphiz=(3,4,5), dEmax=6, done=7, loop=8, dt=9, nsteps=10)
+colmap = OrderedDict(fxyz=(0,1,2), fRphiz=(3,4,5), dEmax=6, done=7, loop=8, dt=9, nsteps=10, success=11)
 l = np.concatenate([[x] if not isiterable(x) else list(x) for x in colmap.values()]).max()+1
 _shape = (2, l)
 
@@ -192,11 +192,12 @@ def worker(task):
     tmp[0,:6] = freqs1
     tmp[1,:6] = freqs2
 
-    tmp[:,6] = dEmax
-    tmp[:,7] = 1.
-    tmp[:,8] = float(is_loop)
-    tmp[:,9] = float(dt)
-    tmp[:,10] = nsteps//2
+    tmp[:,colmap['dEmax']] = dEmax
+    tmp[:,colmap['done']] = 1.
+    tmp[:,colmap['loop']] = float(is_loop)
+    tmp[:,colmap['dt']] = float(dt)
+    tmp[:,colmap['nsteps']] = nsteps
+    tmp[:,colmap['success']] = 1.
 
     allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
     allfreqs[index] = tmp
@@ -225,6 +226,6 @@ def read_allfreqs(f, norbits):
     # replace NAN nsteps with 0
     allfreqs[np.isnan(allfreqs[:,0,colmap['nsteps']]),0,colmap['nsteps']] = 0
     dtype = [('fxyz','f8',(2,3)), ('fRphiz','f8',(2,3)), ('dEmax','f8'), ('done','b1'),
-             ('loop','b1'), ('dt','f8'), ('nsteps','i8')]
+             ('loop','b1'), ('dt','f8'), ('nsteps','i8'), ('success','b1')]
     data = [(allfreqs[i,:,:3],allfreqs[i,:,3:6])+tuple(allfreqs[i,0,6:]) for i in range(norbits)]
     return np.array(data, dtype=dtype)

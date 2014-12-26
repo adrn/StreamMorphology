@@ -18,8 +18,7 @@ from gary.units import galactic
 from gary.util import get_pool
 
 from streammorphology.initialconditions import loop_grid, box_grid
-from streammorphology.util import worker
-from streammorphology.util import _shape
+from streammorphology.util import worker,read_allfreqs,_shape
 
 base_path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
 
@@ -69,8 +68,8 @@ def main(E, loopbox, mpi=False, overwrite=False, ngrid=None, disk=False):
                       potential=potential) for i in range(norbits)]
 
     else:
-        d = np.memmap(allfreqs_filename, mode='r', dtype='float64', shape=allfreqs_shape)
-        not_done = np.where(d[:,0,7] != 1)[0]
+        d = read_allfreqs(allfreqs_filename, norbits)
+        not_done = np.where(~d['done'])[0]
         tasks = [dict(index=i, w0_filename=w0_filename,
                       allfreqs_filename=allfreqs_filename,
                       potential=potential) for i in not_done]
