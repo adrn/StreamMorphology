@@ -16,9 +16,9 @@ from astropy import log as logger
 
 # Project
 from gary.util import get_pool
-from streammorphology.util import worker, read_allfreqs, _shape, potential
+from streammorphology.util import worker, read_allfreqs, potential
 
-def main(path, mpi=False):
+def main(path, mpi=False, threshold_diffusion=1E-6):
     np.random.seed(42)
 
     # get a pool object for multiprocessing / MPI
@@ -36,10 +36,29 @@ def main(path, mpi=False):
         raise IOError("allfreqs file doesn't exist!")
 
     d = read_allfreqs(allfreqs_filename, norbits)
-    not_done = np.where(~d['success'])[0]
+
+    # containers
+    nperiods = np.zeros(norbits)
+    freq_diff = np.zeros(norbits)
+
+    # loop orbits
+    loop = d[d['loop']]
+    loopf = loop['fRphiz']
+    nperiods[d['loop']] = loop['dt']*loop['nsteps'] / (2*np.pi/np.abs(loopf[:,0]).max(axis=-1))
+    freq_diff[d['loop']] = np.abs((loopf[:,1] - loopf[:,0]) / loopf[:,0]).max(axis=1) / nperiods[d['loop']] / 2.
+
+    # box orbits
+    box = d[~d['loop']]
+    boxf = box['fxyz']
+    nperiods[~d['loop']] = box['dt']*box['nsteps'] / (2*np.pi/np.abs(boxf[:,0]).max(axis=-1))
+    freq_diff[~d['loop']] = np.abs((boxf[:,1] - boxf[:,0]) / boxf[:,0]).max(axis=1) / nperiods[~d['loop']] / 2.
+
+    redo_ix = (np.logical_not(d['success']) | np.logical_not(np.isfinite(nperiods)) |
+               (freq_diff > threshold_diffusion) | np.logical_not(np.isfinite(freq_diff)))
+    not_done = np.where(redo_ix)[0]
     tasks = [dict(index=i, w0_filename=w0_filename,
                   allfreqs_filename=allfreqs_filename,
-                  potential=potential) for i in not_done]
+                  potential=potential, dt=1., nsteps=400000) for i in not_done]
 
     pool.map(worker, tasks)
     pool.close()
@@ -54,24 +73,14 @@ if __name__ == '__main__':
                         default=False, help="Be chatty! (default = False)")
     parser.add_argument("-q", "--quiet", action="store_true", dest="quiet",
                         default=False, help="Be quiet! (default = False)")
-    parser.add_argument("-o", "--overwrite", action="store_true", dest="overwrite",
-                        default=False, help="DESTROY. DESTROY. (default = False)")
 
-    parser.add_argument("-E", "--energy", dest="energy", type=float, required=True,
-                        help="Energy of the orbits.")
+    parser.add_argument("-p", "--path", dest="path", required=True,
+                        help="Path to a Numpy memmap file containing the results "
+                             "of frequency mapping.")
     parser.add_argument("--mpi", dest="mpi", default=False, action="store_true",
                         help="Use an MPI pool.")
-    parser.add_argument("--ngrid", dest="ngrid", type=int, default=100,
-                        help="Number of grid IC's to generate along the x axis.")
-    parser.add_argument("--type", dest="orbit_type", type=str, required=True,
-                        help="Orbit type - can be either 'loop' or 'box'.")
-    parser.add_argument("--disk", action="store_true", dest="disk",
-                        default=False, help="Use potential with added disk and bulge.")
 
     args = parser.parse_args()
-
-    if args.orbit_type.strip() not in ['loop','box']:
-        raise ValueError("'--type' argument must be one of 'loop' or 'box'")
 
     # Set logger level based on verbose flags
     if args.verbose:
@@ -81,9 +90,7 @@ if __name__ == '__main__':
     else:
         logger.setLevel(logging.INFO)
 
-    main(E=args.energy, loopbox=args.orbit_type.strip(),
-         mpi=args.mpi, overwrite=args.overwrite, ngrid=args.ngrid,
-         disk=args.disk)
+    main(path=args.path, mpi=args.mpi)
 
     sys.exit(0)
 
