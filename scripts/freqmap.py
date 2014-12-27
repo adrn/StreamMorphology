@@ -13,12 +13,10 @@ from astropy import log as logger
 import numpy as np
 
 # Project
-import gary.potential as gp
-from gary.units import galactic
 from gary.util import get_pool
 
 from streammorphology.initialconditions import loop_grid, box_grid
-from streammorphology.util import worker,read_allfreqs,_shape
+from streammorphology.util import worker, read_allfreqs, _shape, potential
 
 base_path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
 
@@ -26,11 +24,7 @@ def main(E, loopbox, mpi=False, overwrite=False, ngrid=None, disk=False):
     np.random.seed(42)
 
     if disk:
-        potential = gp.OblateMWPotential()
-    else:
-        potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.239225, r_s=30.,
-                                                   a=1., b=0.8, c=0.6,
-                                                   units=galactic)
+        raise NotImplementedError()
 
     # get a pool object for multiprocessing / MPI
     pool = get_pool(mpi=mpi)
@@ -69,7 +63,7 @@ def main(E, loopbox, mpi=False, overwrite=False, ngrid=None, disk=False):
 
     else:
         d = read_allfreqs(allfreqs_filename, norbits)
-        not_done = np.where(~d['done'])[0]
+        not_done = np.where(~d['success'])[0]
         tasks = [dict(index=i, w0_filename=w0_filename,
                       allfreqs_filename=allfreqs_filename,
                       potential=potential) for i in not_done]
