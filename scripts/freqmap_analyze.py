@@ -38,7 +38,7 @@ def main(path):
     max_frac_diff = np.abs((d[loop_ix,1,3:6] - d[loop_ix,0,3:6]) / d[loop_ix,0,3:6]).max(axis=1)
     loop_freq_diff = np.log10(max_frac_diff / nperiods / 2.)
 
-    print(w0[loop_freq_diff.argmax()])
+    # print(w0[loop_freq_diff.argmax()])
 
     # color scaling
     delta = np.abs(loop_freq_diff.max() - loop_freq_diff.min())
@@ -59,9 +59,9 @@ def main(path):
 
     fig,ax = plt.subplots(1,1,figsize=(9,8))
     ax.scatter(w0[box_ix,0], w0[box_ix,2], c=box_freq_diff,
-               vmin=vmin, vmax=vmax, cmap='cubehelix', s=12, marker='s')
+               vmin=vmin, vmax=vmax, cmap='cubehelix', s=20, marker='s')
     c = ax.scatter(w0[loop_ix,0], w0[loop_ix,2], c=loop_freq_diff,
-                   vmin=vmin, vmax=vmax, cmap='cubehelix', s=12, marker='s')
+                   vmin=vmin, vmax=vmax, cmap='cubehelix', s=20, marker='s')
     ax.set_xlim(-1, w0[:,0].max()+5)
     ax.set_ylim(-1, w0[:,2].max()+5)
     ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
@@ -72,7 +72,8 @@ def main(path):
 
     # plot histograms of diffusion rates
     fig,ax = plt.subplots(1,1,figsize=(8,6))
-    n,bins,pa = ax.hist(loop_freq_diff, alpha=0.4, normed=True, label='loop')
+    bins = np.linspace(loop_freq_diff.min(), box_freq_diff.max(), 25)
+    n,bins,pa = ax.hist(loop_freq_diff, alpha=0.4, normed=True, bins=bins, label='loop')
     n,bins,pa = ax.hist(box_freq_diff, alpha=0.4, bins=bins, normed=True, label='box')
     ax.legend(loc='upper right')
     ax.axvline(vmin, alpha=0.1, c='k')
