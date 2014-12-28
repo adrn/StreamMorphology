@@ -60,10 +60,10 @@ base_SCFPOT = """(comment) Miyamoto-Nagai disk parameters
 0            mass scale [Msun]
 (comment) Triaxial NFW halo parameters
 30.             rs (scale radius) [kpc]
-547.6           vh (scale velocity) [km/s]
+532.24177023   vh (scale velocity) [km/s]
 1.             a (major axis)
-0.75              b (intermediate axis)
-0.55             c (minor axis)
+0.8              b (intermediate axis)
+0.6             c (minor axis)
 0        phi (use for rotating halo) [radian]
 0        theta (use for rotating halo) [radian]
 0        psi (use for rotating halo) [radian]
