@@ -4,7 +4,7 @@ test            comment
 50000           nsteps
 10             noutlog
 1000            noutbod
-0.07499715    dtime
+0.18749288    dtime
 1.0             G
 TRUE            self gravitating?
 FALSE           input expansion coefficients?
@@ -17,5 +17,5 @@ TRUE            orbiting in NFW potential?
 500             number of steps to turn on MW potential
 9.3e-03           satellite scale (kpc)
 2.5e+04           satellite mass (Msun)
--41.46032171 -18.71027274 4.49649458
--34.04777 29.46160 -30.53447
+-1.69295332 -13.78418595 15.63091151
+56.78087 223.65581 30.02105
