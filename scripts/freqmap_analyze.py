@@ -46,29 +46,31 @@ def main(path):
     vmax = loop_freq_diff.max() - delta/10.
 
     # plot initial condition grid, colored by fractional diffusion rate
-    fig,ax = plt.subplots(1,1,figsize=(8,8))
+    fig,ax = plt.subplots(1,1,figsize=(9.75,8))
     ax.scatter(w0[box_ix,0], w0[box_ix,2], c=box_freq_diff,
-               vmin=vmin, vmax=vmax, cmap='Greys', s=12, marker='s')
-    ax.scatter(w0[loop_ix,0], w0[loop_ix,2], c=loop_freq_diff,
-               vmin=vmin, vmax=vmax, cmap='Greys', s=12, marker='s')
-    ax.set_xlim(-1, w0[:,0].max()+5)
-    ax.set_ylim(-1, w0[:,2].max()+5)
+               vmin=vmin, vmax=vmax, cmap='Greys_r', s=22, marker='s')
+    c = ax.scatter(w0[loop_ix,0], w0[loop_ix,2], c=loop_freq_diff,
+                   vmin=vmin, vmax=vmax, cmap='Greys_r', s=22, marker='s')
+    ax.set_xlim(0, max([w0[:,0].max(),w0[:,2].max()]))
+    ax.set_ylim(*ax.get_xlim())
     ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
     ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
-    fig.savefig(os.path.join(path,"diffusion_ics.png"))
+    fig.colorbar(c)
+    fig.tight_layout()
+    fig.savefig(os.path.join(path,"diffusion_ics.pdf"))
 
     fig,ax = plt.subplots(1,1,figsize=(9,8))
     ax.scatter(w0[box_ix,0], w0[box_ix,2], c=box_freq_diff,
                vmin=vmin, vmax=vmax, cmap='cubehelix', s=20, marker='s')
     c = ax.scatter(w0[loop_ix,0], w0[loop_ix,2], c=loop_freq_diff,
                    vmin=vmin, vmax=vmax, cmap='cubehelix', s=20, marker='s')
-    ax.set_xlim(-1, w0[:,0].max()+5)
-    ax.set_ylim(-1, w0[:,2].max()+5)
+    ax.set_xlim(0, max([w0[:,0].max(),w0[:,2].max()]))
+    ax.set_ylim(*ax.get_xlim())
     ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
     ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
     fig.colorbar(c)
     fig.tight_layout()
-    fig.savefig(os.path.join(path,"diffusion_ics_ugly.png"))
+    fig.savefig(os.path.join(path,"diffusion_ics_ugly.pdf"))
 
     # plot histograms of diffusion rates
     fig,ax = plt.subplots(1,1,figsize=(8,6))
@@ -78,7 +80,7 @@ def main(path):
     ax.legend(loc='upper right')
     ax.axvline(vmin, alpha=0.1, c='k')
     ax.axvline(vmax, alpha=0.1, c='k')
-    fig.savefig(os.path.join(path,"diffusion_hist.png"))
+    fig.savefig(os.path.join(path,"diffusion_hist.pdf"))
 
     # plot frequency maps
     loop_freqs = d[loop_ix,:,3:6].mean(axis=1)
@@ -99,7 +101,7 @@ def main(path):
     axes[1].set_xlim(0.3,1.2)
     axes[1].set_ylim(0.3,1.2)
 
-    fig.savefig(os.path.join(path,"freqmap.png"))
+    fig.savefig(os.path.join(path,"freqmap.pdf"))
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
