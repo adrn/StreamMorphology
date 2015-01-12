@@ -14,7 +14,7 @@ from scipy.optimize import minimize
 
 __all__ = ['loop_grid']
 
-def loop_grid(E, potential, Naxis=100):
+def loop_grid(E, potential, dx, dz):
     """ Generate a grid of points in the x-z plane (y=0), starting with initial
         velocities vx = vz = 0. vy is solved for as:
 
@@ -27,9 +27,10 @@ def loop_grid(E, potential, Naxis=100):
             which the initial conditions are drawn.
         potential : gary.Potential
             A `gary.Potential` subclass instance.
-        Naxis : int
-            Number of grid points along each axis. Final grid of initial
-            conditions will have < Naxis**2 points.
+        dx : numeric
+            Step size in x.
+        dz : numeric
+            Step size in z.
     """
 
     # find maximum x on z=0
@@ -40,10 +41,9 @@ def loop_grid(E, potential, Naxis=100):
         raise ValueError("Failed to find boundary of ZVC on x-axis.")
     max_x = res.x
 
-    xgrid = np.linspace(0.1, max_x, Naxis)
+    xgrid = np.arange(0.1, max_x+dx, dx)
 
     # compute ZVC boundary for each x
-    dz = None
     for xg in xgrid:
         # find maximum allowed z along x=xx
         def func(x):
@@ -58,16 +58,12 @@ def loop_grid(E, potential, Naxis=100):
             raise ValueError("Failed to find boundary of ZVC for x={}.".format(xg))
 
         logger.debug("Max. z: {}".format(max_z))
-        if dz is None:
-            zgrid = np.linspace(0.1, max_z, Naxis)
-            dz = zgrid[1] - zgrid[0]
-
-            xs = np.zeros_like(zgrid) + xg
-            xz = np.vstack((xs,zgrid))
-        else:
-            zgrid = np.arange(0.1, max_z, dz)
-            xs = np.zeros_like(zgrid) + xg
+        zgrid = np.arange(0.1, max_z, dz)
+        xs = np.zeros_like(zgrid) + xg
+        try:
             xz = np.hstack((xz, np.vstack((xs,zgrid))))
+        except NameError:
+            xz = np.vstack((xs,zgrid))
 
     xyz = np.zeros((xz.shape[-1],3))
     xyz[:,0] = xz[0]
