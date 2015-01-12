@@ -16,8 +16,6 @@ from scipy.signal import argrelmax, argrelmin
 # Project
 import gary.dynamics as gd
 import gary.integrate as gi
-import gary.potential as gp
-from gary.units import galactic
 
 __all__ = ['ws_to_freqs', 'worker', 'read_allfreqs']
 
@@ -25,10 +23,6 @@ __all__ = ['ws_to_freqs', 'worker', 'read_allfreqs']
 colmap = OrderedDict(fxyz=(0,1,2), fRphiz=(3,4,5), dEmax=6, success=7, loop=8, dt=9, nsteps=10)
 l = np.concatenate([[x] if not isiterable(x) else list(x) for x in colmap.values()]).max()+1
 _shape = (2, l)
-
-potential = gp.LeeSutoTriaxialNFWPotential(v_c=0.239225, r_s=30.,
-                                           a=1., b=0.8, c=0.6,
-                                           units=galactic)
 
 def ptp_freqs(t, *args):
     freqs = []
