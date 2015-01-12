@@ -8,15 +8,15 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 import gary.potential as gp
 from gary.units import galactic
 
-__all__ = ['potential_register']
+__all__ = ['potential_registry']
 
 # built-in potentials
-potential_register = dict()
+potential_registry = dict()
 
 p = gp.LeeSutoTriaxialNFWPotential(v_c=0.239225, r_s=30.,
                                    a=1., b=0.8, c=0.6,
                                    units=galactic)
-potential_register['triaxial-NFW'] = p
+potential_registry['triaxial-NFW'] = p
 
 p = gp.TriaxialMWPotential(units=galactic)
-potential_register['triaxial-NFW-disk-bulge'] = p
+potential_registry['triaxial-NFW-disk-bulge'] = p
