@@ -14,42 +14,28 @@ import numpy as np
 
 # Project
 from gary.util import get_pool
+from streammorphology import potential_registry
+from streammorphology.util import worker, read_allfreqs, _shape
 
-from streammorphology.initialconditions import loop_grid, box_grid
-from streammorphology.util import worker, read_allfreqs, _shape, potential
-
-base_path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
-
-def main(E, loopbox, mpi=False, overwrite=False, ngrid=None, disk=False):
+def main(potential_name, path, mpi=False, overwrite=False):
     np.random.seed(42)
-
-    if disk:
-        raise NotImplementedError()
 
     # get a pool object for multiprocessing / MPI
     pool = get_pool(mpi=mpi)
     if mpi:
         logger.info("Using MPI")
 
-    path = os.path.join(base_path, 'output',
-                        'E{:.3f}_{}_{}'.format(E, potential.__class__.__name__, loopbox))
-    logger.info("Caching to: {}".format(path))
     allfreqs_filename = os.path.join(path, "allfreqs.dat")
-    if not os.path.exists(path):
-        os.mkdir(path)
 
-    # initial conditions
-    if loopbox == 'loop':
-        w0 = loop_grid(E, potential, Naxis=ngrid)
-    else:
-        w0 = box_grid(E, potential, Ntotal=ngrid*ngrid)
+    # path to initial conditions cache
+    w0_filename = os.path.join(path, 'w0.npy')
+    w0 = np.load(w0_filename)
+
+    # get potential from registry
+    potential = potential_registry[potential_name]
 
     norbits = len(w0)
     logger.info("Number of orbits: {}".format(norbits))
-
-    # save the initial conditions
-    w0_filename = os.path.join(path, 'w0.npy')
-    np.save(w0_filename, w0)
 
     if os.path.exists(allfreqs_filename) and overwrite:
         os.remove(allfreqs_filename)
@@ -84,21 +70,16 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--overwrite", action="store_true", dest="overwrite",
                         default=False, help="DESTROY. DESTROY. (default = False)")
 
-    parser.add_argument("-E", "--energy", dest="energy", type=float, required=True,
-                        help="Energy of the orbits.")
     parser.add_argument("--mpi", dest="mpi", default=False, action="store_true",
                         help="Use an MPI pool.")
-    parser.add_argument("--ngrid", dest="ngrid", type=int, default=100,
-                        help="Number of grid IC's to generate along the x axis.")
-    parser.add_argument("--type", dest="orbit_type", type=str, required=True,
-                        help="Orbit type - can be either 'loop' or 'box'.")
-    parser.add_argument("--disk", action="store_true", dest="disk",
-                        default=False, help="Use potential with added disk and bulge.")
+    parser.add_argument("--potential", dest="potential_name", type=str, required=True,
+                        help="Name of the potential from the potential registry. Can be "
+                        "one of: {}".format(",".join(potential_registry.keys())))
+
+    parser.add_argument("--path", dest="path", type=str, required=True,
+                        help="Path to the freqmap initial conditions grid.")
 
     args = parser.parse_args()
-
-    if args.orbit_type.strip() not in ['loop','box']:
-        raise ValueError("'--type' argument must be one of 'loop' or 'box'")
 
     # Set logger level based on verbose flags
     if args.verbose:
@@ -108,8 +89,7 @@ if __name__ == '__main__':
     else:
         logger.setLevel(logging.INFO)
 
-    main(E=args.energy, loopbox=args.orbit_type.strip(),
-         mpi=args.mpi, overwrite=args.overwrite, ngrid=args.ngrid,
-         disk=args.disk)
+    main(potential_name=args.potential_name, path=args.path,
+         mpi=args.mpi, overwrite=args.overwrite)
 
     sys.exit(0)
