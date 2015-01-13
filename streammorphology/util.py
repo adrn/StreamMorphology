@@ -101,11 +101,11 @@ def estimate_dt_nsteps(potential, w0, nperiods=100):
 
     # arbitrarily choose the timestep...
     try:
-        dt = round(max_T * 1.E-5, 0)
+        dt = round(max_T * 5.E-6, 0)
         nsteps = int(max_T / dt)
     except ValueError:
-        dt = 2.
-        nsteps = 200000
+        dt = 0.5
+        nsteps = 100000
 
     return dt, nsteps
 
@@ -147,13 +147,6 @@ def worker(task):
     dEmax = 1.
     maxiter = 3  # maximum number of times to refine integration step
     for i in range(maxiter+1):
-        if i > 0:
-            # adjust timestep and duration if necessary
-            dt /= 2.
-            nsteps *= 2
-            logger.debug("Refining orbit {} to: dt,nsteps=({},{}). Max. dE={}"
-                         .format(index, dt, nsteps, dEmax))
-
         # integrate orbit
         try:
             t,ws = potential.integrate_orbit(w0[index].copy(), dt=dt, nsteps=nsteps,
@@ -161,7 +154,9 @@ def worker(task):
                                              Integrator_kwargs=dict(nsteps=8192,atol=1E-14,rtol=1E-9))
         except RuntimeError:
             # ODE integration failed
-            logger.warning("Orbit integration failed.")
+            logger.warning("Orbit integration failed. Shrinking timestep to "
+                           "dt={}".format(dt))
+            dt /= 2.
             continue
 
         logger.debug('Orbit integrated')
@@ -173,6 +168,10 @@ def worker(task):
 
         if dEmax < 1E-9:
             break
+
+        nsteps *= 2
+        logger.debug("Refining orbit {} to: dt,nsteps=({},{}). Max. dE={}"
+                     .format(index, dt, nsteps, dEmax))
 
     if dEmax > 1E-9:
         allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
