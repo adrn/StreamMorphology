@@ -96,16 +96,22 @@ def estimate_dt_nsteps(potential, w0, nperiods=100):
     t,ws = potential.integrate_orbit(w0, dt=2., nsteps=20000,
                                      Integrator=gi.DOPRI853Integrator)
 
-    # estimate the maximum period - integrate for 400 times the max period
-    max_T = round(estimate_max_period(t, ws).max()*400, -4)
+    # estimate the maximum period
+    max_T = estimate_max_period(t, ws).max()
 
     # arbitrarily choose the timestep...
     try:
-        dt = round(max_T * 5.E-6, 0)
-        nsteps = int(max_T / dt)
+        # 1000 steps per period
+        dt = round(max_T / 1000, 2)
+
+        # integrate for 100 times the max period
+        nsteps = int(round(100 * max_T / dt, -4))
     except ValueError:
         dt = 0.5
         nsteps = 100000
+
+    if dt == 0:
+        dt = 0.01
 
     return dt, nsteps
 
