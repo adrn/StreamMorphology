@@ -31,7 +31,6 @@ def main():
     dts = np.array([0.1, 0.25, 0.5, 1.])
     t2 = 100000
     nsteps = t2 / dts
-    dts,nsteps = map(np.ravel, np.meshgrid(dts, nsteps))
 
     if not os.path.exists(filename):
         freq_dicts = [dict(), dict()]
