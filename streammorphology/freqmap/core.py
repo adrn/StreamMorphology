@@ -13,7 +13,7 @@ from scipy.signal import argrelmax, argrelmin
 import gary.dynamics as gd
 import gary.integrate as gi
 
-__all__ = ['ptp_periods', 'ws_to_freqs']
+__all__ = ['ptp_periods', 'orbit_to_freqs']
 
 def ptp_periods(t, *coords):
     """
@@ -80,7 +80,7 @@ def estimate_max_period(t, w):
 
     return T
 
-def orbit_to_freqs(naff, w, force_box=False, **kwargs):
+def orbit_to_freqs(t, w, force_box=False, **kwargs):
     """
     Compute the fundamental frequencies of an orbit, ``w``. If not forced, this
     function tries to figure out whether the input orbit is a tube or box orbit and
@@ -90,10 +90,10 @@ def orbit_to_freqs(naff, w, force_box=False, **kwargs):
 
     Parameters
     ----------
-    naff : :class:`~gary.dynamics.NAFF`
-        Instantiated ``NAFF`` instance for doing frequency analysis.
+    t : array_like
+        Array of times.
     w : array_like
-        The orbit to analyze. Should have shape (ntime,6).
+        The orbit to analyze. Should have shape (len(t),6).
     force_box : bool (optional)
         Force the routine to assume the orbit is a box orbit. Default is ``False``.
     **kwargs
@@ -111,6 +111,8 @@ def orbit_to_freqs(naff, w, force_box=False, **kwargs):
     else:
         circ = gd.classify_orbit(w)
         is_tube = np.any(circ)
+
+    naff = gd.NAFF(t)
 
     if is_tube:
         # need to flip coordinates until circulation is around z axis
