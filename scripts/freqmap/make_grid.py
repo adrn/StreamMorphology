@@ -18,20 +18,20 @@ import astropy.units as u
 
 # Project
 from streammorphology import potential_registry
-from streammorphology.initialconditions import loop_grid, box_grid
+import streammorphology.initialconditions as ic
 
-base_path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
-
-def main(potential_name, E, loopbox, path=None, ntotal=None, dx=None, dz=None,
-         overwrite=False, plot=False):
-    """ Calls the loop_ or box_grid utility functions to generate a grid of
-        initial conditions for frequency mapping.
+scripts_path = os.path.split(os.path.abspath(__file__))[0]
+base_path = os.path.split(scripts_path)[0]
+def main(potential_name, E, path=None, overwrite=False, plot=False, **kwargs):
+    """ Calls one of the grid-making utility functions to generate a
+        grid of initial conditions for frequency mapping, and saves the
+        grid to a file.
     """
 
     potential = potential_registry[potential_name]
 
     if path is None:
-        path = os.path.join(base_path, 'output',
+        path = os.path.join(base_path, 'output', 'freqmap', potential_name,
                             'E{:.3f}_{}_{}'.format(E, potential_name, loopbox))
 
     logger.info("Caching to: {}".format(path))
@@ -80,6 +80,7 @@ def main(potential_name, E, loopbox, path=None, ntotal=None, dx=None, dz=None,
 if __name__ == '__main__':
     from argparse import ArgumentParser
     import logging
+    import inspect
 
     # Define parser object
     parser = ArgumentParser(description="")
@@ -98,12 +99,18 @@ if __name__ == '__main__':
                         help="Name of the potential from the potential registry. Can be "
                         "one of: {}".format(",".join(potential_registry.keys())))
 
-    parser.add_argument("--ntotal", dest="ntotal", type=int, default=100,
-                        help="Use with box grid generator. Sets the total number of IC's.")
-    parser.add_argument("--dx", dest="dx", type=float, help="Step size in x. Used for loop IC's.")
-    parser.add_argument("--dz", dest="dz", type=float, help="Step size in z. Used for loop IC's.")
-    parser.add_argument("--type", dest="orbit_type", type=str, required=True,
-                        help="Orbit type - can be either 'loop' or 'box'.")
+    # automagically add arguments for different initial condition grid functions
+    for fn_name in dir(ic):
+        if 'grid' not in fn_name:
+            continue
+
+        argspec = inspect.getargspec(getattr(ic,fn_name))
+        for arg in argspec.args:
+            if arg in ['E','potential']:
+                continue
+
+            parser.add_argument("--{}".format(arg), dest=arg, type=float,
+                                help="Used in initial condition function: {}".format(fn_name))
 
     args = parser.parse_args()
 
