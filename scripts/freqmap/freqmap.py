@@ -33,7 +33,7 @@ import numpy as np
 # Project
 from gary.util import get_pool
 from streammorphology import potential_registry
-from streammorphology.util import worker, read_allfreqs, _shape
+from streammorphology.freqmap import worker, read_allfreqs, _shape
 
 def main(path, mpi=False, overwrite=False, seed=42):
     np.random.seed(seed)
