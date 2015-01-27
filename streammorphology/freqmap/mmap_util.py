@@ -22,7 +22,7 @@ __all__ = ['read_allfreqs']
 # define indices of columns -- need this for the memmap'd file
 colmap = OrderedDict(fxyz=(0,1,2), fRphiz=(3,4,5), dEmax=6, success=7, loop=8, dt=9, nsteps=10)
 l = np.concatenate([[x] if not isiterable(x) else list(x) for x in colmap.values()]).max()+1
-_shape = (2, l)
+mmap_shape = (2, l)
 
 def read_allfreqs(f, norbits=None):
     """
@@ -46,7 +46,7 @@ def read_allfreqs(f, norbits=None):
         w0 = np.load(w0_filename)
         norbits = len(w0)
 
-    allfreqs_shape = (norbits,) + _shape
+    allfreqs_shape = (norbits,) + mmap_shape
 
     # first get the memmap array
     allfreqs = np.memmap(f, mode='r', shape=allfreqs_shape, dtype='float64').copy()
