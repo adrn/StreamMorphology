@@ -80,35 +80,64 @@ def estimate_max_period(t, w):
 
     return T
 
-def ws_to_freqs(naff, ws, nintvec=15):
+def orbit_to_freqs(naff, w, force_box=False, **kwargs):
+    """
+    Compute the fundamental frequencies of an orbit, ``w``. If not forced, this
+    function tries to figure out whether the input orbit is a tube or box orbit and
+    then uses the appropriate set of coordinates (Poincaré polar coordinates for tube,
+    ordinary Cartesian for box). Any extra keyword arguments (``kwargs``) are passed
+    to `NAFF.find_fundamental_frequencies`.
+
+    Parameters
+    ----------
+    naff : :class:`~gary.dynamics.NAFF`
+        Instantiated ``NAFF`` instance for doing frequency analysis.
+    w : array_like
+        The orbit to analyze. Should have shape (ntime,6).
+    force_box : bool (optional)
+        Force the routine to assume the orbit is a box orbit. Default is ``False``.
+    **kwargs
+        Any extra keyword arguments are passed to `NAFF.find_fundamental_frequencies`.
+
+    """
+
+    if w.ndim == 3:
+        # remove extra length-1 dimension (assumed to be axis=1)
+        w = w[:,0]
+
     # now get other frequencies
-    circ = gd.classify_orbit(ws)
-    is_tube = np.any(circ)
+    if force_box:
+        is_tube = False
+    else:
+        circ = gd.classify_orbit(w)
+        is_tube = np.any(circ)
 
     if is_tube:
-        fxyz = np.ones(3)*np.nan
         # need to flip coordinates until circulation is around z axis
-        new_ws = gd.align_circulation_with_z(ws[:,0], circ[0])
+        new_ws = gd.align_circulation_with_z(w, circ[0])
+        # TODO: does the above always return a 3D array?
 
         fs = gd.poincare_polar(new_ws[:,0])
         try:
             logger.info('Solving for Rφz frequencies...')
-            fRphiz,d,ixes = naff.find_fundamental_frequencies(fs, nintvec=nintvec)
+            fRphiz,d,ixes = naff.find_fundamental_frequencies(fs, **kwargs)
         except:
             fRphiz = np.ones(3)*np.nan
 
-    else:
-        fRphiz = np.ones(3)*np.nan
+        freqs = fRphiz
 
+    else:
         # first get x,y,z frequencies
         logger.info('Solving for XYZ frequencies...')
-        fs = [(ws[:,0,j] + 1j*ws[:,0,j+3]) for j in range(3)]
+        fs = [(w[:,j] + 1j*w[:,j+3]) for j in range(3)]
         try:
-            fxyz,d,ixes = naff.find_fundamental_frequencies(fs, nintvec=nintvec)
+            fxyz,d,ixes = naff.find_fundamental_frequencies(fs, **kwargs)
         except:
             fxyz = np.ones(3)*np.nan
 
-    return np.append(fxyz, fRphiz), is_tube
+        freqs = fxyz
+
+    return freqs, is_tube
 
 def estimate_dt_nsteps(potential, w0, nperiods=100):
     # integrate orbit
