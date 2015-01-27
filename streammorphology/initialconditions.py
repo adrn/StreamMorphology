@@ -12,25 +12,32 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize
 
-__all__ = ['loop_grid']
+__all__ = ['tube_grid', 'box_grid']
 
-def loop_grid(E, potential, dx, dz):
-    """ Generate a grid of points in the x-z plane (y=0), starting with initial
-        velocities vx = vz = 0. vy is solved for as:
+def tube_grid(E, potential, dx, dz):
+    """
+    Generate a grid of points in the :math:`x-z` plane (:math:`y=0`),
+    starting with initial velocities :math:`v_x = v_z = 0`. :math`v_y`
+    is solved for as:
 
-            vy = sqrt(2(E - potential(x,0,z)))
+    .. math::
 
-        Parameters
-        ----------
-        E : numeric
-            Energy of the orbits - defines the zero-velocity curve within
-            which the initial conditions are drawn.
-        potential : gary.Potential
-            A `gary.Potential` subclass instance.
-        dx : numeric
-            Step size in x.
-        dz : numeric
-            Step size in z.
+        v_y = \sqrt(2(E - \Phi(x,0,z)))
+
+    where :math:`E` is the energy and :math:`\Phi` is the potential.
+
+    Parameters
+    ----------
+    E : numeric
+        Energy of the orbits - defines the zero-velocity curve within
+        which the initial conditions are determined.
+    potential : :class:`~gary.potential.Potential`
+        A :class:`~gary.potential.Potential` subclass instance.
+    dx : numeric
+        Step size in :math:`x`.
+    dz : numeric
+        Step size in :math:`z`.
+
     """
 
     # find maximum x on z=0
@@ -76,19 +83,21 @@ def loop_grid(E, potential, dx, dz):
     return np.hstack((xyz, vxyz))
 
 def box_grid(E, potential, Ntotal=128**2):
-    """ Generate a grid of points on an equipotential surface starting with
-        zero initial velocity.
+    """
+    Generate a grid of points on an equipotential surface starting with
+    zero initial velocity.
 
-        Parameters
-        ----------
-        E : numeric
-            Energy of the orbits - defines the zero-velocity curve within
-            which the initial conditions are drawn.
-        potential : gary.Potential
-            A `gary.Potential` subclass instance.
-        Ntotal : int
-            Total number of grid points to generate. Final grid of initial
-            conditions might have slightly less than Ntotal points.
+    Parameters
+    ----------
+    E : numeric
+        Energy of the orbits - defines the zero-velocity curve within
+        which the initial conditions are sampled.
+    potential : :class:`~gary.potential.Potential`
+        A :class:`~gary.potential.Potential` subclass instance.
+    Ntotal : int
+        Total number of grid points to generate. Final grid of initial
+        conditions might have slightly less than Ntotal points.
+
     """
 
     Ntotal *= 8
