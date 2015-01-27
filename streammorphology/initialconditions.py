@@ -15,7 +15,7 @@ from scipy.optimize import minimize
 __all__ = ['tube_grid', 'box_grid']
 
 def tube_grid(E, potential, dx, dz):
-    """
+    r"""
     Generate a grid of points in the :math:`x-z` plane (:math:`y=0`),
     starting with initial velocities :math:`v_x = v_z = 0`. :math`v_y`
     is solved for as:
@@ -83,7 +83,7 @@ def tube_grid(E, potential, dx, dz):
     return np.hstack((xyz, vxyz))
 
 def box_grid(E, potential, approx_num=1000):
-    """
+    r"""
     Generate a grid of points on an equipotential surface starting with
     zero initial velocity. The angular positions :math:`(\phi,\theta)` are
     sampled randomly (close to uniformly) over one octant of the equipotential
