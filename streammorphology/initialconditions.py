@@ -85,7 +85,14 @@ def tube_grid(E, potential, dx, dz):
 def box_grid(E, potential, approx_num=1000):
     """
     Generate a grid of points on an equipotential surface starting with
-    zero initial velocity.
+    zero initial velocity. The angular positions :math:`(\phi,\theta)` are
+    sampled randomly (close to uniformly) over one octant of the equipotential
+    surface, and the initial radius is determined by solving the equation
+    below for :math`r`:
+
+    .. math::
+
+        \Phi(r,\phi,\theta) - E = 0
 
     Parameters
     ----------
