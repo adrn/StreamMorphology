@@ -12,7 +12,7 @@ from scipy.signal import argrelmax, argrelmin
 import gary.dynamics as gd
 import gary.integrate as gi
 
-__all__ = ['ptp_periods']
+__all__ = ['ptp_periods', 'estimate_max_period', 'estimate_dt_nsteps']
 
 def ptp_periods(t, *coords):
     """
