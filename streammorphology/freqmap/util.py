@@ -19,7 +19,7 @@ import gary.integrate as gi
 
 __all__ = ['ws_to_freqs', 'worker', 'read_allfreqs']
 
-# define indices of columns
+# define indices of columns -- need this for the memmap'd file
 colmap = OrderedDict(fxyz=(0,1,2), fRphiz=(3,4,5), dEmax=6, success=7, loop=8, dt=9, nsteps=10)
 l = np.concatenate([[x] if not isiterable(x) else list(x) for x in colmap.values()]).max()+1
 _shape = (2, l)
