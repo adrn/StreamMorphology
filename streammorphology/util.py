@@ -104,8 +104,8 @@ def estimate_dt_nsteps(potential, w0, nperiods=100):
         # 1000 steps per period
         dt = round(max_T / 1000, 2)
 
-        # integrate for 100 times the max period
-        nsteps = int(round(100 * max_T / dt, -4))
+        # integrate for 250 times the max period
+        nsteps = int(round(250 * max_T / dt, -4))
     except ValueError:
         dt = 0.5
         nsteps = 100000
