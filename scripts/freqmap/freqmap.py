@@ -17,8 +17,8 @@ from gary.util import get_pool
 from streammorphology import potential_registry
 from streammorphology.util import worker, read_allfreqs, _shape
 
-def main(path, mpi=False, overwrite=False):
-    np.random.seed(42)
+def main(path, mpi=False, overwrite=False, seed=42):
+    np.random.seed(seed)
 
     # get a pool object for multiprocessing / MPI
     pool = get_pool(mpi=mpi)
