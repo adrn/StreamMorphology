@@ -12,9 +12,8 @@ from scipy.signal import argrelmax, argrelmin
 # Project
 import gary.dynamics as gd
 import gary.integrate as gi
-from .mmap_util import colmap, mmap_shape
 
-__all__ = ['ptp_periods', 'ws_to_freqs', 'worker']
+__all__ = ['ptp_periods', 'ws_to_freqs']
 
 def ptp_periods(t, *coords):
     """
@@ -71,7 +70,7 @@ def estimate_max_period(t, w):
     for i in range(norbits):
         circ = gd.classify_orbit(w[:,i])
 
-        if np.any(circ): # TUBE ORBIT
+        if np.any(circ):  # TUBE ORBIT - pass R,φ,z
             # flip coords
             new_w = gd.align_circulation_with_z(w[:,i], circ[0])[:,0]
 
@@ -81,7 +80,8 @@ def estimate_max_period(t, w):
             z = new_w[:,2]
 
             T = ptp_periods(t, R, phi, z)
-        else:
+
+        else:  # BOX ORBIT - pass x,y,z
             T = ptp_periods(t, *w[:,i,:3].T)
 
         periods.append(T)
