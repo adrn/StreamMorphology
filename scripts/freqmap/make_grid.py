@@ -39,6 +39,7 @@ def main(potential_name, E, ic_func, output_path=None, overwrite=False, **kwargs
 
     # path to initial conditions cache
     w0path = os.path.join(path, 'w0.npy')
+    pot_path = os.path.join(path, 'potential.txt')
 
     if os.path.exists(w0path) and overwrite:
         os.remove(w0path)
@@ -48,6 +49,9 @@ def main(potential_name, E, ic_func, output_path=None, overwrite=False, **kwargs
         w0 = ic_func(E=E, potential=potential, **kwargs)
         np.save(w0path, w0)
         logger.info("Create initial conditions file:\n\t{}".format(w0path))
+
+        with open(pot_path,'w') as f:
+            f.write(potential_name)
 
     else:
         w0 = np.load(w0path)
