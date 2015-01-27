@@ -48,7 +48,7 @@ def ptp_periods(t, *coords):
 
 def estimate_max_period(t, w):
     """
-    Given an array of times and orbits, estimate the longest period
+    Given an array of times and an orbit, estimate the longest period
     in the orbit. We will then use this to figure out how long to
     integrate for when frequency mapping.
 
@@ -57,36 +57,28 @@ def estimate_max_period(t, w):
     t : array_like
         Array of times.
     w : array_like
-        Orbit(s).
+        Single orbit -- should have shape (len(t), 6)
 
     """
 
-    # if only a single orbit,
-    if w.ndim < 3:
-        w = w[:,np.newaxis]
+    # circulation
+    circ = gd.classify_orbit(w)
 
-    norbits = w.shape[1]
-    periods = []
-    for i in range(norbits):
-        circ = gd.classify_orbit(w[:,i])
+    if np.any(circ):  # TUBE ORBIT - pass R,φ,z
+        # flip coords
+        new_w = gd.align_circulation_with_z(w, circ[0])[:,0]
 
-        if np.any(circ):  # TUBE ORBIT - pass R,φ,z
-            # flip coords
-            new_w = gd.align_circulation_with_z(w[:,i], circ[0])[:,0]
+        # convert to cylindrical
+        R = np.sqrt(new_w[:,0]**2 + new_w[:,1]**2)
+        phi = np.arctan2(new_w[:,1], new_w[:,0])
+        z = new_w[:,2]
 
-            # convert to cylindrical
-            R = np.sqrt(new_w[:,0]**2 + new_w[:,1]**2)
-            phi = np.arctan2(new_w[:,1], new_w[:,0])
-            z = new_w[:,2]
+        T = ptp_periods(t, R, phi, z)
 
-            T = ptp_periods(t, R, phi, z)
+    else:  # BOX ORBIT - pass x,y,z
+        T = ptp_periods(t, *w[:,:3].T)
 
-        else:  # BOX ORBIT - pass x,y,z
-            T = ptp_periods(t, *w[:,i,:3].T)
-
-        periods.append(T)
-
-    return np.array(periods)
+    return T
 
 def ws_to_freqs(naff, ws, nintvec=15):
     # now get other frequencies
