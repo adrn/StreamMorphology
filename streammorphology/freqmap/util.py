@@ -64,9 +64,9 @@ def estimate_max_period(t, w):
             phi = np.arctan2(new_w[:,1], new_w[:,0])
             z = new_w[:,2]
 
-            T = 2*np.pi / ptp_freqs(t, R, phi, z)
+            T = ptp_periods(t, R, phi, z)
         else:
-            T = 2*np.pi / ptp_freqs(t, *w[:,i,:3].T)
+            T = ptp_periods(t, *w[:,i,:3].T)
 
         periods.append(T)
 
