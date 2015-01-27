@@ -11,32 +11,31 @@ import os
 import sys
 
 # Third-party
-import matplotlib.pyplot as plt
 import numpy as np
 from astropy import log as logger
-import astropy.units as u
 
 # Project
-from streammorphology import potential_registry
+from streammorphology import potential_registry, project_path
 import streammorphology.initialconditions as ic
 
-scripts_path = os.path.split(os.path.abspath(__file__))[0]
-base_path = os.path.split(scripts_path)[0]
-def main(potential_name, E, path=None, overwrite=False, plot=False, **kwargs):
+def main(potential_name, E, ic_func, output_path=None, overwrite=False, **kwargs):
     """ Calls one of the grid-making utility functions to generate a
         grid of initial conditions for frequency mapping, and saves the
         grid to a file.
     """
 
+    # read the potential from the registry
     potential = potential_registry[potential_name]
 
-    if path is None:
-        path = os.path.join(base_path, 'output', 'freqmap', potential_name,
-                            'E{:.3f}_{}_{}'.format(E, potential_name, loopbox))
+    # create path
+    if output_path is None:
+        output_path = os.path.join(project_path, "output")
+    path = os.path.join(output_path, 'freqmap', potential_name,
+                        'E{:.3f}_{}'.format(E, ic_func.func_name))
 
     logger.info("Caching to: {}".format(path))
     if not os.path.exists(path):
-        os.mkdir(path)
+        os.makedirs(path)
 
     # path to initial conditions cache
     w0path = os.path.join(path, 'w0.npy')
@@ -45,13 +44,8 @@ def main(potential_name, E, path=None, overwrite=False, plot=False, **kwargs):
         os.remove(w0path)
 
     if not os.path.exists(w0path):
-
         # initial conditions
-        if loopbox == 'loop':
-            w0 = loop_grid(E, potential, dx=dx, dz=dz)
-        else:
-            w0 = box_grid(E, potential, Ntotal=ntotal)
-
+        w0 = ic_func(E=E, potential=potential, **kwargs)
         np.save(w0path, w0)
         logger.info("Create initial conditions file:\n\t{}".format(w0path))
 
@@ -60,22 +54,6 @@ def main(potential_name, E, path=None, overwrite=False, plot=False, **kwargs):
         logger.info("Initial conditions file already exists!\n\t{}".format(w0path))
 
     logger.debug("Number of initial conditions: {}".format(len(w0)))
-
-    if plot:
-        pfile = os.path.join(path, 'w0.pdf')
-
-        fig,ax = plt.subplots(1,1,figsize=(8,8))
-        ax.plot(w0[:,0], w0[:,2], linestyle='none', marker='o', alpha=0.2)
-
-        ax.set_xlim(-1., w0[:,:3].max()+1)
-        ax.set_ylim(-1., w0[:,:3].max()+1)
-
-        ax.set_xlabel("$x$ [kpc]")
-        ax.set_ylabel("$z$ [kpc]")
-
-        fig.tight_layout()
-        fig.savefig(pfile)
-
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -90,14 +68,18 @@ if __name__ == '__main__':
                         default=False, help="Be quiet! (default = False)")
     parser.add_argument("-o", "--overwrite", action="store_true", dest="overwrite",
                         default=False, help="DESTROY. DESTROY. (default = False)")
-    parser.add_argument("-p", "--plot", action="store_true", dest="plot",
-                        default=False, help="Plot stuff.")
+
+    parser.add_argument("-p","--output-path", dest="output_path", default=None,
+                        help="Path to the 'output' directory.")
 
     parser.add_argument("-E", "--energy", dest="energy", type=float, required=True,
                         help="Energy of the orbits.")
     parser.add_argument("--potential", dest="potential_name", type=str, required=True,
                         help="Name of the potential from the potential registry. Can be "
                         "one of: {}".format(",".join(potential_registry.keys())))
+    parser.add_argument("--ic-func", dest="ic_func", type=str, required=True,
+                        help="Name of the initial condition function to use. Can be "
+                        "one of: {}".format(",".join([f for f in dir(ic) if 'grid' in f])))
 
     # automagically add arguments for different initial condition grid functions
     for fn_name in dir(ic):
@@ -114,8 +96,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.orbit_type.strip() not in ['loop','box']:
-        raise ValueError("'--type' argument must be one of 'loop' or 'box'")
+    # now actually pull out the relevant arguments for the initial condition function
+    argspec = inspect.getargspec(getattr(ic,args.ic_func))
+    arg_dict = dict()
+    for arg in argspec.args:
+        if arg in ['E','potential']:
+            continue
+        arg_dict[arg] = getattr(args, arg)
 
     # Set logger level based on verbose flags
     if args.verbose:
@@ -125,8 +112,11 @@ if __name__ == '__main__':
     else:
         logger.setLevel(logging.INFO)
 
-    main(potential_name=args.potential_name, E=args.energy,
-         loopbox=args.orbit_type.strip(), dx=args.dx, dz=args.dz, ntotal=args.ntotal,
-         overwrite=args.overwrite, plot=args.plot)
+    main(potential_name=args.potential_name,
+         E=args.energy,
+         ic_func=getattr(ic,args.ic_func),
+         overwrite=args.overwrite,
+         output_path=args.output_path,
+         **arg_dict)
 
     sys.exit(0)
