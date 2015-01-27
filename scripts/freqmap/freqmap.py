@@ -2,20 +2,21 @@
 
 from __future__ import division, print_function
 
-""" Frequency map a potential. Before calling this module, you'll need to generate
-    a grid of initial conditions or make sure the grid you have is in the correct
-    format. You also need to have a text file containing the name of the potential
-    that you used to generate the initial conditions (the name has to be one specified
-    in the ``potential_registry``).
+"""
+Frequency map a potential. Before calling this module, you'll need to generate
+a grid of initial conditions or make sure the grid you have is in the correct
+format. You also need to have a text file containing the name of the potential
+that you used to generate the initial conditions (the name has to be one specified
+in the ``potential_registry``).
 
-    For example, you might do::
+For example, you might do::
 
-        python scripts/freqmap/make_grid.py -E -0.21 --potential=triaxial-NFW \
-        --ic-func=tube_grid_xz --dx=1.5 --dz=1.5
+    python scripts/freqmap/make_grid.py -E -0.21 --potential=triaxial-NFW \
+    --ic-func=tube_grid_xz --dx=1.5 --dz=1.5
 
-    and then run this module on::
+and then run this module on::
 
-        python scripts/freqmap/freqmap.py --path=/path/to/triaxial-NFW/E-0.21_tube_grid_xz/
+    python scripts/freqmap/freqmap.py --path=/path/to/triaxial-NFW/E-0.21_tube_grid_xz/
 
 """
 
