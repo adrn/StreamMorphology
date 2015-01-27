@@ -14,7 +14,7 @@ import gary.dynamics as gd
 import gary.integrate as gi
 from .mmap_util import colmap, mmap_shape
 
-__all__ = ['ws_to_freqs', 'worker']
+__all__ = ['ptp_periods', 'ws_to_freqs', 'worker']
 
 def ptp_periods(t, *coords):
     """
@@ -48,16 +48,32 @@ def ptp_periods(t, *coords):
     return np.array(freqs)
 
 def estimate_max_period(t, w):
+    """
+    Given an array of times and orbits, estimate the longest period
+    in the orbit. We will then use this to figure out how long to
+    integrate for when frequency mapping.
+
+    Parameters
+    ----------
+    t : array_like
+        Array of times.
+    w : array_like
+        Orbit(s).
+
+    """
+
+    # if only a single orbit,
     if w.ndim < 3:
         w = w[:,np.newaxis]
 
     norbits = w.shape[1]
     periods = []
     for i in range(norbits):
-        loop = gd.classify_orbit(w[:,i])
-        if np.any(loop):
+        circ = gd.classify_orbit(w[:,i])
+
+        if np.any(circ): # TUBE ORBIT
             # flip coords
-            new_w = gd.align_circulation_with_z(w[:,i], loop[0])[:,0]
+            new_w = gd.align_circulation_with_z(w[:,i], circ[0])[:,0]
 
             # convert to cylindrical
             R = np.sqrt(new_w[:,0]**2 + new_w[:,1]**2)
@@ -74,13 +90,13 @@ def estimate_max_period(t, w):
 
 def ws_to_freqs(naff, ws, nintvec=15):
     # now get other frequencies
-    loop = gd.classify_orbit(ws)
-    is_loop = np.any(loop)
+    circ = gd.classify_orbit(ws)
+    is_tube = np.any(circ)
 
-    if is_loop:
+    if is_tube:
         fxyz = np.ones(3)*np.nan
         # need to flip coordinates until circulation is around z axis
-        new_ws = gd.align_circulation_with_z(ws[:,0], loop[0])
+        new_ws = gd.align_circulation_with_z(ws[:,0], circ[0])
 
         fs = gd.poincare_polar(new_ws[:,0])
         try:
@@ -100,7 +116,7 @@ def ws_to_freqs(naff, ws, nintvec=15):
         except:
             fxyz = np.ones(3)*np.nan
 
-    return np.append(fxyz, fRphiz), is_loop
+    return np.append(fxyz, fRphiz), is_tube
 
 def estimate_dt_nsteps(potential, w0, nperiods=100):
     # integrate orbit
@@ -199,15 +215,15 @@ def worker(task):
 
     # start finding the frequencies -- do first half then second half
     naff = gd.NAFF(t[:nsteps//2+1])
-    freqs1,is_loop = ws_to_freqs(naff, ws[:nsteps//2+1])
-    freqs2,is_loop = ws_to_freqs(naff, ws[nsteps//2:])
+    freqs1,is_tube = ws_to_freqs(naff, ws[:nsteps//2+1])
+    freqs2,is_tube = ws_to_freqs(naff, ws[nsteps//2:])
 
     # save to output array
     tmp[0,:6] = freqs1
     tmp[1,:6] = freqs2
 
     tmp[:,colmap['dEmax']] = dEmax
-    tmp[:,colmap['loop']] = float(is_loop)
+    tmp[:,colmap['loop']] = float(is_tube)
     tmp[:,colmap['dt']] = float(dt)
     tmp[:,colmap['nsteps']] = nsteps
     tmp[:,colmap['success']] = 1.
