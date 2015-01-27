@@ -16,16 +16,35 @@ from .mmap_util import colmap, mmap_shape
 
 __all__ = ['ws_to_freqs', 'worker']
 
-def ptp_freqs(t, *args):
+def ptp_periods(t, *coords):
+    """
+    Estimate the dominant periods of given coordinates by
+    computing the mean peak-to-peak time.
+
+    Parameters
+    ----------
+    t : array_like
+        Array of times. Must have same shape as individual coordinates.
+    *coords
+        Positional arguments allow specifying coordinates to compute the
+        periods of. For example, these could simply be x,y,z, or
+        could be R,phi,z for cylindrical coordinates.
+
+    """
+
     freqs = []
-    for x in args:
+    for x in coords:
+        # first compute mean peak-to-peak
         ix = argrelmax(x, mode='wrap')[0]
-        f_max = np.mean(2*np.pi / (t[ix[1:]] - t[ix[:-1]]))
+        f_max = np.mean(t[ix[1:]] - t[ix[:-1]])
 
+        # now compute mean trough-to-trough
         ix = argrelmin(x, mode='wrap')[0]
-        f_min = np.mean(2*np.pi / (t[ix[1:]] - t[ix[:-1]]))
+        f_min = np.mean(t[ix[1:]] - t[ix[:-1]])
 
+        # then take the mean of these two
         freqs.append(np.mean([f_max, f_min]))
+
     return np.array(freqs)
 
 def estimate_max_period(t, w):
