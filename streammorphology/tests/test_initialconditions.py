@@ -23,8 +23,6 @@ def test_tube():
 
     for E in np.linspace(-0.12, -0.2, 5):
         w0 = tube_grid(E=E, potential=potential, dx=1., dz=1.)
-
-        # TODO: check that energy of all orbits is same as input
         Es = potential.total_energy(w0[:,:3], w0[:,3:])
         np.testing.assert_allclose(Es, E)
 
