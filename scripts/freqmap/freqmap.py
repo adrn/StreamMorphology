@@ -17,7 +17,7 @@ from gary.util import get_pool
 from streammorphology import potential_registry
 from streammorphology.util import worker, read_allfreqs, _shape
 
-def main(potential_name, path, mpi=False, overwrite=False):
+def main(path, mpi=False, overwrite=False):
     np.random.seed(42)
 
     # get a pool object for multiprocessing / MPI
@@ -30,6 +30,11 @@ def main(potential_name, path, mpi=False, overwrite=False):
     # path to initial conditions cache
     w0_filename = os.path.join(path, 'w0.npy')
     w0 = np.load(w0_filename)
+
+    # path to potential name file
+    pot_filename = os.path.join(path, 'potential.txt')
+    with open(pot_filename) as f:
+        potential_name = f.read().strip()
 
     # get potential from registry
     potential = potential_registry[potential_name]
@@ -72,10 +77,6 @@ if __name__ == '__main__':
 
     parser.add_argument("--mpi", dest="mpi", default=False, action="store_true",
                         help="Use an MPI pool.")
-    parser.add_argument("--potential", dest="potential_name", type=str, required=True,
-                        help="Name of the potential from the potential registry. Can be "
-                        "one of: {}".format(",".join(potential_registry.keys())))
-
     parser.add_argument("--path", dest="path", type=str, required=True,
                         help="Path to the freqmap initial conditions grid.")
 
@@ -89,7 +90,6 @@ if __name__ == '__main__':
     else:
         logger.setLevel(logging.INFO)
 
-    main(potential_name=args.potential_name, path=args.path,
-         mpi=args.mpi, overwrite=args.overwrite)
+    main(path=args.path, mpi=args.mpi, overwrite=args.overwrite)
 
     sys.exit(0)
