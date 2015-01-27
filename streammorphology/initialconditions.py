@@ -110,6 +110,7 @@ def box_grid(E, potential, approx_num=1000):
 
     # only want points in one octant, but algorithm generates points over whole sphere
     approx_num *= 8
+    approx_num = int(approx_num)
 
     # generate points roughly evenly distributed on an octant using the golden
     #   ratio / spiral method
