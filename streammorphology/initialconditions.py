@@ -82,7 +82,7 @@ def tube_grid(E, potential, dx, dz):
 
     return np.hstack((xyz, vxyz))
 
-def box_grid(E, potential, Ntotal=128**2):
+def box_grid(E, potential, approx_num=1000):
     """
     Generate a grid of points on an equipotential surface starting with
     zero initial velocity.
@@ -94,19 +94,21 @@ def box_grid(E, potential, Ntotal=128**2):
         which the initial conditions are sampled.
     potential : :class:`~gary.potential.Potential`
         A :class:`~gary.potential.Potential` subclass instance.
-    Ntotal : int
-        Total number of grid points to generate. Final grid of initial
-        conditions might have slightly less than Ntotal points.
+    approx_num : int
+        Approximate total number of grid points to generate. Final grid
+        of initial conditions might have slightly less than this number
+        of points.
 
     """
 
-    Ntotal *= 8
+    # only want points in one octant, but algorithm generates points over whole sphere
+    approx_num *= 8
 
     # generate points roughly evenly distributed on an octant using the golden
     #   ratio / spiral method
     golden_angle = np.pi * (3 - np.sqrt(5))
-    theta = golden_angle * np.arange(Ntotal)
-    z = np.linspace(1 - 1.0 / Ntotal, 1.0 / Ntotal - 1, Ntotal)
+    theta = golden_angle * np.arange(approx_num)
+    z = np.linspace(1 - 1.0 / approx_num, 1.0 / approx_num - 1, approx_num)
     radius = np.sqrt(1 - z * z)
     x = radius * np.cos(theta)
     y = radius * np.sin(theta)
