@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize
 
-__all__ = ['tube_grid', 'box_grid']
+__all__ = ['tube_grid_xz', 'box_grid']
 
-def tube_grid(E, potential, dx, dz):
+def tube_grid_xz(E, potential, dx, dz):
     r"""
     Generate a grid of points in the :math:`x-z` plane (:math:`y=0`),
     starting with initial velocities :math:`v_x = v_z = 0`. :math`v_y`

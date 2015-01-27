@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 # Project
 import gary.potential as gp
 from gary.units import galactic
-from ..initialconditions import tube_grid, box_grid
+from ..initialconditions import tube_grid_xz, box_grid
 
 plot_path = "output/tests/initialconditions"
 if not os.path.exists(plot_path):
@@ -27,7 +27,7 @@ def test_tube():
     plt.figure(figsize=(10,10))
 
     for E in np.linspace(-0.12, -0.2, 5):
-        w0 = tube_grid(E=E, potential=potential, dx=1., dz=1.)
+        w0 = tube_grid_xz(E=E, potential=potential, dx=1., dz=1.)
         Es = potential.total_energy(w0[:,:3], w0[:,3:])
         np.testing.assert_allclose(Es, E)
 
