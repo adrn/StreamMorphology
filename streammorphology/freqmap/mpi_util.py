@@ -6,9 +6,6 @@ from __future__ import division, print_function
 
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
-# Standard library
-import os
-
 # Third-party
 import numpy as np
 from astropy import log as logger
@@ -17,17 +14,25 @@ from astropy import log as logger
 import gary.dynamics as gd
 import gary.integrate as gi
 from .mmap_util import colmap, mmap_shape
+from .core import estimate_dt_nsteps
 
 __all__ = ['worker']
 
 def worker(task):
+
     # unpack input argument dictionary
     index = task['index']
     w0_filename = task['w0_filename']
     allfreqs_filename = task['allfreqs_filename']
     potential = task['potential']
+
+    # if these aren't set, we'll need to estimate them
     dt = task.get('dt',None)
     nsteps = task.get('nsteps',None)
+
+    # if these aren't set, just take defaults from function
+    nperiods = task.get('nperiods',None)
+    nsteps_per_period = task.get('nsteps_per_period',None)
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
@@ -44,7 +49,8 @@ def worker(task):
     # automatically estimate dt, nsteps
     if dt is None or nsteps is None:
         try:
-            dt, nsteps = estimate_dt_nsteps(potential, w0[index].copy())
+            dt, nsteps = estimate_dt_nsteps(potential, w0[index].copy(),
+                                            nperiods, nsteps_per_period)
         except RuntimeError:
             logger.warning("Failed to integrate orbit when estimating dt,nsteps")
             allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
@@ -55,7 +61,6 @@ def worker(task):
 
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
-    dEmax = 1.
     maxiter = 3  # maximum number of times to refine integration step
     for i in range(maxiter+1):
         # integrate orbit
@@ -68,6 +73,7 @@ def worker(task):
             logger.warning("Orbit integration failed. Shrinking timestep to "
                            "dt={}".format(dt))
             dt /= 2.
+            nsteps *= 2
             continue
 
         logger.debug('Orbit integrated')
@@ -81,6 +87,7 @@ def worker(task):
             break
 
         nsteps *= 2
+        dt /= 2.
         logger.debug("Refining orbit {} to: dt,nsteps=({},{}). Max. dE={}"
                      .format(index, dt, nsteps, dEmax))
 
@@ -92,9 +99,8 @@ def worker(task):
         return
 
     # start finding the frequencies -- do first half then second half
-    naff = gd.NAFF(t[:nsteps//2+1])
-    freqs1,is_tube = ws_to_freqs(naff, ws[:nsteps//2+1])
-    freqs2,is_tube = ws_to_freqs(naff, ws[nsteps//2:])
+    freqs1,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[:nsteps//2+1])
+    freqs2,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[nsteps//2:])
 
     # save to output array
     tmp[0,:6] = freqs1
@@ -109,4 +115,3 @@ def worker(task):
     allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
     allfreqs[index] = tmp
     allfreqs.flush()
-
