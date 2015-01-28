@@ -104,7 +104,7 @@ def estimate_max_period(t, w):
     else:
         return np.nan
 
-def estimate_dt_nsteps(potential, w0, nperiods=200, nsteps_per_period=100):
+def estimate_dt_nsteps(potential, w0, nperiods=200, nsteps_per_period=200):
     """
     Estimate the timestep and number of steps to integrate for given a potential
     and set of initial conditions.

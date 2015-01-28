@@ -18,8 +18,7 @@ from .core import estimate_dt_nsteps
 
 __all__ = ['worker']
 
-ETOL = 1E-9
-
+ETOL = 1E-7
 def worker(task):
 
     # unpack input argument dictionary
@@ -34,7 +33,7 @@ def worker(task):
 
     # if these aren't set, assume defaults
     nperiods = task.get('nperiods',200)
-    nsteps_per_period = task.get('nsteps_per_period',100)
+    nsteps_per_period = task.get('nsteps_per_period',500)
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
@@ -66,25 +65,26 @@ def worker(task):
     maxiter = 3  # maximum number of times to refine integration step
     for i in range(maxiter+1):
         # integrate orbit
+        logger.debug("Iteration {} -- integrating orbit...".format(i+1))
         try:
             t,ws = potential.integrate_orbit(w0[index].copy(), dt=dt, nsteps=nsteps,
                                              Integrator=gi.DOPRI853Integrator,
-                                             Integrator_kwargs=dict(nsteps=8192,atol=1E-13))
-        except RuntimeError:
-            # ODE integration failed
-            logger.warning("Orbit integration failed. Shrinking timestep to "
-                           "dt={}".format(dt))
+                                             Integrator_kwargs=dict(nsteps=4096,atol=1E-8))
+        except RuntimeError:  # ODE integration failed
             dt /= 2.
             nsteps *= 2
+            logger.warning("Orbit integration failed. Shrinking timestep to "
+                           "dt={}".format(dt))
             continue
 
-        logger.debug('Orbit integrated')
+        logger.debug('Orbit integrated successfully, checking energy conservation...')
 
         # check energy conservation for the orbit
         E = potential.total_energy(ws[:,0,:3].copy(), ws[:,0,3:].copy())
         dE = np.abs(E[1:] - E[0])
         dEmax = dE.max() / np.abs(E[0])
 
+        logger.debug('max(∆E) = {0:.2e}'.format(dEmax))
         if dEmax < ETOL:
             break
 
