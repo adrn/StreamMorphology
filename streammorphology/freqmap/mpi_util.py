@@ -32,9 +32,9 @@ def worker(task):
     dt = task.get('dt',None)
     nsteps = task.get('nsteps',None)
 
-    # if these aren't set, just take defaults from function
-    nperiods = task.get('nperiods',None)
-    nsteps_per_period = task.get('nsteps_per_period',None)
+    # if these aren't set, assume defaults
+    nperiods = task.get('nperiods',200)
+    nsteps_per_period = task.get('nsteps_per_period',100)
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
