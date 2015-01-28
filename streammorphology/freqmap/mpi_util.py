@@ -101,8 +101,10 @@ def worker(task):
         return
 
     # start finding the frequencies -- do first half then second half
-    freqs1,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[:nsteps//2+1])
-    freqs2,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[nsteps//2:])
+    freqs1,d1,ixs1,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[:nsteps//2+1])
+    freqs2,d2,ixs2,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[nsteps//2:])
+
+    max_amp_freq_ix = d1['|A|'][ixs1].argmax()
 
     # save to output array
     tmp[0,:3] = freqs1
@@ -113,6 +115,7 @@ def worker(task):
     tmp[:,colmap['dt']] = float(dt)
     tmp[:,colmap['nsteps']] = nsteps
     tmp[:,colmap['success']] = 1.
+    tmp[:,colmap['max_amp_freq_ix']] = max_amp_freq_ix
 
     allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
     allfreqs[index] = tmp
