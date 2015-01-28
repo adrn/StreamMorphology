@@ -18,6 +18,8 @@ from .core import estimate_dt_nsteps
 
 __all__ = ['worker']
 
+ETOL = 1E-9
+
 def worker(task):
 
     # unpack input argument dictionary
@@ -67,7 +69,7 @@ def worker(task):
         try:
             t,ws = potential.integrate_orbit(w0[index].copy(), dt=dt, nsteps=nsteps,
                                              Integrator=gi.DOPRI853Integrator,
-                                             Integrator_kwargs=dict(nsteps=8192,atol=1E-14,rtol=1E-9))
+                                             Integrator_kwargs=dict(nsteps=8192,atol=1E-13))
         except RuntimeError:
             # ODE integration failed
             logger.warning("Orbit integration failed. Shrinking timestep to "
@@ -83,7 +85,7 @@ def worker(task):
         dE = np.abs(E[1:] - E[0])
         dEmax = dE.max() / np.abs(E[0])
 
-        if dEmax < 1E-9:
+        if dEmax < ETOL:
             break
 
         nsteps *= 2
@@ -91,7 +93,7 @@ def worker(task):
         logger.debug("Refining orbit {} to: dt,nsteps=({},{}). Max. dE={}"
                      .format(index, dt, nsteps, dEmax))
 
-    if dEmax > 1E-9:
+    if dEmax > ETOL:
         allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
         tmp[:,:] = np.nan
         allfreqs[index] = tmp
