@@ -14,13 +14,10 @@ from collections import OrderedDict
 import numpy as np
 from astropy.utils import isiterable
 
-# Project
-# ...
-
 __all__ = ['read_allfreqs']
 
 # define indices of columns -- need this for the memmap'd file
-colmap = OrderedDict(fxyz=(0,1,2), fRphiz=(3,4,5), dEmax=6, success=7, loop=8, dt=9, nsteps=10)
+colmap = OrderedDict(freqs=(0,1,2), dE_max=3, success=4, is_tube=5, dt=6, nsteps=7)
 l = np.concatenate([[x] if not isiterable(x) else list(x) for x in colmap.values()]).max()+1
 mmap_shape = (2, l)
 
@@ -53,7 +50,7 @@ def read_allfreqs(f, norbits=None):
 
     # replace NAN nsteps with 0
     allfreqs[np.isnan(allfreqs[:,0,colmap['nsteps']]),0,colmap['nsteps']] = 0
-    dtype = [('fxyz','f8',(2,3)), ('fRphiz','f8',(2,3)), ('dEmax','f8'), ('success','b1'),
-             ('loop','b1'), ('dt','f8'), ('nsteps','i8')]
-    data = [(allfreqs[i,:,:3],allfreqs[i,:,3:6])+tuple(allfreqs[i,0,6:]) for i in range(norbits)]
+    dtype = [('freqs','f8',(2,3)), ('dE_max','f8'), ('success','b1'),
+             ('is_tube','b1'), ('dt','f8'), ('nsteps','i8')]
+    data = [(allfreqs[i,:,:3],) + tuple(allfreqs[i,0,3:]) for i in range(norbits)]
     return np.array(data, dtype=dtype)

@@ -105,11 +105,11 @@ def worker(task):
     freqs2,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[nsteps//2:])
 
     # save to output array
-    tmp[0,:6] = freqs1
-    tmp[1,:6] = freqs2
+    tmp[0,:3] = freqs1
+    tmp[1,:3] = freqs2
 
-    tmp[:,colmap['dEmax']] = dEmax
-    tmp[:,colmap['loop']] = float(is_tube)
+    tmp[:,colmap['dE_max']] = dEmax
+    tmp[:,colmap['is_tube']] = float(is_tube)
     tmp[:,colmap['dt']] = float(dt)
     tmp[:,colmap['nsteps']] = nsteps
     tmp[:,colmap['success']] = 1.
