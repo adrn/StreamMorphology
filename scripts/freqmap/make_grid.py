@@ -57,7 +57,7 @@ def main(potential_name, E, ic_func, output_path=None, overwrite=False, **kwargs
         w0 = np.load(w0path)
         logger.info("Initial conditions file already exists!\n\t{}".format(w0path))
 
-    logger.debug("Number of initial conditions: {}".format(len(w0)))
+    logger.info("Number of initial conditions: {}".format(len(w0)))
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
