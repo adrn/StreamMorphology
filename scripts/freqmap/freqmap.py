@@ -33,7 +33,7 @@ import numpy as np
 # Project
 from gary.util import get_pool
 from streammorphology import potential_registry
-from streammorphology.freqmap import worker, read_allfreqs, _shape
+from streammorphology.freqmap import worker, read_allfreqs, mmap_shape
 
 def main(path, mpi=False, overwrite=False, seed=42):
     np.random.seed(seed)
@@ -63,7 +63,7 @@ def main(path, mpi=False, overwrite=False, seed=42):
     if os.path.exists(allfreqs_filename) and overwrite:
         os.remove(allfreqs_filename)
 
-    allfreqs_shape = (norbits,) + _shape
+    allfreqs_shape = (norbits,) + mmap_shape
     if not os.path.exists(allfreqs_filename):
         d = np.memmap(allfreqs_filename, mode='w+', dtype='float64', shape=allfreqs_shape)
         tasks = [dict(index=i, w0_filename=w0_filename,
