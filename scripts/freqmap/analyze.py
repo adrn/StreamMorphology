@@ -14,94 +14,112 @@ from astropy import log as logger
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Project
+from streammorphology.freqmap import read_allfreqs
+
 def main(path):
-    # TODO: auto detect loop or box in filename, decide what to do accordingly
+
+    # read in initial conditions
     w0 = np.load(os.path.join(path, 'w0.npy'))
+    norbits = len(w0)
+
+    # read freqmap output
     allfreqs_filename = os.path.join(path, 'allfreqs.dat')
-    d = np.memmap(allfreqs_filename, shape=(len(w0),2,11), dtype='float64', mode='r')
+    d = read_allfreqs(allfreqs_filename, norbits=len(w0))
 
-    done_ix = d[:,0,7] == 1.
-    logger.info("{} total orbits".format(len(w0)))
-    logger.info("{} box orbits".format((d[done_ix,0,8] == 0).sum()))
-    logger.info("{} loop orbits".format((d[done_ix,0,8] == 1).sum()))
+    logger.info("{} total orbits".format(norbits))
+    logger.info("\t{} successful".format(d['success'].sum()))
+    logger.info("\t{} not successful".format((d['success'] == 0).sum()))
 
-    box_ix = (done_ix & (d[:,0,8] == 0.) & np.all(np.isfinite(d[:,0,:3]), axis=1)
-              & np.all(np.isfinite(d[:,1,:3]), axis=1))
-    loop_ix = (done_ix & (d[:,0,8] == 1.) & np.all(np.isfinite(d[:,0,3:6]), axis=1)
-               & np.all(np.isfinite(d[:,1,3:6]), axis=1))
+    ntube = d['is_tube'].sum()
+    nbox = (d['is_tube'] == 0).sum()
+    logger.info("\t{} tube orbits".format(ntube))
+    logger.info("\t{} box orbits".format(nbox))
 
-    nperiods = d[box_ix,0,9]*d[box_ix,0,10] / (2*np.pi/np.abs(d[box_ix,0,:3]).max(axis=1))
-    max_frac_diff = np.abs((d[box_ix,1,:3] - d[box_ix,0,:3]) / d[box_ix,0,:3]).max(axis=1)
-    box_freq_diff = np.log10(max_frac_diff / nperiods / 2.)
+    periods = np.abs(2*np.pi / d['freqs'][:,0])
+    nperiods = d['dt']*d['nsteps'] / periods.max(axis=1)
+    freq_diff_per_orbit = np.abs((d['freqs'][:,1] - d['freqs'][:,0]) / d['freqs'][:,0] / (nperiods[:,None]/2.))
+    max_freq_diff_per_orbit = freq_diff_per_orbit.max(axis=1)
 
-    nperiods = d[loop_ix,0,9]*d[loop_ix,0,10] / (2*np.pi/np.abs(d[loop_ix,0,3:6]).max(axis=1))
-    max_frac_diff = np.abs((d[loop_ix,1,3:6] - d[loop_ix,0,3:6]) / d[loop_ix,0,3:6]).max(axis=1)
-    loop_freq_diff = np.log10(max_frac_diff / nperiods / 2.)
-
-    # print(w0[loop_freq_diff.argmax()])
+    good_ix = np.isfinite(max_freq_diff_per_orbit)
+    max_freq_diff_per_orbit = np.log10(max_freq_diff_per_orbit[good_ix])
 
     # color scaling
-    delta = np.abs(loop_freq_diff.max() - loop_freq_diff.min())
-    vmin = loop_freq_diff.min() + delta/10.
-    vmax = loop_freq_diff.max() - delta/10.
+    delta = np.abs(max_freq_diff_per_orbit.max() - max_freq_diff_per_orbit.min())
+    vmin = max_freq_diff_per_orbit.min() + delta/10.
+    vmax = max_freq_diff_per_orbit.max() - delta/10.
 
-    # plot initial condition grid, colored by fractional diffusion rate
-    fig,ax = plt.subplots(1,1,figsize=(9.75,8))
-    ax.scatter(w0[box_ix,0], w0[box_ix,2], c=box_freq_diff,
-               vmin=vmin, vmax=vmax, cmap='Greys_r', s=22, marker='s')
-    c = ax.scatter(w0[loop_ix,0], w0[loop_ix,2], c=loop_freq_diff,
-                   vmin=vmin, vmax=vmax, cmap='Greys_r', s=22, marker='s')
-    ax.set_xlim(0, max([w0[:,0].max(),w0[:,2].max()]))
-    ax.set_ylim(*ax.get_xlim())
-    ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
-    ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
-    fig.colorbar(c)
-    fig.tight_layout()
-    fig.savefig(os.path.join(path,"diffusion_ics.pdf"))
+    # initial conditions in x-z plane
+    if np.all(w0[:,1] == 0.):
+        # plot initial condition grid, colored by fractional diffusion rate
+        fig,ax = plt.subplots(1,1,figsize=(9.75,8))
 
-    fig,ax = plt.subplots(1,1,figsize=(9,8))
-    ax.scatter(w0[box_ix,0], w0[box_ix,2], c=box_freq_diff,
-               vmin=vmin, vmax=vmax, cmap='cubehelix', s=20, marker='s')
-    c = ax.scatter(w0[loop_ix,0], w0[loop_ix,2], c=loop_freq_diff,
-                   vmin=vmin, vmax=vmax, cmap='cubehelix', s=20, marker='s')
-    ax.set_xlim(0, max([w0[:,0].max(),w0[:,2].max()]))
-    ax.set_ylim(*ax.get_xlim())
-    ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
-    ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
-    fig.colorbar(c)
-    fig.tight_layout()
-    fig.savefig(os.path.join(path,"diffusion_ics_ugly.pdf"))
+        # plot bad points
+        ax.scatter(w0[~good_ix,0], w0[~good_ix,2], c='r', s=10, marker='s')
+
+        # plot good points, colored
+        c = ax.scatter(w0[good_ix,0], w0[good_ix,2], c=max_freq_diff_per_orbit,
+                       vmin=vmin, vmax=vmax, cmap='Greys_r', s=22, marker='s')
+
+        ax.set_xlim(0, max([w0[:,0].max(),w0[:,2].max()]))
+        ax.set_ylim(*ax.get_xlim())
+        ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
+        ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
+        fig.colorbar(c)
+        fig.tight_layout()
+        fig.savefig(os.path.join(path,"diffusion_map.pdf"))
+
+        # frequency map
+        fig,ax = plt.subplots(1,1,figsize=(8,8))
+
+        tube_f = np.mean(d['freqs'][d['is_tube']], axis=1)
+        ax.plot(tube_f[:,1]/tube_f[:,0], tube_f[:,2]/tube_f[:,0],
+                linestyle='none', marker='.', alpha=0.4)
+        ax.set_xlabel(r'$\Omega_\phi/\Omega_R$')
+        ax.set_ylabel(r'$\Omega_z/\Omega_R$')
+        ax.set_xlim(0.45,0.8)
+        ax.set_ylim(0.45,0.8)
+        fig.savefig(os.path.join(path,"freqmap.pdf"))
+
+    # initial conditions on equipotential surface
+    else:
+        from mpl_toolkits.mplot3d import Axes3D
+
+        fig = plt.figure(figsize=(9.75,8))
+        ax = fig.add_subplot(111, projection='3d')
+
+        # plot bad points
+        ax.scatter(w0[~good_ix,0], w0[~good_ix,1], w0[~good_ix,2], c='r', s=10, marker='s')
+
+        # plot good points
+        c = ax.scatter(w0[good_ix,0], w0[good_ix,1], w0[good_ix,2], c=max_freq_diff_per_orbit,
+                       vmin=vmin, vmax=vmax, cmap='Greys_r', s=22, marker='s')
+
+        ax.elev = 45
+        ax.azim = 45
+
+        fig.colorbar(c)
+        fig.tight_layout()
+        fig.savefig(os.path.join(path,"diffusion_map.pdf"))
+
+        # frequency map
+        fig,ax = plt.subplots(1,1,figsize=(8,8))
+
+        box_f = np.mean(d['freqs'][~d['is_tube']], axis=1)
+        ax.plot(box_f[:,0]/box_f[:,2], box_f[:,1]/box_f[:,2],
+                linestyle='none', marker='.', alpha=0.4)
+        ax.set_xlabel(r'$\Omega_x/\Omega_z$')
+        ax.set_ylabel(r'$\Omega_y/\Omega_z$')
+        ax.set_xlim(0.3,1.2)
+        ax.set_ylim(0.3,1.2)
+        fig.savefig(os.path.join(path,"freqmap.pdf"))
 
     # plot histograms of diffusion rates
     fig,ax = plt.subplots(1,1,figsize=(8,6))
-    bins = np.linspace(loop_freq_diff.min(), box_freq_diff.max(), 25)
-    n,bins,pa = ax.hist(loop_freq_diff, alpha=0.4, normed=True, bins=bins, label='loop')
-    n,bins,pa = ax.hist(box_freq_diff, alpha=0.4, bins=bins, normed=True, label='box')
-    ax.legend(loc='upper right')
-    ax.axvline(vmin, alpha=0.1, c='k')
-    ax.axvline(vmax, alpha=0.1, c='k')
-    fig.savefig(os.path.join(path,"diffusion_hist.pdf"))
-
-    # plot frequency maps
-    loop_freqs = d[loop_ix,:,3:6].mean(axis=1)
-    box_freqs = d[box_ix,:,:3].mean(axis=1)
-
-    fig,axes = plt.subplots(1,2,figsize=(16,8))
-    axes[0].plot(loop_freqs[:,1]/loop_freqs[:,0], loop_freqs[:,2]/loop_freqs[:,0],
-                 linestyle='none', marker='.', alpha=0.4)
-    axes[0].set_xlabel(r'$\Omega_\phi/\Omega_R$')
-    axes[0].set_ylabel(r'$\Omega_z/\Omega_R$')
-    axes[0].set_xlim(0.45,0.8)
-    axes[0].set_ylim(0.45,0.8)
-
-    axes[1].plot(box_freqs[:,0]/box_freqs[:,2], box_freqs[:,1]/box_freqs[:,2],
-                 linestyle='none', marker='.', alpha=0.4)
-    axes[1].set_xlabel(r'$\Omega_x/\Omega_z$')
-    axes[1].set_ylabel(r'$\Omega_y/\Omega_z$')
-    axes[1].set_xlim(0.3,1.2)
-    axes[1].set_ylim(0.3,1.2)
-
-    fig.savefig(os.path.join(path,"freqmap.pdf"))
+    bins = np.linspace(max_freq_diff_per_orbit.min(), max_freq_diff_per_orbit.max(), 25)
+    n,bins,pa = ax.hist(max_freq_diff_per_orbit, alpha=0.4, normed=True, bins=bins)
+    ax.set_xlabel("log fractional freq. diffusion rate per orbit")
+    fig.savefig(os.path.join(path,"diffusion_rate_hist.pdf"))
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
