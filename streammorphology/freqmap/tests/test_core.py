@@ -72,12 +72,5 @@ def test_estimate_max_period():
 
 def test_estimate_dt_nsteps():
     potential = gp.IsochronePotential(m=1E11, b=2.5, units=galactic)
-    w0 = np.array([10., 0., 0., 0., 0.12, 0.])
-
-    t,w = potential.integrate_orbit(w0, dt=2., nsteps=25000)
-    fig = gd.plot_orbits(w, linestyle='none')
-    plt.show()
-
+    w0 = np.array([10., 0., 0., 0., 0.12, 0.02])
     dt,nsteps = estimate_dt_nsteps(potential, w0)
-
-    print(dt, nsteps)
