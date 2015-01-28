@@ -14,12 +14,12 @@ from collections import OrderedDict
 import numpy as np
 from astropy.utils import isiterable
 
-__all__ = ['read_allfreqs']
-
 # define indices of columns -- need this for the memmap'd file
 colmap = OrderedDict(freqs=(0,1,2), dE_max=3, success=4, is_tube=5, dt=6, nsteps=7)
 l = np.concatenate([[x] if not isiterable(x) else list(x) for x in colmap.values()]).max()+1
 mmap_shape = (2, l)
+
+__all__ = ['read_allfreqs', 'mmap_shape']
 
 def read_allfreqs(f, norbits=None):
     """
