@@ -57,4 +57,3 @@ def read_allfreqs(f, norbits=None):
              ('loop','b1'), ('dt','f8'), ('nsteps','i8')]
     data = [(allfreqs[i,:,:3],allfreqs[i,:,3:6])+tuple(allfreqs[i,0,6:]) for i in range(norbits)]
     return np.array(data, dtype=dtype)
-
