@@ -9,6 +9,7 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 # Standard library
 import os
 import sys
+import glob
 
 # Third-party
 import numpy as np
@@ -24,6 +25,7 @@ from streammorphology.potential import potential_registry
 dt = 1.
 nsteps = 100000
 path = "/vega/astro/users/amp2217/projects/morphology/output/two_balls/"
+nball = 1000
 
 def create_ball(w0, potential, N=100):
     menc = potential.mass_enclosed(w0)
@@ -85,8 +87,6 @@ def worker(args):
     np.save(freq_file, np.vstack((freqs1,freqs2)))
 
 def main(mpi=False):
-    nball = 100
-
     pool = get_pool(mpi=mpi)
 
     potential = potential_registry['triaxial-NFW']
@@ -103,6 +103,21 @@ def main(mpi=False):
 
     tasks = [[potential,fast_ball0[i],i,'fast'] for i in range(nball)]
     pool.map(worker, tasks)
+
+    pool.close()
+    
+    slow_fqz = np.zeros((nball,2,3))
+    for i,filename in enumerate(glob.glob(os.path.join(path,"slow_freq*"))):
+        slow_fqz[i] = np.load(filename)
+
+    fast_fqz = np.zeros((nball,2,3))
+    for i,filename in enumerate(glob.glob(os.path.join(path,"fast_freq*"))):
+        fast_fqz[i] = np.load(filename)
+
+    print("slow:", np.std(slow_fqz[:,0],axis=0), np.std(slow_fqz[:,1],axis=0))
+    print("fast:", np.std(fast_fqz[:,0],axis=0), np.std(fast_fqz[:,1],axis=0))
+
+    sys.exit(0)
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
