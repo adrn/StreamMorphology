@@ -32,19 +32,30 @@ def ptp_periods(t, *coords):
 
     freqs = []
     for x in coords:
+        # find peaks
+        max_ix = argrelmax(x, mode='wrap')[0]
+        max_ix = max_ix[(max_ix != 0) & (max_ix != (len(x)-1))]
+
+        # find troughs
+        min_ix = argrelmin(x, mode='wrap')[0]
+        min_ix = min_ix[(min_ix != 0) & (min_ix != (len(x)-1))]
+
+        # neglect minor oscillations
+        tol = 1E-2
+        if abs(np.mean(x[max_ix]) - np.mean(x[min_ix])) < tol:
+            freqs.append(np.nan)
+            continue
+
         # first compute mean peak-to-peak
-        ix = argrelmax(x, mode='wrap')[0]
-        ix = ix[(ix != 0) & (ix != (len(x)-1))]
-        if len(ix) > 0:
-            f_max = np.mean(t[ix[1:]] - t[ix[:-1]])
+
+        if len(max_ix) > 0:
+            f_max = np.mean(t[max_ix[1:]] - t[max_ix[:-1]])
         else:
             f_max = np.nan
 
         # now compute mean trough-to-trough
-        ix = argrelmin(x, mode='wrap')[0]
-        ix = ix[(ix != 0) & (ix != (len(x)-1))]
-        if len(ix) > 0:
-            f_min = np.mean(t[ix[1:]] - t[ix[:-1]])
+        if len(min_ix) > 0:
+            f_min = np.mean(t[min_ix[1:]] - t[min_ix[:-1]])
         else:
             f_min = np.nan
 
@@ -68,6 +79,9 @@ def estimate_max_period(t, w):
 
     """
 
+    if w.ndim == 3:
+        w = w[:,0]
+
     # circulation
     circ = gd.classify_orbit(w)
 
@@ -85,7 +99,10 @@ def estimate_max_period(t, w):
     else:  # BOX ORBIT - pass x,y,z
         T = ptp_periods(t, *w[:,:3].T)
 
-    return T.max()
+    if np.any(np.isfinite(T)):
+        return T[np.isfinite(T)].max()
+    else:
+        return np.nan
 
 def estimate_dt_nsteps(potential, w0, nperiods=200, nsteps_per_period=100):
     """
