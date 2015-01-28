@@ -34,10 +34,12 @@ def ptp_periods(t, *coords):
     for x in coords:
         # first compute mean peak-to-peak
         ix = argrelmax(x, mode='wrap')[0]
+        ix = ix[(ix != 0) & (ix != (len(x)-1))]
         f_max = np.mean(t[ix[1:]] - t[ix[:-1]])
 
         # now compute mean trough-to-trough
         ix = argrelmin(x, mode='wrap')[0]
+        ix = ix[(ix != 0) & (ix != (len(x)-1))]
         f_min = np.mean(t[ix[1:]] - t[ix[:-1]])
 
         # then take the mean of these two
