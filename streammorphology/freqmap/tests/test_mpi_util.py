@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import gary.potential as gp
 from gary.units import galactic
 from ..mpi_util import worker
-from ..mmap_util import mmap_shape
+from ..mmap_util import mmap_shape, read_allfreqs
 
 plot_path = "output/tests/freqmap"
 if not os.path.exists(plot_path):
@@ -49,3 +49,6 @@ def test_worker():
     task['potential'] = potential
     task['allfreqs_filename'] = tmp_allfreqs
     worker(task)
+
+    af = read_allfreqs(tmp_allfreqs, norbits=1)
+    print(af)
