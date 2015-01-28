@@ -68,7 +68,7 @@ def main(path, mpi=False, overwrite=False, seed=42):
         d = np.memmap(allfreqs_filename, mode='w+', dtype='float64', shape=allfreqs_shape)
         tasks = [dict(index=i, w0_filename=w0_filename,
                       allfreqs_filename=allfreqs_filename,
-                      potential=potential) for i in range(norbits)[:1]]
+                      potential=potential) for i in range(norbits)]
 
     else:
         d = read_allfreqs(allfreqs_filename, norbits)
