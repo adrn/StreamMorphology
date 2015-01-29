@@ -67,6 +67,8 @@ def worker(task):
     w0 = np.load(w0_filename)
     shp = (len(w0),nparticles,6)
 
+    logger.info("Orbit {}".format(index))
+
     # integrate orbit for long time
     dt = 2.
     nsteps = 25000
@@ -84,6 +86,7 @@ def worker(task):
     r = np.sqrt(np.sum(w[:,0]**2, axis=-1))
     apos = [ix for ix in argrelmax(r)[0] if ix != 0 and ix != (nsteps-1)]
     pers = [ix for ix in argrelmin(r)[0] if ix != 0 and ix != (nsteps-1)]
+    logger.debug("{0} apocenters, {1} pericenters".format(len(apos), len(pers)))
 
     if len(apos) < norbits:
         logger.warning("Not enough orbits completed to determine final apocenter.")
@@ -100,6 +103,8 @@ def worker(task):
     nsteps = int((t2-t1) / dt)
     new_w0 = w[pers[0], 0]
 
+    logger.debug("Integrating {0} particles with dt={1}, nsteps={2}".format(nparticles,dt,nsteps))
+
     # create a Gaussian ball of orbits around the central orbit
     ball_w0 = create_ball(new_w0, potential, nparticles, mass)
 
@@ -112,6 +117,7 @@ def worker(task):
     allptcl.flush()
 
     # build a KDE from the final ball particle positions
+    logger.debug("Estimating density")
     final_pos = ball_w[-1,:,:3]
     kde = KernelDensity()
     kde.fit(final_pos)
@@ -165,7 +171,7 @@ def main(path, mass, norbits, nparticles=1000, mpi=False,
 
     else:
         d = np.memmap(allptcl_filename, mode='r+', dtype='float64', shape=allptcl_shape)
-        not_done = np.where(np.any(d != 0., axis=1) | np.any(np.isnan(d, axis=1)))
+        not_done = np.where(np.any(d != 0., axis=1) | np.any(np.isnan(d), axis=1))
         tasks = [dict(index=i, w0_filename=w0_filename, norbits=norbits, mass=mass,
                       allptcl_filename=allptcl_filename, nparticles=nparticles,
                       entropy_filename=entropy_filename,
