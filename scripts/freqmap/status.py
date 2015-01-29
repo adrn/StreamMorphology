@@ -12,39 +12,39 @@ import os
 # Third-party
 import numpy as np
 
-from streammorphology.util import _shape
+from streammorphology.freqmap import read_allfreqs
 
 def main(path, index=None):
-    basepath = os.path.split(path)[0]
-    w0_path = os.path.join(basepath, 'w0.npy')
+    # read allfreqs into structured array
+    d = read_allfreqs(path)
 
-    w0 = np.load(w0_path)
-    d = np.memmap(path, mode='r', shape=(len(w0),)+_shape, dtype='float64')
+    nsuccess = d['success'].sum()
+    fail = np.any(np.any(np.isnan(d['freqs']), axis=-1), axis=-1)
+    nfail = fail.sum()
 
-    n_done = int((d[:,0,7] == 1).sum())
-    n_fail_some = int((np.any(np.isnan(d[:,0,:6]), axis=1) | np.any(np.isnan(d[:,1,:6]), axis=1)).sum())
-    n_total_fail = int(np.all(np.isnan(d[:,0,:6]), axis=1).sum())
-
-    print("Number of orbits: {}".format(len(w0)))
-    print("Completed: {}".format(n_done))
-    print("Some failures: {}".format(n_fail_some))
-    print("Total failures: {}".format(n_total_fail))
+    print("Number of orbits: {}".format(len(d)))
+    print("Successful: {}".format(nsuccess))
+    print("Failures: {}".format(nfail))
 
     if index is not None:
+        w0 = np.load(os.path.join(os.path.split(path)[0], 'w0.npy'))
+
+        row = d[index]
+
         print("-"*79)
         print("w0: {}".format(w0[index]))
-        print("max(∆E): {}".format(d[index,0,6]))
-        print("dt, nsteps: {}, {}".format(d[index,0,9],d[index,0,10]))
-        if d[index,0,8] == 1.:
-            print("Loop orbit")
+        print("max(∆E): {}".format(row['dE_max']))
+        print("dt, nsteps: {}, {}".format(row['dt'], row['nsteps']))
+        if row['is_tube']:
+            print("Tube orbit")
         else:
             print("Box orbit")
+
+        fmt = "\t {0:.8e} {1:.8e} {2:.8e}"
         print("1st half freqs.:")
-        print("\t xyz: {}".format(d[index,0,:3]))
-        print("\t rφz: {}".format(d[index,0,3:6]))
+        print(fmt.format(*row['freqs'][0]))
         print("2nd half freqs.:")
-        print("\t xyz: {}".format(d[index,1,:3]))
-        print("\t rφz: {}".format(d[index,1,3:6]))
+        print(fmt.format(*row['freqs'][1]))
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
