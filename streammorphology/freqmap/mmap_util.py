@@ -50,6 +50,7 @@ def read_allfreqs(f, norbits=None):
 
     # replace NAN nsteps with 0
     allfreqs[np.isnan(allfreqs[:,0,colmap['nsteps']]),0,colmap['nsteps']] = 0
+    allfreqs[np.isnan(allfreqs[:,0,colmap['max_amp_freq_ix']]),0,colmap['max_amp_freq_ix']] = 0
     dtype = [('freqs','f8',(2,3)), ('dE_max','f8'), ('success','b1'),
              ('is_tube','b1'), ('dt','f8'), ('nsteps','i8'), ('max_amp_freq_ix','i8')]
     data = [(allfreqs[i,:,:3],) + tuple(allfreqs[i,0,3:]) for i in range(norbits)]
