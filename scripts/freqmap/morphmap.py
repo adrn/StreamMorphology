@@ -28,6 +28,7 @@ import sys
 from astropy import log as logger
 import numpy as np
 from scipy.signal import argrelmax, argrelmin
+from scipy.stats import entropy
 from sklearn.neighbors import KernelDensity
 
 # Project
@@ -56,6 +57,7 @@ def worker(task):
     index = task['index']
     w0_filename = task['w0_filename']
     allptcl_filename = task['allptcl_filename']
+    entropy_filename = task['entropy_filename']
     potential = task['potential']
     nparticles = task['nparticles']
     norbits = task['norbits']
@@ -115,6 +117,13 @@ def worker(task):
     kde.fit(final_pos)
     dens = kde.score_samples(final_pos)
 
+    # compute entropy of distribution
+    H,ed = np.histogram(dens, bins=35)
+    S = entropy(H)
+
+    entropy_f = np.memmap(entropy_filename, mode='r+', shape=(len(w0),), dtype='float64')
+    entropy_f[index] = S
+    entropy_f.flush()
 
 def main(path, mass, norbits, nparticles=1000, mpi=False,
          overwrite=False, seed=42):
@@ -133,6 +142,7 @@ def main(path, mass, norbits, nparticles=1000, mpi=False,
     # path to mmap file to save to
     allptcl_filename = os.path.join(path, 'allptcl.dat')
     allptcl_shape = (len(w0), nparticles, 6)
+    entropy_filename = os.path.join(path, 'entropy.dat')
 
     # path to potential name file
     pot_filename = os.path.join(path, 'potential.txt')
@@ -147,8 +157,10 @@ def main(path, mass, norbits, nparticles=1000, mpi=False,
 
     if not os.path.exists(allptcl_filename):
         d = np.memmap(allptcl_filename, mode='w+', dtype='float64', shape=allptcl_shape)
+        d = np.memmap(entropy_filename, mode='w+', dtype='float64', shape=(len(w0),))
         tasks = [dict(index=i, w0_filename=w0_filename, norbits=norbits, mass=mass,
                       allptcl_filename=allptcl_filename, nparticles=nparticles,
+                      entropy_filename=entropy_filename,
                       potential=potential) for i in range(norbits)]
 
     else:
@@ -156,6 +168,7 @@ def main(path, mass, norbits, nparticles=1000, mpi=False,
         not_done = np.where(np.any(d != 0., axis=1) | np.any(np.isnan(d, axis=1)))
         tasks = [dict(index=i, w0_filename=w0_filename, norbits=norbits, mass=mass,
                       allptcl_filename=allptcl_filename, nparticles=nparticles,
+                      entropy_filename=entropy_filename,
                       potential=potential) for i in not_done]
 
     pool.map(worker, tasks)
