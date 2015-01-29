@@ -191,6 +191,12 @@ if __name__ == '__main__':
                         help="Use an MPI pool.")
     parser.add_argument("--path", dest="path", type=str, required=True,
                         help="Path to the freqmap initial conditions grid.")
+    parser.add_argument("--nparticles", dest="nparticles", type=int, default=1000,
+                        help="Number of particles per ball.")
+    parser.add_argument("--norbits", dest="norbits", type=int, required=True,
+                        help="Number of orbits to integrate particles for.")
+    parser.add_argument("--mass", dest="mass", type=float, required=True,
+                        help="'mass' scale of the progenitor")
 
     args = parser.parse_args()
 
@@ -202,6 +208,7 @@ if __name__ == '__main__':
     else:
         logger.setLevel(logging.INFO)
 
-    main(path=args.path, mpi=args.mpi, overwrite=args.overwrite)
+    main(path=args.path, mass=args.mass, norbits=args.norbits, nparticles=args.nparticles,
+         mpi=args.mpi, overwrite=args.overwrite)
 
     sys.exit(0)
