@@ -112,7 +112,7 @@ def worker(task):
     try:
         t,ball_w = potential.integrate_orbit(ball_w0, dt=dt, nsteps=nsteps,
                                              Integrator=gi.DOPRI853Integrator)
-    except RuntimeError:
+    except RuntimeError: # TODO: this is wrong
         return
 
     allptcl = np.memmap(allptcl_filename, mode='r+', shape=shp, dtype='float64')
@@ -149,7 +149,8 @@ def main(path, mass, norbits, nparticles=1000, mpi=False,
     # path to initial conditions cache
     w0_filename = os.path.join(path, 'w0.npy')
     w0 = np.load(w0_filename)
-    logger.info("Number of initial conditions: {}".format(len(w0)))
+    nics = len(w0)
+    logger.info("Number of initial conditions: {}".format(nics))
 
     # path to mmap file to save to
     allptcl_filename = os.path.join(path, 'allptcl.dat')
@@ -173,7 +174,7 @@ def main(path, mass, norbits, nparticles=1000, mpi=False,
         tasks = [dict(index=i, w0_filename=w0_filename, norbits=norbits, mass=mass,
                       allptcl_filename=allptcl_filename, nparticles=nparticles,
                       entropy_filename=entropy_filename,
-                      potential=potential) for i in range(norbits)]
+                      potential=potential) for i in range(nics)]
 
     else:
         d = np.memmap(allptcl_filename, mode='r+', dtype='float64', shape=allptcl_shape)
