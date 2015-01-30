@@ -109,8 +109,11 @@ def worker(task):
     ball_w0 = create_ball(new_w0, potential, nparticles, mass)
 
     # integrate all orbits
-    t,ball_w = potential.integrate_orbit(ball_w0, dt=dt, nsteps=nsteps,
-                                         Integrator=gi.DOPRI853Integrator)
+    try:
+        t,ball_w = potential.integrate_orbit(ball_w0, dt=dt, nsteps=nsteps,
+                                             Integrator=gi.DOPRI853Integrator)
+    except RuntimeError:
+        return
 
     allptcl = np.memmap(allptcl_filename, mode='r+', shape=shp, dtype='float64')
     allptcl[index] = ball_w[-1,:]
