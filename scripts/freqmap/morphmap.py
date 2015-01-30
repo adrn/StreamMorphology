@@ -127,9 +127,12 @@ def worker(task):
     H,ed = np.histogram(dens, bins=35)
     S = entropy(H)
 
+    logger.debug("Saving entropy")
     entropy_f = np.memmap(entropy_filename, mode='r+', shape=(len(w0),), dtype='float64')
     entropy_f[index] = S
     entropy_f.flush()
+
+    return
 
 def main(path, mass, norbits, nparticles=1000, mpi=False,
          overwrite=False, seed=42):
