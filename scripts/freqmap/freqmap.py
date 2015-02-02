@@ -31,6 +31,7 @@ from astropy import log as logger
 import numpy as np
 
 # Project
+import gary.potential as gp
 from gary.util import get_pool
 from streammorphology import potential_registry
 from streammorphology.freqmap import worker, read_allfreqs, mmap_shape
@@ -50,12 +51,8 @@ def main(path, mpi=False, overwrite=False, seed=42):
     w0 = np.load(w0_filename)
 
     # path to potential name file
-    pot_filename = os.path.join(path, 'potential.txt')
-    with open(pot_filename) as f:
-        potential_name = f.read().strip()
-
-    # get potential from registry
-    potential = potential_registry[potential_name]
+    pot_filename = os.path.join(path, 'potential.yml')
+    potential = gp.load(pot_filename)
 
     norbits = len(w0)
     logger.info("Number of orbits: {}".format(norbits))

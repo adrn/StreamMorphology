@@ -89,11 +89,11 @@ def main(path):
         ax = fig.add_subplot(111, projection='3d')
 
         # plot bad points
-        ax.scatter(w0[~good_ix,0], w0[~good_ix,1], w0[~good_ix,2], c='r', s=10, marker='s')
+        ax.scatter(w0[~good_ix,0], w0[~good_ix,1], w0[~good_ix,2], c='r', s=8, marker='o')
 
         # plot good points
         c = ax.scatter(w0[good_ix,0], w0[good_ix,1], w0[good_ix,2], c=max_freq_diff_per_orbit,
-                       vmin=vmin, vmax=vmax, cmap='Greys_r', s=22, marker='s')
+                       vmin=vmin, vmax=vmax, cmap='Greys_r', s=18, marker='o')
 
         ax.elev = 45
         ax.azim = 45
@@ -110,8 +110,8 @@ def main(path):
                 linestyle='none', marker='.', alpha=0.4)
         ax.set_xlabel(r'$\Omega_x/\Omega_z$')
         ax.set_ylabel(r'$\Omega_y/\Omega_z$')
-        ax.set_xlim(0.3,1.2)
-        ax.set_ylim(0.3,1.2)
+        ax.set_xlim(0.55,0.9)
+        ax.set_ylim(0.7,1.05)
         fig.savefig(os.path.join(path,"freqmap.pdf"))
 
     # plot histograms of diffusion rates

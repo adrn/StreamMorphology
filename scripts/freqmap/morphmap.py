@@ -112,7 +112,7 @@ def worker(task):
     try:
         t,ball_w = potential.integrate_orbit(ball_w0, dt=dt, nsteps=nsteps,
                                              Integrator=gi.DOPRI853Integrator)
-    except RuntimeError: # TODO: this is wrong
+    except RuntimeError:  # TODO: this is wrong - shouldn't just give up if fail
         return
 
     allptcl = np.memmap(allptcl_filename, mode='r+', shape=shp, dtype='float64')
