@@ -48,7 +48,7 @@ date
 
 def main(overwrite=False):
     ##########################################################################
-    nplanes = 5
+    nplanes = 9
     E = -0.21
     ##########################################################################
 
@@ -59,7 +59,8 @@ def main(overwrite=False):
         potential = gp.TriaxialMWPotential(halo=dict(phi=phi))
         w0 = ic.tube_grid_xz(E, potential, dx=1., dz=1.)
 
-        this_path = os.path.join(path, 'plane{0}_phi{1}'.format(i,int(phi.value)))
+        endpath = 'plane{0}_phi{1}'.format(i,int(phi.value))
+        this_path = os.path.join(path, endpath)
         logger.info("Caching plane {0} to: {1}".format(i, this_path))
 
         if not os.path.exists(this_path):
@@ -82,7 +83,9 @@ def main(overwrite=False):
         logger.info("Number of initial conditions: {}".format(len(w0)))
 
         # now make a submit file for freqmapping
-
+        submit_text = submit_base.format(ix=i, endpath=endpath)
+        with open(os.path.join(this_path, "submit.sh"), "w") as f:
+            f.write(submit_text)
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
