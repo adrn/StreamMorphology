@@ -26,7 +26,7 @@ submit_base = """
 # Directives
 #PBS -N plane{ix}_freqmap
 #PBS -W group_list=yetiastro
-#PBS -l nodes=8:ppn=16,walltime=16:00:00,mem=32gb
+#PBS -l nodes=4:ppn=16,walltime=16:00:00,mem=18gb
 #PBS -M amp2217@columbia.edu
 #PBS -m abe
 #PBS -V
@@ -39,7 +39,7 @@ submit_base = """
 date
 
 #Command to execute Python program
-/usr/local/openmpi-1.6.5/bin/mpiexec -n 128 /vega/astro/users/amp2217/anaconda/bin/python /vega/astro/users/amp2217/projects/morphology/scripts/freqmap/freqmap.py --mpi --path=/vega/astro/users/amp2217/projects/morphology/output/freqmap/planes-of-satellites/{endpath} -o
+/usr/local/openmpi-1.6.5/bin/mpiexec -n 64 /vega/astro/users/amp2217/anaconda/bin/python /vega/astro/users/amp2217/projects/morphology/scripts/freqmap/freqmap.py --mpi --path=/vega/astro/users/amp2217/projects/morphology/output/freqmap/planes-of-satellites/{endpath} -o
 
 date
 
