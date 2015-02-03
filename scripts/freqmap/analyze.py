@@ -53,16 +53,28 @@ def main(path):
     if np.all(w0[:,1] == 0.):
         # plot initial condition grid, colored by fractional diffusion rate
         fig,ax = plt.subplots(1,1,figsize=(9.75,8))
+        ax.set_xlim(0, max([w0[:,0].max(),w0[:,2].max()]))
+        ax.set_ylim(*ax.get_xlim())
+
+        # automatically determine symbol size
+        xy_pixels = ax.transData.transform(np.vstack([w0[good_ix,0],w0[good_ix,2]]).T)
+        xpix, ypix = xy_pixels.T
+
+        # In matplotlib, 0,0 is the lower left corner, whereas it's usually the upper
+        # right for most image software, so we'll flip the y-coords
+        width, height = fig.canvas.get_width_height()
+        ypix = height - ypix
+
+        # this assumes that your data-points are equally spaced
+        sz = max((xpix[1]-xpix[0])**2, (ypix[1]-ypix[0])**2)
 
         # plot bad points
-        ax.scatter(w0[~good_ix,0], w0[~good_ix,2], c='r', s=10, marker='s')
+        ax.scatter(w0[~good_ix,0], w0[~good_ix,2], c='r', s=sz, marker='s')
 
         # plot good points, colored
         c = ax.scatter(w0[good_ix,0], w0[good_ix,2], c=max_freq_diff_per_orbit,
-                       vmin=vmin, vmax=vmax, cmap='Greys_r', s=22, marker='s')
+                       vmin=vmin, vmax=vmax, cmap='Greys_r', s=sz, marker='s')
 
-        ax.set_xlim(0, max([w0[:,0].max(),w0[:,2].max()]))
-        ax.set_ylim(*ax.get_xlim())
         ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
         ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
         fig.colorbar(c)
