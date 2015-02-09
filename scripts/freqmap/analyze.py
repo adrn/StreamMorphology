@@ -17,7 +17,7 @@ import numpy as np
 # Project
 from streammorphology.freqmap import read_allfreqs
 
-def main(path):
+def main(path, vbounds=None):
 
     # read in initial conditions
     w0 = np.load(os.path.join(path, 'w0.npy'))
@@ -45,9 +45,13 @@ def main(path):
     max_freq_diff_per_orbit = np.log10(max_freq_diff_per_orbit[good_ix])
 
     # color scaling
-    delta = np.abs(max_freq_diff_per_orbit.max() - max_freq_diff_per_orbit.min())
-    vmin = max_freq_diff_per_orbit.min() + delta/10.
-    vmax = max_freq_diff_per_orbit.max() - delta/10.
+    if vbounds is None:
+        delta = np.abs(max_freq_diff_per_orbit.max() - max_freq_diff_per_orbit.min())
+        vmin = max_freq_diff_per_orbit.min() + delta/10.
+        vmax = max_freq_diff_per_orbit.max() - delta/10.
+
+    else:
+        vmin,vmax = vbounds
 
     # initial conditions in x-z plane
     if np.all(w0[:,1] == 0.):
@@ -142,6 +146,14 @@ if __name__ == '__main__':
                         help="Path to a Numpy memmap file containing the results "
                              "of frequency mapping.")
 
+    parser.add_argument("--vbounds", dest="vbounds", default=None, type=str,
+                        help="bounds of color scale")
+
     args = parser.parse_args()
 
-    main(args.path)
+    if args.vbounds is not None:
+        vbounds = map(float, args.vbounds.split(","))
+    else:
+        vbounds = None
+
+    main(args.path, vbounds=vbounds)
