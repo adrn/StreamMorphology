@@ -18,8 +18,8 @@ __all__ = ['potential_registry']
 potential_registry = dict()
 
 # --------------------------------------------------------------
-p = gp.LeeSutoTriaxialNFWPotential(v_c=0.239225, r_s=30.,
-                                   a=1., b=0.8, c=0.6,
+p = gp.LeeSutoTriaxialNFWPotential(v_c=0.205, r_s=20.,
+                                   a=1., b=0.77, c=0.55,
                                    units=galactic)
 potential_registry['triaxial-NFW'] = p
 
