@@ -52,7 +52,7 @@ def main(path, mpi=False, overwrite=False, seed=42):
 
     # path to potential name file
     pot_filename = os.path.join(path, 'potential.yml')
-    potential = gp.load(pot_filename)
+    # potential = gp.load(pot_filename)
 
     norbits = len(w0)
     logger.info("Number of orbits: {}".format(norbits))
@@ -65,14 +65,14 @@ def main(path, mpi=False, overwrite=False, seed=42):
         d = np.memmap(allfreqs_filename, mode='w+', dtype='float64', shape=allfreqs_shape)
         tasks = [dict(index=i, w0_filename=w0_filename,
                       allfreqs_filename=allfreqs_filename,
-                      potential=potential) for i in range(norbits)]
+                      potential_filename=pot_filename) for i in range(norbits)]
 
     else:
         d = read_allfreqs(allfreqs_filename, norbits)
         not_done = np.where(~d['success'])[0]
         tasks = [dict(index=i, w0_filename=w0_filename,
                       allfreqs_filename=allfreqs_filename,
-                      potential=potential) for i in not_done]
+                      potential_filename=pot_filename) for i in not_done]
 
     pool.map(worker, tasks)
     pool.close()

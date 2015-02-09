@@ -13,6 +13,7 @@ from astropy import log as logger
 # Project
 import gary.dynamics as gd
 import gary.integrate as gi
+import gary.potential as gp
 from .mmap_util import colmap, mmap_shape
 from .core import estimate_dt_nsteps
 
@@ -25,7 +26,7 @@ def worker(task):
     index = task['index']
     w0_filename = task['w0_filename']
     allfreqs_filename = task['allfreqs_filename']
-    potential = task['potential']
+    potential = gp.load(task['potential_filename'])
 
     # if these aren't set, we'll need to estimate them
     dt = task.get('dt',None)
