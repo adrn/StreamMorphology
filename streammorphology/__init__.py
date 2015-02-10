@@ -1,4 +1,3 @@
-from .util import *
 from .potential import *
 
 import os
