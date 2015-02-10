@@ -24,6 +24,13 @@ p = gp.LeeSutoTriaxialNFWPotential(v_c=0.205, r_s=20.,
 potential_registry['triaxial-NFW'] = p
 
 # --------------------------------------------------------------
+p = gp.LeeSutoTriaxialNFWPotential(v_c=0.205, r_s=20.,
+                                   a=1., b=0.77, c=0.55,
+                                   units=galactic,
+                                   phi=np.pi/2.)
+potential_registry['triaxial-NFW-yz'] = p
+
+# --------------------------------------------------------------
 p = gp.TriaxialMWPotential(units=galactic)
 potential_registry['triaxial-NFW-disk-bulge'] = p
 
