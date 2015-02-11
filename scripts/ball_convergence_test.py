@@ -19,6 +19,8 @@ from astropy.coordinates.angles import rotation_matrix
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import argrelmax, argrelmin
+from sklearn.grid_search import GridSearchCV
+from sklearn.neighbors import KernelDensity
 
 # Custom
 import gary.integrate as gi
@@ -142,7 +144,45 @@ def kld(potential, E0, slow_ball, fast_ball, slow_t, fast_t, nbins=25):
     ax.plot(fast_t[t_ixes_fast], fast_D)
     return fig
 
-def main():
+def kld_mc(potential, E0, slow_ball, fast_ball, slow_t, fast_t):
+    slow_D = []
+    t_ixes_slow = np.linspace(0, slow_ball.shape[0]-1, 128).astype(int)
+    for i in t_ixes_slow:
+        grid = GridSearchCV(KernelDensity(kernel='epanechnikov'),
+                            {'bandwidth': np.logspace(-2, 2., 30)},
+                            cv=10)  # 10-fold cross-validation
+        grid.fit(slow_ball[-1,:,:3])
+
+        kde = KernelDensity(kernel='epanechnikov', bandwidth=grid.best_params_['bandwidth'])
+        kde.fit(slow_ball[i,:,:3])
+        kde_densy = np.exp(kde.score_samples(slow_ball[i,:,:3]))
+
+        p_densy = np.sqrt(E0 - potential(slow_ball[i,:,:3]))
+        D = np.log(kde_densy / p_densy)
+        slow_D.append(D[np.isfinite(D)].sum())
+
+    fast_D = []
+    t_ixes_fast = np.linspace(0, fast_ball.shape[0]-1, 128).astype(int)
+    for i in t_ixes_fast:
+        grid = GridSearchCV(KernelDensity(kernel='epanechnikov'),
+                            {'bandwidth': np.logspace(-2, 2., 30)},
+                            cv=10)  # 10-fold cross-validation
+        grid.fit(fast_ball[-1,:,:3])
+
+        kde = KernelDensity(kernel='epanechnikov', bandwidth=grid.best_params_['bandwidth'])
+        kde.fit(fast_ball[i,:,:3])
+        kde_densy = np.exp(kde.score_samples(fast_ball[i,:,:3]))
+
+        p_densy = np.sqrt(E0 - potential(fast_ball[i,:,:3]))
+        D = np.log(kde_densy / p_densy)
+        fast_D.append(D[np.isfinite(D)].sum())
+
+    fig,ax = plt.subplots(1,1,figsize=(12,8))
+    ax.plot(slow_t[t_ixes_slow], slow_D)
+    ax.plot(fast_t[t_ixes_fast], fast_D)
+    return fig
+
+def fixed_grid_integral():
     # =============================================================================
     # Things to set
 
@@ -232,6 +272,95 @@ def main():
             fig.savefig(os.path.join(path, "kld_{0}ptcl_{1}bins.png".format(nparticles,nbins)))
             plt.close('all')
 
+def monte_carlo():
+    # =============================================================================
+    # Things to set
+
+    evln_time = 20000.  # time to integrate balls (20 Gyr)
+
+    slow_fast_w0 = np.array([[27.85, 0.0, 22.1, 0.0, 0.16914188537254274, 0.0],
+                             [27.85, 0.0, 23.6, 0.0, 0.16023972330323624, 0.0]])
+
+    # path = "/Users/adrian/projects/morphology/output/ball_convergence/"
+    path = "/vega/astro/users/amp2217/projects/morphology/output/ball_convergence/monte_carlo"
+
+    # =============================================================================
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    # compute energy of orbits -- should be the same
+    E0s = potential.total_energy(slow_fast_w0[:,:3], slow_fast_w0[:,3:])
+    if not np.allclose(E0s[0],E0s[1]):
+        raise ValueError("Orbits should have same energy")
+    E0 = E0s[0]
+
+    # integrate orbits for 1.2 times the evolution time
+    logger.info("Integrating orbits")
+    sf_t,sf_w = potential.integrate_orbit(slow_fast_w0, dt=1., nsteps=int(1.2*evln_time),
+                                          Integrator=gi.DOPRI853Integrator)
+
+    # identify first pericenter of each orbit, then apocenter closest to the evolution
+    #   time away
+    Rs = np.sqrt(np.sum(sf_w[:,:,:3].T**2, axis=0))
+
+    # estimate apocenters and pericenters with relative min/maxima
+    slow_apos,slow_pers = argrelmax(Rs[0])[0], argrelmin(Rs[0])[0]
+    fast_apos,fast_pers = argrelmax(Rs[1])[0], argrelmin(Rs[1])[0]
+
+    # -----------------------------------------------------------------------------
+    # figure out integration time and initial conditions for slow and fast orbit
+    slow_dt = 1.
+    fast_dt = 1.
+
+    # slow
+    t1 = sf_t[slow_pers[0]]
+    t2 = sf_t[slow_apos]
+    t2 = sf_t[slow_apos[np.abs((t2-t1) - evln_time).argmin()]]
+
+    slow_nsteps = int((t2-t1) / slow_dt)
+    slow_w0 = sf_w[slow_pers[0], 0]
+
+    # fast
+    t1 = sf_t[fast_pers[0]]
+    t2 = sf_t[fast_apos]
+    t2 = sf_t[fast_apos[np.abs((t2-t1) - evln_time).argmin()]]
+
+    fast_nsteps = int((t2-t1) / fast_dt)
+    fast_w0 = sf_w[fast_pers[0], 1]
+    # -----------------------------------------------------------------------------
+
+    max_nparticles = 10000
+
+    # sample balls around slow,fast initial conditions
+    logger.info("Making particle balls")
+    slow_ball0 = create_ball(slow_w0, potential, max_nparticles)
+    fast_ball0 = create_ball(fast_w0, potential, max_nparticles)
+
+    # integrate all orbits
+    logger.info("Integrating slow FDR ball...")
+    slow_t,all_slow_ball = potential.integrate_orbit(slow_ball0, dt=slow_dt, nsteps=slow_nsteps,
+                                                     Integrator=gi.DOPRI853Integrator)
+    logger.info("...done.")
+
+    logger.info("Integrating fast FDR ball...")
+    fast_t,all_fast_ball = potential.integrate_orbit(fast_ball0, dt=fast_dt, nsteps=fast_nsteps,
+                                                     Integrator=gi.DOPRI853Integrator)
+    logger.info("...done.")
+
+    for nparticles in [1000,10000]:
+        logger.info("nparticles={0}".format(nparticles))
+        slow_ball = all_slow_ball[:,:nparticles]
+        fast_ball = all_fast_ball[:,:nparticles]
+
+        fig = make_aligned_figure(slow_ball, fast_ball)
+        fig.savefig(os.path.join(path, "aligned_{0}ptcl.png".format(nparticles)))
+
+        fig = kld_mc(potential, E0, slow_ball, fast_ball, slow_t, fast_t)
+        fig.savefig(os.path.join(path, "kld_{0}ptcl.png".format(nparticles)))
+        plt.close('all')
+
 if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
-    main()
+    # fixed_grid_integral()
+    monte_carlo()
