@@ -10,7 +10,7 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Standard library
 import os
-import sys
+import logging
 
 # Third-party
 from astropy import log as logger
@@ -21,7 +21,6 @@ import numpy as np
 from scipy.signal import argrelmax, argrelmin
 
 # Custom
-import gary.dynamics as gd
 import gary.integrate as gi
 
 # project
@@ -162,7 +161,7 @@ def main():
 
     # compute energy of orbits -- should be the same
     E0s = potential.total_energy(slow_fast_w0[:,:3], slow_fast_w0[:,3:])
-    if np.allclose(E0s[0],E0s[1]):
+    if not np.allclose(E0s[0],E0s[1]):
         raise ValueError("Orbits should have same energy")
     E0 = E0s[0]
 
@@ -234,4 +233,5 @@ def main():
             plt.close('all')
 
 if __name__ == '__main__':
+    logger.setLevel(logging.DEBUG)
     main()
