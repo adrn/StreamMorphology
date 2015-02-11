@@ -152,7 +152,8 @@ def main():
     slow_fast_w0 = np.array([[27.85, 0.0, 22.1, 0.0, 0.16914188537254274, 0.0],
                              [27.85, 0.0, 23.6, 0.0, 0.16023972330323624, 0.0]])
 
-    path = "/Users/adrian/projects/morphology/output/ball_convergence/"
+    # path = "/Users/adrian/projects/morphology/output/ball_convergence/"
+    path = "/vega/astro/users/amp2217/projects/morphology/output/ball_convergence/"
 
     # =============================================================================
 
@@ -161,11 +162,12 @@ def main():
 
     # compute energy of orbits -- should be the same
     E0s = potential.total_energy(slow_fast_w0[:,:3], slow_fast_w0[:,3:])
-    if np.allclose(E0s):
+    if np.allclose(E0s[0],E0s[1]):
         raise ValueError("Orbits should have same energy")
     E0 = E0s[0]
 
     # integrate orbits for 1.2 times the evolution time
+    logger.info("Integrating orbits")
     sf_t,sf_w = potential.integrate_orbit(slow_fast_w0, dt=1., nsteps=int(1.2*evln_time),
                                           Integrator=gi.DOPRI853Integrator)
 
@@ -202,17 +204,23 @@ def main():
     max_nparticles = 10000
 
     # sample balls around slow,fast initial conditions
+    logger.info("Making particle balls")
     slow_ball0 = create_ball(slow_w0, potential, max_nparticles)
     fast_ball0 = create_ball(fast_w0, potential, max_nparticles)
 
     # integrate all orbits
+    logger.info("Integrating slow FDR ball...")
     slow_t,all_slow_ball = potential.integrate_orbit(slow_ball0, dt=slow_dt, nsteps=slow_nsteps,
                                                      Integrator=gi.DOPRI853Integrator)
+    logger.info("...done.")
 
+    logger.info("Integrating fast FDR ball...")
     fast_t,all_fast_ball = potential.integrate_orbit(fast_ball0, dt=fast_dt, nsteps=fast_nsteps,
                                                      Integrator=gi.DOPRI853Integrator)
+    logger.info("...done.")
 
     for nparticles in [1000,10000]:
+        logger.info("nparticles={0}".format(nparticles))
         slow_ball = all_slow_ball[:nparticles]
         fast_ball = all_fast_ball[:nparticles]
 
@@ -220,6 +228,7 @@ def main():
         fig.savefig(os.path.join(path, "aligned_{0}ptcl.png".format(nparticles)))
 
         for nbins in [11,19,27,35,43,51]:
+            logger.info("nbins={0}".format(nbins))
             fig = kld(potential, E0, slow_ball, fast_ball, slow_t, fast_t, nbins=nbins)
             fig.savefig(os.path.join(path, "kld_{0}ptcl_{1}bins.png".format(nparticles,nbins)))
             plt.close('all')
