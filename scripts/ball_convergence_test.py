@@ -220,8 +220,8 @@ def main():
 
     for nparticles in [1000,10000]:
         logger.info("nparticles={0}".format(nparticles))
-        slow_ball = all_slow_ball[:nparticles]
-        fast_ball = all_fast_ball[:nparticles]
+        slow_ball = all_slow_ball[:,:nparticles]
+        fast_ball = all_fast_ball[:,:nparticles]
 
         fig = make_aligned_figure(slow_ball, fast_ball)
         fig.savefig(os.path.join(path, "aligned_{0}ptcl.png".format(nparticles)))
