@@ -24,8 +24,10 @@ p1 = gp.LeeSutoTriaxialNFWPotential(v_c=(150*u.km/u.s).to(u.kpc/u.Myr).value,
 potential_registry['triaxial-NFW'] = p1
 
 # --------------------------------------------------------------
+params = p1.parameters
+params.pop('R')
 p2 = gp.LeeSutoTriaxialNFWPotential(units=galactic, phi=np.pi/2.,
-                                    **p1.parameters)
+                                    **params)
 potential_registry['triaxial-NFW-yz'] = p2
 
 # --------------------------------------------------------------
