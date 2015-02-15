@@ -19,7 +19,7 @@ from astropy import log as logger
 from streammorphology import potential_registry, project_path
 import streammorphology.initialconditions as ic
 
-def main(potential_name, E, ic_func, output_path=None, overwrite=False, **kwargs):
+def main(potential_name, E, ic_func, output_path=None, overwrite=False, plot=False, **kwargs):
     """ Calls one of the grid-making utility functions to generate a
         grid of initial conditions for frequency mapping, and saves the
         grid to a file.
@@ -58,6 +58,11 @@ def main(potential_name, E, ic_func, output_path=None, overwrite=False, **kwargs
         w0 = np.load(w0path)
         logger.info("Initial conditions file already exists!\n\t{}".format(w0path))
 
+    if plot:
+        fig,ax = plt.subplots(1, 1, figsize=(8,8))
+        ax.plot(w0[:,0], w0[:,2], marker='.', linestyle='none')
+        fig.savefig(os.path.join(path, 'w0.png'))
+
     logger.info("Number of initial conditions: {}".format(len(w0)))
 
 if __name__ == '__main__':
@@ -74,6 +79,8 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--overwrite", action="store_true", dest="overwrite",
                         default=False, help="DESTROY. DESTROY. (default = False)")
 
+    parser.add_argument("--plot", action="store_true", dest="plot",
+                        default=False, help="Plot dat ish.")
     parser.add_argument("-p","--output-path", dest="output_path", default=None,
                         help="Path to the 'output' directory.")
 
@@ -122,6 +129,7 @@ if __name__ == '__main__':
          ic_func=getattr(ic,args.ic_func),
          overwrite=args.overwrite,
          output_path=args.output_path,
+         plot=args.plot,
          **arg_dict)
 
     sys.exit(0)
