@@ -57,9 +57,9 @@ def main(path, mpi=False, overwrite=False, seed=42):
     if os.path.exists(allfreqs_filename) and overwrite:
         os.remove(allfreqs_filename)
 
-    allfreqs_shape = (norbits,) + mmap_shape
+    shape = (norbits,) + mmap_shape
     if not os.path.exists(allfreqs_filename):
-        d = np.memmap(allfreqs_filename, mode='w+', dtype='float64', shape=allfreqs_shape)
+        d = np.memmap(allfreqs_filename, mode='w+', dtype='float64', shape=shape)
         tasks = [dict(index=i, w0_filename=w0_filename,
                       allfreqs_filename=allfreqs_filename,
                       potential_filename=pot_filename) for i in range(norbits)]
