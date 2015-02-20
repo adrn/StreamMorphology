@@ -7,6 +7,7 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 # Standard library
 import os
 import sys
+import time as pytime
 
 # Third-party
 from astropy import log as logger
@@ -47,7 +48,7 @@ def worker(task):
     # if these aren't set, we'll need to estimate them
     dt = task.get('dt',None)
     nsteps = task.get('nsteps',None)
-    nsteps_per_period = task.get('nsteps_per_period', 256)
+    nsteps_per_period = task.get('nsteps_per_period', 128)
 
     # if these aren't set, assume defaults
     nperiods = 500
@@ -99,13 +100,24 @@ def worker(task):
     KLD_ixes = np.linspace(nsteps_per_period, nsteps, nkld).astype(int)
     KLD = []
     KLD_times = []
+    timer0 = pytime.time()
     for ii in range(nsteps):
-        t,w_ip1 = integrator.run(w_i, t1=time, dt=dt, nsteps=1)
+        successful = False
+        jj = 0
+        while not successful and jj < 10:
+            try:
+                t,w_ip1 = integrator.run(w_i, t1=time, dt=dt, nsteps=1)
+                successful = True
+                break
+            except RuntimeError:
+                integrator._ode_kwargs['nsteps'] *= 2
+            jj += 1
+
         w_i = w_ip1[-1]
         time += dt
 
         if ii in KLD_ixes:
-            logger.debug("Computing KLD at index {0}".format(ii))
+            logger.debug("Computing KLD at index {0} ({1:.2f} seconds)".format(ii,pytime.time()-timer0))
             kde = KernelDensity(kernel='epanechnikov', bandwidth=bw)
             kde.fit(w_i[:,:3])
             kde_densy = np.exp(kde.score_samples(w_i[:,:3]))
@@ -115,10 +127,19 @@ def worker(task):
             KLD.append(D[np.isfinite(D)].sum())
             KLD_times.append(time)
 
+            timer0 = pytime.time()
+
     KLD = np.array(KLD)
     KLD_times = np.array(KLD_times)
 
     # TODO: compare final E vs. initial E against ETOL
+    E_end = float(np.squeeze(potential.total_energy(w_i[0,:3], w_i[0,3:])))
+    dE = np.log10(E_end - E0)
+    if dE > ETOL:
+        all_kld[index,0] = np.nan
+        all_kld[index,1] = 2.  # failed due to energy conservation
+        all_kld.flush()
+        return
 
     # fit a power law to the KLDs
     model = lambda p,t: p[0] * t**p[1]
@@ -126,7 +147,7 @@ def worker(task):
     p_opt,ier = so.leastsq(errfunc, x0=(0.01,-0.15), args=(KLD_times,KLD))
     if ier not in [1,2,3,4]:
         all_kld[index,0] = np.nan
-        all_kld[index,1] = 2.  # failed due to leastsq
+        all_kld[index,1] = 3.  # failed due to leastsq
 
     # power-law index
     k = p_opt[1]
