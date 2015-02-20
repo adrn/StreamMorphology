@@ -16,10 +16,10 @@ import gary.integrate as gi
 import gary.potential as gp
 from .mmap_util import colmap, mmap_shape
 from .core import estimate_dt_nsteps
+from .. import ETOL
 
 __all__ = ['worker']
 
-ETOL = 1E-7
 def worker(task):
 
     # unpack input argument dictionary
