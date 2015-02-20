@@ -68,7 +68,7 @@ def worker(task):
     t,w = potential.integrate_orbit(this_w0, dt=1., nsteps=20000)
     R = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
     T_max,T_min = estimate_max_period(t,w,min=True)
-    peri_ix = argrelmin(R, model='wrap')[0]
+    peri_ix = argrelmin(R, mode='wrap')[0]
 
     # timestep from number of steps per period
     dt = float(T_min) / nsteps_per_period
@@ -79,8 +79,8 @@ def worker(task):
 
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
-    logger.debug("Generating ensemble of {0} particles".format())
     ball_w0 = create_ball(this_w0, potential, N=nensemble, m_scale=mscale)
+    logger.debug("Generated ensemble of {0} particles".format(nensemble))
 
     # manually integrate and don't keep all timesteps so we don't use an
     #   infinite amount of energy
@@ -105,6 +105,7 @@ def worker(task):
         time += dt
 
         if ii in KLD_ixes:
+            logger.debug("Computing KLD at index {0}".format(ii))
             kde = KernelDensity(kernel='epanechnikov', bandwidth=bw)
             kde.fit(w_i[:,:3])
             kde_densy = np.exp(kde.score_samples(w_i[:,:3]))
