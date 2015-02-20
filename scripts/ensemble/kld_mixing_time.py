@@ -15,13 +15,10 @@ from astropy import log as logger
 import numpy as np
 
 # Project
-import gary.dynamics as gd
-import gary.integrate as gi
 from gary.util import get_pool
 
 # project
-from streammorphology.potential import potential_registry
-from streammorphology.ensemble import create_ball, worker
+from streammorphology.ensemble import worker
 
 def main(path, mpi=False, overwrite=False, seed=42):
     np.random.seed(seed)
