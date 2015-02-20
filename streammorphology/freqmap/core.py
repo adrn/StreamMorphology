@@ -64,7 +64,7 @@ def ptp_periods(t, *coords):
 
     return np.array(freqs)
 
-def estimate_max_period(t, w):
+def estimate_max_period(t, w, min=False):
     """
     Given an array of times and an orbit, estimate the longest period
     in the orbit. We will then use this to figure out how long to
@@ -76,6 +76,8 @@ def estimate_max_period(t, w):
         Array of times.
     w : array_like
         Single orbit -- should have shape (len(t), 6)
+    min : bool (optional)
+        Also return min period.
 
     """
 
@@ -100,9 +102,15 @@ def estimate_max_period(t, w):
         T = ptp_periods(t, *w[:,:3].T)
 
     if np.any(np.isfinite(T)):
-        return T[np.isfinite(T)].max()
+        if min:
+            return T[np.isfinite(T)].max(), T[np.isfinite(T)].min()
+        else:
+            return T[np.isfinite(T)].max()
     else:
-        return np.nan
+        if min:
+            return np.nan, np.nan
+        else:
+            return np.nan
 
 def estimate_dt_nsteps(potential, w0, nperiods=200, nsteps_per_period=200):
     """
