@@ -20,7 +20,7 @@ from gary.util import get_pool
 # project
 from streammorphology.ensemble import worker
 
-def main(path, mpi=False, overwrite=False, seed=42):
+def main(path, memmap_shape, cache_filename, mpi=False, overwrite=False, seed=42, **kwargs):
     np.random.seed(seed)
 
     # get a pool object for multiprocessing / MPI
@@ -28,7 +28,7 @@ def main(path, mpi=False, overwrite=False, seed=42):
     if mpi:
         logger.info("Using MPI")
 
-    all_kld_filename = os.path.join(path, "allkld.dat")
+    cache_path = os.path.join(path, cache_filename)
 
     # path to initial conditions cache
     w0_filename = os.path.join(path, 'w0.npy')
@@ -40,17 +40,17 @@ def main(path, mpi=False, overwrite=False, seed=42):
     norbits = len(w0)
     logger.info("Number of orbits: {}".format(norbits))
 
-    if os.path.exists(all_kld_filename) and overwrite:
-        os.remove(all_kld_filename)
+    if os.path.exists(cache_path) and overwrite:
+        os.remove(cache_path)
 
-    shape = (norbits,2)
-    if not os.path.exists(all_kld_filename):
+    shape = (norbits,) + memmap_shape
+    if not os.path.exists(cache_path):
         # make sure memmap file exists
-        d = np.memmap(all_kld_filename, mode='w+', dtype='float64', shape=shape)
+        d = np.memmap(cache_path, mode='w+', dtype='float64', shape=shape)
 
     tasks = [dict(index=i, w0_filename=w0_filename,
-                  cache_filename=all_kld_filename,
-                  potential_filename=pot_filename) for i in range(norbits)]
+                  cache_filename=cache_path,
+                  potential_filename=pot_filename, **kwargs) for i in range(norbits)]
 
     pool.map(worker, tasks)
     pool.close()
