@@ -11,21 +11,34 @@ import time as pytime
 
 # Third-party
 from astropy import log as logger
-import astropy.units as u
 import gary.potential as gp
 import gary.integrate as gi
 import numpy as np
 import scipy.optimize as so
 from scipy.signal import argrelmin
 from sklearn.neighbors import KernelDensity
-from sklearn.grid_search import GridSearchCV
 
 # Project
 from .. import ETOL
 from .core import create_ball
 from ..freqmap import estimate_max_period
 
-__all__ = ['worker']
+__all__ = ['worker', 'parser_arguments']
+
+parser_arguments = list()
+
+# list of [args, kwargs]
+parser_arguments.append([('--nensemble',), dict(dest='nensemble', required=True,
+                                                type=int, help='Number of orbits per ensemble.')])
+parser_arguments.append([('--mscale',), dict(dest='mscale', default=1E4,
+                                             type=float, help='Mass scale of ensemble.')])
+parser_arguments.append([('--bandwidth',), dict(dest='kde_bandwidth', default=10.,
+                                                type=float, help='KDE kernel bandwidth.')])
+parser_arguments.append([('--nkld',), dict(dest='nkld', default=256, type=int,
+                                           help='Number of times to evaluate the KLD over the '
+                                                'integration of the ensemble.')])
+parser_arguments.append([('--nperiods',), dict(dest='nperiods', default=500, type=int,
+                                               help='Number of periods to integrate for.')])
 
 def worker(task):
 
@@ -37,13 +50,13 @@ def worker(task):
     nensemble = task['nensemble']
 
     # mass scale
-    mscale = task.get('mscale', 1E4)
+    mscale = task['mscale']
 
     # KDE kernel bandwidth
-    bw = task.get('kde_bandwidth', 10.)
+    bw = task['kde_bandwidth']
 
     # number of times to compute the KLD
-    nkld = task.get('nkld', 256)
+    nkld = task['nkld']
 
     # if these aren't set, we'll need to estimate them
     dt = task.get('dt',None)
@@ -51,7 +64,7 @@ def worker(task):
     nsteps_per_period = task.get('nsteps_per_period', 128)
 
     # if these aren't set, assume defaults
-    nperiods = 500
+    nperiods = task['nperiods']
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
