@@ -5,8 +5,6 @@ from __future__ import division, print_function
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Standard library
-import os
-import sys
 import time as pytime
 
 # Third-party
@@ -20,8 +18,9 @@ from sklearn.neighbors import KernelDensity
 
 # Project
 from .. import ETOL
+from .mmap_util import get_dtype
 from .core import create_ball
-from ..freqmap import estimate_max_period
+from ..freqmap import estimate_periods
 
 __all__ = ['worker', 'parser_arguments']
 
@@ -68,20 +67,24 @@ def worker(task):
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
+    norbits = len(w0)
     this_w0 = w0[index].copy()
-    shape = (len(w0),2)
-    all_kld = np.memmap(filename, mode='r+', shape=shape, dtype='float64')
+    all_kld = np.memmap(filename, mode='r+',
+                        shape=(norbits,), dtype=get_dtype(nkld))
 
     # short-circuit if this orbit is already done
-    if all_kld[index,1] == 1.:
+    if all_kld['status'][index] == 1:
         return
 
-    # TODO: handle == 0 (not attempted) different from >= 2 (previous failure)
+    # TODO: handle status == 0 (not attempted) different from
+    #       status >= 2 (previous failure)
 
     # identify first pericenter and estimate dt, nsteps needed for 500 periods
     t,w = potential.integrate_orbit(this_w0, dt=1., nsteps=20000)
     R = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
-    T_max,T_min = estimate_max_period(t,w,min=True)
+
+    # TODO: fix this
+    T_max,T_min = estimate_periods(t,w)
     peri_ix = argrelmin(R, mode='wrap')[0]
 
     # timestep from number of steps per period
@@ -149,22 +152,25 @@ def worker(task):
     E_end = float(np.squeeze(potential.total_energy(w_i[0,:3], w_i[0,3:])))
     dE = np.log10(E_end - E0)
     if dE > ETOL:
-        all_kld[index,0] = np.nan
-        all_kld[index,1] = 2.  # failed due to energy conservation
+        all_kld['status'][index] = 2  # failed due to energy conservation
         all_kld.flush()
         return
 
-    # fit a power law to the KLDs
-    model = lambda p,t: p[0] * t**p[1]
-    errfunc = lambda p,t,y: (y - model(p,t))
-    p_opt,ier = so.leastsq(errfunc, x0=(0.01,-0.15), args=(KLD_times,KLD))
-    if ier not in [1,2,3,4]:
-        all_kld[index,0] = np.nan
-        all_kld[index,1] = 3.  # failed due to leastsq
-
-    # power-law index
-    k = p_opt[1]
-
-    all_kld[index,0] = k
+    all_kld['kld'][index] = KLD
+    all_kld['kld_t'][index] = KLD_times
+    all_kld['dt'][index] = dt
+    all_kld['nsteps'][index] = nsteps
+    all_kld['dE_max'][index] = dE
+    all_kld['status'][index] = 1  # success!
     all_kld.flush()
 
+    # # fit a power law to the KLDs
+    # model = lambda p,t: p[0] * t**p[1]
+    # errfunc = lambda p,t,y: (y - model(p,t))
+    # p_opt,ier = so.leastsq(errfunc, x0=(0.01,-0.15), args=(KLD_times,KLD))
+    # if ier not in [1,2,3,4]:
+    #     all_kld[index,0] = np.nan
+    #     all_kld[index,1] = 3.  # failed due to leastsq
+
+    # # power-law index
+    # k = p_opt[1]
