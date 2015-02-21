@@ -25,6 +25,8 @@ parser_arguments = list()
 # list of [args, kwargs]
 parser_arguments.append([('--nperiods',), dict(dest='nperiods', default=250, type=int,
                                                help='Number of periods to integrate for.')])
+parser_arguments.append([('--nsteps_per_period',), dict(dest='nsteps_per_period', default=250, type=int,
+                                                        help='Number of steps to take per min. period.')])
 
 def worker(task):
 
@@ -40,7 +42,7 @@ def worker(task):
 
     # if these aren't set, assume defaults
     nperiods = task['nperiods']
-    nsteps_per_period = task.get('nsteps_per_period',500)
+    nsteps_per_period = task['nsteps_per_period']
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
