@@ -17,7 +17,7 @@ from gary.util import get_pool
 
 __all__ = ['main', 'get_parser']
 
-def main(worker, path, cache_shape, cache_filename, mpi=False, overwrite=False, seed=42, **kwargs):
+def main(worker, path, cache_filename, cache_dtype, mpi=False, overwrite=False, seed=42, **kwargs):
     np.random.seed(seed)
 
     # get a pool object for multiprocessing / MPI
@@ -43,10 +43,9 @@ def main(worker, path, cache_shape, cache_filename, mpi=False, overwrite=False, 
     if os.path.exists(cache_path) and overwrite:
         os.remove(cache_path)
 
-    shape = (norbits,) + cache_shape
     if not os.path.exists(cache_path):
         # make sure memmap file exists
-        d = np.memmap(cache_path, mode='w+', dtype='float64', shape=shape)
+        d = np.memmap(cache_path, mode='w+', dtype=cache_dtype, shape=(norbits,))
 
     tasks = [dict(index=i, w0_filename=w0_filename,
                   cache_filename=cache_path,
@@ -68,6 +67,8 @@ def get_parser():
                         default=False, help="Be quiet! (default = False)")
     parser.add_argument("-o", "--overwrite", action="store_true", dest="overwrite",
                         default=False, help="DESTROY. DESTROY. (default = False)")
+    parser.add_argument("--seed", dest="seed", default=42, type=int,
+                        help="Seed for random number generators.")
 
     parser.add_argument("--mpi", dest="mpi", default=False, action="store_true",
                         help="Use an MPI pool.")
