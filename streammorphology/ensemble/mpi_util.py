@@ -12,7 +12,6 @@ from astropy import log as logger
 import gary.potential as gp
 import gary.integrate as gi
 import numpy as np
-import scipy.optimize as so
 from scipy.signal import argrelmin
 from sklearn.neighbors import KernelDensity
 
@@ -148,7 +147,7 @@ def worker(task):
     KLD = np.array(KLD)
     KLD_times = np.array(KLD_times)
 
-    # TODO: compare final E vs. initial E against ETOL
+    # compare final E vs. initial E against ETOL
     E_end = float(np.squeeze(potential.total_energy(w_i[0,:3], w_i[0,3:])))
     dE = np.log10(E_end - E0)
     if dE > ETOL:
