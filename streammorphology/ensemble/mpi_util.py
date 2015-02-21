@@ -19,7 +19,7 @@ from sklearn.neighbors import KernelDensity
 from .. import ETOL
 from .mmap_util import get_dtype
 from .core import create_ball
-from ..freqmap import estimate_periods
+from ..freqmap import estimate_dt_nsteps
 
 __all__ = ['worker', 'parser_arguments']
 
@@ -78,17 +78,19 @@ def worker(task):
     # TODO: handle status == 0 (not attempted) different from
     #       status >= 2 (previous failure)
 
+    try:
+        dt, nsteps = estimate_dt_nsteps(potential, w0[index].copy(),
+                                        nperiods, nsteps_per_period)
+    except RuntimeError:
+        logger.warning("Failed to integrate orbit when estimating dt,nsteps")
+        all_kld['status'][index] = 3  # failed due to integration
+        all_kld.flush()
+        return
+
     # identify first pericenter and estimate dt, nsteps needed for 500 periods
-    t,w = potential.integrate_orbit(this_w0, dt=1., nsteps=20000)
+    t,w = potential.integrate_orbit(this_w0, dt=dt, nsteps=2*nsteps_per_period)
     R = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
-
-    # TODO: fix this
-    T_max,T_min = estimate_periods(t,w)
     peri_ix = argrelmin(R, mode='wrap')[0]
-
-    # timestep from number of steps per period
-    dt = float(T_min) / nsteps_per_period
-    nsteps = int(round(nperiods * nsteps_per_period, -4))
 
     # update w0 so ensemble starts at pericenter
     this_w0 = w[peri_ix[0],0]
