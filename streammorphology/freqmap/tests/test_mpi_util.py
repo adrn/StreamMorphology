@@ -8,9 +8,7 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 import os
 
 # Third-party
-import astropy.units as u
 import numpy as np
-import matplotlib.pyplot as plt
 
 # Project
 import gary.potential as gp
