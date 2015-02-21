@@ -70,6 +70,7 @@ def worker(task):
 
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
+    # TODO: do I instead want to refine the internal number of steps?
     maxiter = 3  # maximum number of times to refine integration step
     for i in range(maxiter+1):
         # integrate orbit

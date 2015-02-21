@@ -15,7 +15,7 @@ from astropy import log as logger
 
 # project
 from streammorphology.util import main, get_parser
-from streammorphology.ensemble import worker, parser_arguments, memmap_shape
+from streammorphology.ensemble import worker, parser_arguments, dtype
 
 parser = get_parser()
 for args,kwargs in parser_arguments:
@@ -31,12 +31,10 @@ elif args.quiet:
 else:
     logger.setLevel(logging.INFO)
 
-try:
-    main(worker=worker, path=args.path,
-         cache_shape=memmap_shape, cache_filename='allkld.dat',
-         mpi=args.mpi, overwrite=args.overwrite, seed=args.seed,
-         **kwargs)
-except:
-    sys.exit(1)
+dargs = dict(args._get_kwargs())
+main(worker=worker, path=dargs.pop('path'),
+     cache_filename='allkld.dat', cache_dtype=dtype,
+     mpi=dargs.pop('mpi'), overwrite=dargs.pop('overwrite'), seed=dargs.pop('seed'),
+     **dargs)
 
 sys.exit(0)
