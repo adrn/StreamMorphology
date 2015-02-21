@@ -25,7 +25,7 @@ def worker(task):
     # unpack input argument dictionary
     index = task['index']
     w0_filename = task['w0_filename']
-    allfreqs_filename = task['allfreqs_filename']
+    allfreqs_filename = task['cache_filename']
     potential = gp.load(task['potential_filename'])
 
     # if these aren't set, we'll need to estimate them
