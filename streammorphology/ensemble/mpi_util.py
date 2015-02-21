@@ -114,7 +114,7 @@ def worker(task):
     w_i = ball_w0
 
     # start after one period
-    KLD_ixes = np.linspace(nsteps_per_period, nsteps, nkld).astype(int)
+    KLD_ixes = np.linspace(nsteps_per_period, nsteps-1, nkld).astype(int)
     KLD = []
     KLD_times = []
     timer0 = pytime.time()
