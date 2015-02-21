@@ -9,22 +9,31 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 # Third-party
 import numpy as np
 from astropy import log as logger
-
-# Project
 import gary.dynamics as gd
 import gary.integrate as gi
 import gary.potential as gp
-from .core import estimate_dt_nsteps
 
-__all__ = ['worker']
+# project
+from .. import ETOL
+from ..freqmap import estimate_dt_nsteps
+from .mmap_util import dtype
 
-ETOL = 1E-7
+__all__ = ['worker', 'parser_arguments']
+
+parser_arguments = list()
+
+# list of [args, kwargs]
+parser_arguments.append([('--nperiods',), dict(dest='nperiods', default=250, type=int,
+                                               help='Number of periods to integrate for.')])
+parser_arguments.append([('--nsteps_per_period',), dict(dest='nsteps_per_period', default=250, type=int,
+                                                        help='Number of steps to take per min. period.')])
+
 def worker(task):
 
     # unpack input argument dictionary
     index = task['index']
     w0_filename = task['w0_filename']
-    alllyap_filename = task['alllyap_filename']
+    alllyap_filename = task['cache_filename']
     potential = gp.load(task['potential_filename'])
 
     # if these aren't set, we'll need to estimate them
@@ -32,16 +41,17 @@ def worker(task):
     nsteps = task.get('nsteps',None)
 
     # if these aren't set, assume defaults
-    nperiods = task.get('nperiods',250)
-    nsteps_per_period = task.get('nsteps_per_period',250)
+    nperiods = task['nperiods']
+    nsteps_per_period = task['nsteps_per_period']
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
-    alllyap_shape = (len(w0),2)
-    alllyap = np.memmap(alllyap_filename, mode='r', shape=alllyap_shape, dtype='float64')
+    norbits = len(w0)
+    all_lyap = np.memmap(alllyap_filename, mode='r',
+                         shape=(norbits,), dtype=dtype)
 
     # short-circuit if this orbit is already done
-    if alllyap[index,1] == 1.:
+    if all_lyap['status'][index] == 1:
         return
 
     # automatically estimate dt, nsteps
@@ -51,8 +61,9 @@ def worker(task):
                                             nperiods, nsteps_per_period)
         except RuntimeError:
             logger.warning("Failed to integrate orbit when estimating dt,nsteps")
-            alllyap = np.memmap(alllyap_filename, mode='r+', shape=alllyap_shape, dtype='float64')
-            alllyap[index] = np.array([np.nan, 0.])
+            alllyap = np.memmap(alllyap_filename, mode='r+',
+                                shape=(norbits,), dtype=dtype)
+            alllyap['status'][index] = 2
             alllyap.flush()
             return
 
@@ -97,13 +108,16 @@ def worker(task):
                      .format(index, dt, nsteps, dEmax))
 
     if dEmax > ETOL:
-        alllyap = np.memmap(alllyap_filename, mode='r+', shape=alllyap_shape, dtype='float64')
-        alllyap[index] = np.array([np.nan, 0.])
+        alllyap = np.memmap(alllyap_filename, mode='r+',
+                            shape=(norbits,), dtype=dtype)
+        alllyap['status'][index] = 2
         alllyap.flush()
         return
 
-    alllyap = np.memmap(alllyap_filename, mode='r+', shape=alllyap_shape, dtype='float64')
-    alllyap[index] = np.array([LEs[-1].max(), 1.])
+    alllyap = np.memmap(alllyap_filename, mode='r+',
+                        shape=(norbits,), dtype=dtype)
+    alllyap['lyap_exp'][index] = LEs[-1].max()
+    alllyap['status'][index] = 1
     alllyap.flush()
 
     return
