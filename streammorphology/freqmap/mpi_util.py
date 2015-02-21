@@ -18,7 +18,13 @@ from .mmap_util import dtype
 from .core import estimate_dt_nsteps
 from .. import ETOL
 
-__all__ = ['worker']
+__all__ = ['worker', 'parser_arguments']
+
+parser_arguments = list()
+
+# list of [args, kwargs]
+parser_arguments.append([('--nperiods',), dict(dest='nperiods', default=250, type=int,
+                                               help='Number of periods to integrate for.')])
 
 def worker(task):
 
@@ -33,7 +39,7 @@ def worker(task):
     nsteps = task.get('nsteps',None)
 
     # if these aren't set, assume defaults
-    nperiods = task.get('nperiods',200)
+    nperiods = task['nperiods']
     nsteps_per_period = task.get('nsteps_per_period',500)
 
     # read out just this initial condition

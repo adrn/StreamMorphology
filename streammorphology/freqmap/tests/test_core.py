@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import gary.dynamics as gd
 import gary.potential as gp
 from gary.units import galactic
-from ..core import ptp_periods, estimate_max_period, estimate_dt_nsteps
+from ..core import ptp_periods, estimate_periods, estimate_dt_nsteps
 
 plot_path = "output/tests/freqmap"
 if not os.path.exists(plot_path):
@@ -37,7 +37,7 @@ def test_ptp_periods():
     T_pred = ptp_periods(t, x)
     assert np.isnan(T_pred)
 
-def test_estimate_max_period():
+def test_estimate_periods():
     t = np.linspace(0.,10.,1000)
 
     # tube orbit
@@ -48,7 +48,7 @@ def test_estimate_max_period():
                                               z=0.1*np.sin(2*np.pi*t/(T/3.325)))
         w[:,:3] = cyl.represent_as(coord.CartesianRepresentation).xyz.T
 
-        T_est = estimate_max_period(t, w)
+        T_est = estimate_periods(t, w).max()
         np.testing.assert_allclose(T, T_est, rtol=1E-2)
 
     # mostly planar orbit with minor long-period z-axis oscillation
@@ -58,7 +58,7 @@ def test_estimate_max_period():
                                           phi=(2*np.pi*t/T)*u.rad,
                                           z=1E-6*np.sin(2*np.pi*t/(2*T)))
     w[:,:3] = cyl.represent_as(coord.CartesianRepresentation).xyz.T
-    T_est = estimate_max_period(t, w)
+    T_est = estimate_periods(t, w).max()
     np.testing.assert_allclose(T, T_est, rtol=1E-2)
 
     # box orbit
@@ -67,10 +67,11 @@ def test_estimate_max_period():
         w[:,1] = 0.8*np.cos(2*np.pi*t/T)
         w[:,2] = 0.1*np.sin(2*np.pi*t/(T/3.325))
 
-        T_est = estimate_max_period(t, w)
+        T_est = estimate_periods(t, w).max()
         np.testing.assert_allclose(T, T_est, rtol=1E-2)
 
 def test_estimate_dt_nsteps():
     potential = gp.IsochronePotential(m=1E11, b=2.5, units=galactic)
     w0 = np.array([10., 0., 0., 0., 0.12, 0.02])
-    dt,nsteps = estimate_dt_nsteps(potential, w0)
+    dt,nsteps = estimate_dt_nsteps(potential, w0, nperiods=250, nsteps_per_period=200)
+    print(dt, nsteps)

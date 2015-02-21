@@ -12,7 +12,7 @@ from scipy.signal import argrelmax, argrelmin
 import gary.dynamics as gd
 import gary.integrate as gi
 
-__all__ = ['ptp_periods', 'estimate_max_period', 'estimate_dt_nsteps']
+__all__ = ['ptp_periods', 'estimate_periods', 'estimate_dt_nsteps']
 
 def ptp_periods(t, *coords):
     """
@@ -64,11 +64,11 @@ def ptp_periods(t, *coords):
 
     return np.array(freqs)
 
-def estimate_max_period(t, w, min=False):
+def estimate_periods(t, w, min=False):
     """
-    Given an array of times and an orbit, estimate the longest period
-    in the orbit. We will then use this to figure out how long to
-    integrate for when frequency mapping.
+    Given an array of times and an orbit, estimate the periods of
+    present in the orbit. We will then use this to figure out how
+    long to integrate for when, e.g., frequency mapping.
 
     Parameters
     ----------
@@ -76,8 +76,11 @@ def estimate_max_period(t, w, min=False):
         Array of times.
     w : array_like
         Single orbit -- should have shape (len(t), 6)
-    min : bool (optional)
-        Also return min period.
+
+    Returns
+    -------
+    periods : :class:`numpy.ndarray`
+        The periods found from the time series.
 
     """
 
@@ -102,17 +105,12 @@ def estimate_max_period(t, w, min=False):
         T = ptp_periods(t, *w[:,:3].T)
 
     if np.any(np.isfinite(T)):
-        if min:
-            return T[np.isfinite(T)].max(), T[np.isfinite(T)].min()
-        else:
-            return T[np.isfinite(T)].max()
-    else:
-        if min:
-            return np.nan, np.nan
-        else:
-            return np.nan
+        return np.array(T[np.isfinite(T)])
 
-def estimate_dt_nsteps(potential, w0, nperiods=200, nsteps_per_period=200):
+    else:
+        return np.array([np.nan]*w.shape[-1])
+
+def estimate_dt_nsteps(potential, w0, nperiods, nsteps_per_period):
     """
     Estimate the timestep and number of steps to integrate for given a potential
     and set of initial conditions.
@@ -121,9 +119,9 @@ def estimate_dt_nsteps(potential, w0, nperiods=200, nsteps_per_period=200):
     ----------
     potential : :class:`~gary.potential.Potential`
     w0 : array_like
-    nperiods : int (optional)
+    nperiods : int
         Number of (max) periods to integrate.
-    nsteps_per_period : int (optional)
+    nsteps_per_period : int
         Number of steps to take per (max) orbital period.
 
     """
@@ -133,13 +131,11 @@ def estimate_dt_nsteps(potential, w0, nperiods=200, nsteps_per_period=200):
                                     Integrator=gi.DOPRI853Integrator)
 
     # estimate the maximum period
-    max_T = estimate_max_period(t, w)
+    T = estimate_periods(t, w)
 
     # timestep from number of steps per period
-    dt = float(max_T) / float(nsteps_per_period)
-
-    # integrate for nperiods times the max period
-    nsteps = int(round(nperiods * nsteps_per_period, -4))
+    dt = float(T.min()) / float(nsteps_per_period)
+    nsteps = int(round(nperiods * T.max() / dt, -4))
 
     if dt == 0.:
         raise ValueError("Timestep is zero!")
