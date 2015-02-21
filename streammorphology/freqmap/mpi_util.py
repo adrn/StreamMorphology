@@ -14,7 +14,7 @@ from astropy import log as logger
 import gary.dynamics as gd
 import gary.integrate as gi
 import gary.potential as gp
-from .mmap_util import colmap, mmap_shape
+from .mmap_util import dtype
 from .core import estimate_dt_nsteps
 from .. import ETOL
 
@@ -38,15 +38,13 @@ def worker(task):
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
-    allfreqs_shape = (len(w0),) + mmap_shape
-    allfreqs = np.memmap(allfreqs_filename, mode='r', shape=allfreqs_shape, dtype='float64')
+    norbits = len(w0)
+    allfreqs = np.memmap(allfreqs_filename, mode='r',
+                         shape=(norbits,), dtype=dtype)
 
     # short-circuit if this orbit is already done
-    if allfreqs[index,0,colmap['success']] == 1.:
+    if allfreqs['success'][index]:
         return
-
-    # temporary array for results
-    tmp = np.zeros(mmap_shape)
 
     # automatically estimate dt, nsteps
     if dt is None or nsteps is None:
@@ -55,9 +53,10 @@ def worker(task):
                                             nperiods, nsteps_per_period)
         except RuntimeError:
             logger.warning("Failed to integrate orbit when estimating dt,nsteps")
-            allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
-            tmp[:,:] = np.nan
-            allfreqs[index] = tmp
+            allfreqs = np.memmap(allfreqs_filename, mode='r+',
+                                 shape=(norbits,), dtype=dtype)
+            allfreqs['freqs'][index] = np.nan
+            allfreqs['success'][index] = False
             allfreqs.flush()
             return
 
@@ -95,9 +94,10 @@ def worker(task):
                      .format(index, dt, nsteps, dEmax))
 
     if dEmax > ETOL:
-        allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
-        tmp[:,:] = np.nan
-        allfreqs[index] = tmp
+        allfreqs = np.memmap(allfreqs_filename, mode='r+',
+                             shape=(norbits,), dtype=dtype)
+        allfreqs['freqs'][index] = np.nan
+        allfreqs['success'][index] = False
         allfreqs.flush()
         return
 
@@ -108,16 +108,14 @@ def worker(task):
     max_amp_freq_ix = d1['|A|'][ixs1].argmax()
 
     # save to output array
-    tmp[0,:3] = freqs1
-    tmp[1,:3] = freqs2
-
-    tmp[:,colmap['dE_max']] = dEmax
-    tmp[:,colmap['is_tube']] = float(is_tube)
-    tmp[:,colmap['dt']] = float(dt)
-    tmp[:,colmap['nsteps']] = nsteps
-    tmp[:,colmap['success']] = 1.
-    tmp[:,colmap['max_amp_freq_ix']] = max_amp_freq_ix
-
-    allfreqs = np.memmap(allfreqs_filename, mode='r+', shape=allfreqs_shape, dtype='float64')
-    allfreqs[index] = tmp
+    allfreqs = np.memmap(allfreqs_filename, mode='r+',
+                         shape=(norbits,), dtype=dtype)
+    allfreqs['freqs'][index][0] = freqs1
+    allfreqs['freqs'][index][1] = freqs1
+    allfreqs['dE_max'][index] = dEmax
+    allfreqs['is_tube'][index] = float(is_tube)
+    allfreqs['dt'][index] = float(dt)
+    allfreqs['nsteps'][index] = nsteps
+    allfreqs['max_amp_freq_ix'][index] = max_amp_freq_ix
+    allfreqs['success'][index] = True
     allfreqs.flush()
