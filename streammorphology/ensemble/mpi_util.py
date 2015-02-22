@@ -141,7 +141,7 @@ def worker(task):
 
             p_densy = predicted_density(w_i[:,:3])
             D = np.log(kde_densy / p_densy)
-            KLD.append(D[np.isfinite(D)].sum())
+            KLD.append(D[np.isfinite(D)].sum() / nensemble)
             KLD_times.append(time)
 
             timer0 = pytime.time()
