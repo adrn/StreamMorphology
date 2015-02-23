@@ -113,8 +113,10 @@ def worker(task):
     time = 0.
     w_i = ball_w0
 
-    # start after one period
-    KLD_ixes = np.linspace(nsteps_per_period, nsteps-1, nkld).astype(int)
+    # start after one period - logspace the bins
+    # KLD_ixes = np.linspace(nsteps_per_period, nsteps-1, nkld).astype(int)
+    KLD_ixes = np.logspace(np.log10(nsteps_per_period),
+                           np.log10(nsteps-1), nkld).astype(int)
     KLD = []
     KLD_times = []
     timer0 = pytime.time()
@@ -151,7 +153,7 @@ def worker(task):
 
     # compare final E vs. initial E against ETOL
     E_end = float(np.squeeze(potential.total_energy(w_i[0,:3], w_i[0,3:])))
-    dE = np.log10(E_end - E0)
+    dE = np.log10(np.abs(E_end - E0))
     if dE > ETOL:
         all_kld['status'][index] = 2  # failed due to energy conservation
         all_kld.flush()
