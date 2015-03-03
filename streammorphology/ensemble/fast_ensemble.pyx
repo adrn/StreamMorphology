@@ -28,7 +28,6 @@ cdef extern from "dop853.h":
     ctypedef void (*GradFn)(double *pars, double *q, double *grad) nogil
     ctypedef void (*SolTrait)(long nr, double xold, double x, double* y, unsigned n, int* irtrn)
     ctypedef void (*FcnEqDiff)(unsigned n, double x, double *y, double *f, GradFn gradfunc, double *gpars, unsigned norbits) nogil
-    double contd8 (unsigned ii, double x)
 
     # See dop853.h for full description of all input parameters
     int dop853 (unsigned n, FcnEqDiff fcn, GradFn gradfunc, double *gpars, unsigned norbits,
@@ -50,7 +49,7 @@ cpdef ensemble_integrate(_CPotential cpotential, double[:,::1] w0,
                          double dt0, int nsteps, double t0):
     cdef:
         int i, j, k
-        int res, iout
+        int res
         unsigned norbits = w0.shape[0]
         unsigned ndim = w0.shape[1]
         double[::1] t = np.empty(nsteps)
@@ -73,7 +72,7 @@ cpdef ensemble_integrate(_CPotential cpotential, double[:,::1] w0,
     for j in range(1,nsteps,1):
         res = dop853(ndim*norbits, <FcnEqDiff> Fwrapper,
                      <GradFn>cpotential.c_gradient, &(cpotential._parameters[0]), norbits,
-                     t[j-1], &w[0], t[j], &rtol, &atol, 0, NULL, iout,
+                     t[j-1], &w[0], t[j], &rtol, &atol, 0, NULL, 0,
                      NULL, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, dt0, 0, 0, 1, 0, NULL, 0);
 
         if res == -1:
@@ -85,4 +84,4 @@ cpdef ensemble_integrate(_CPotential cpotential, double[:,::1] w0,
         elif res == -4:
             raise RuntimeError("The problem is probably stff (interrupted).")
 
-    return np.asarray(w)
+    return np.asarray(w).reshape(norbits, ndim)

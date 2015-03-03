@@ -26,7 +26,8 @@ gary_incl_path = os.path.join(gary_base_path, "integrate", "dopri")
 extensions = []
 
 ensemble = Extension("streammorphology.ensemble.*",
-                     ["streammorphology/ensemble/*.pyx"],
+                     ["streammorphology/ensemble/*.pyx",
+                      os.path.join(gary_incl_path,"dop853.c")],
                      include_dirs=[numpy_incl_path,
                                    gary_incl_path])
 extensions.append(ensemble)
