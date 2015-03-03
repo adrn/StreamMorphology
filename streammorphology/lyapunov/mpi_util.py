@@ -69,19 +69,20 @@ def worker(task):
 
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
-    def F_max(t,w):
-        x,y,z,px,py,pz = w.T
-        term1 = np.array([px, py, pz]).T
-        term2 = potential.acceleration(w[...,:3])
-        return np.hstack((term1,term2))
-    integrator = gi.DOPRI853Integrator(F_max)
+    # def F_max(t,w):
+    #     x,y,z,px,py,pz = w.T
+    #     term1 = np.array([px, py, pz]).T
+    #     term2 = potential.acceleration(w[...,:3])
+    #     return np.hstack((term1,term2))
+    # integrator = gi.DOPRI853Integrator(F_max)
 
     maxiter = 3  # maximum number of times to refine integration step
     for i in range(maxiter+1):
         # integrate orbit
         logger.debug("Iteration {} -- integrating orbit...".format(i+1))
         try:
-            lyap = gd.lyapunov_max(w0[index].copy(), integrator, dt=dt, nsteps=nsteps)
+            # lyap = gd.lyapunov_max(w0[index].copy(), integrator, dt=dt, nsteps=nsteps)
+            lyap = gd.fast_lyapunov_max(w0[index].copy(), potential, dt=dt, nsteps=nsteps)
 
         except RuntimeError:  # ODE integration failed
             dt /= 2.
@@ -116,7 +117,7 @@ def worker(task):
 
     alllyap = np.memmap(alllyap_filename, mode='r+',
                         shape=(norbits,), dtype=dtype)
-    alllyap['lyap_exp'][index] = LEs[-1].max()
+    alllyap['lyap_exp'][index] = np.mean(LEs[-100:])
     alllyap['status'][index] = 1
     alllyap.flush()
 
