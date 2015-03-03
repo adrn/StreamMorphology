@@ -10,7 +10,6 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 import numpy as np
 from astropy import log as logger
 import gary.dynamics as gd
-import gary.integrate as gi
 import gary.potential as gp
 
 # project
