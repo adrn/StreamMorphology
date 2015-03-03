@@ -23,7 +23,7 @@ __all__ = ['worker', 'parser_arguments']
 parser_arguments = list()
 
 # list of [args, kwargs]
-parser_arguments.append([('--nperiods',), dict(dest='nperiods', default=250, type=int,
+parser_arguments.append([('--nperiods',), dict(dest='nperiods', default=1000, type=int,
                                                help='Number of periods to integrate for.')])
 parser_arguments.append([('--nsteps_per_period',), dict(dest='nsteps_per_period', default=250, type=int,
                                                         help='Number of steps to take per min. period.')])
