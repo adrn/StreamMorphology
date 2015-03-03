@@ -10,15 +10,12 @@ import time as pytime
 # Third-party
 from astropy import log as logger
 import gary.potential as gp
-import gary.integrate as gi
 import numpy as np
-from scipy.signal import argrelmin
-from sklearn.neighbors import KernelDensity
 
 # Project
 from .. import ETOL
 from .mmap_util import get_dtype
-from .core import create_ball
+from .core import create_ball, peri_to_apo, do_the_kld
 from ..freqmap import estimate_dt_nsteps
 
 __all__ = ['worker', 'parser_arguments']
@@ -30,6 +27,8 @@ parser_arguments.append([('--nensemble',), dict(dest='nensemble', required=True,
                                                 type=int, help='Number of orbits per ensemble.')])
 parser_arguments.append([('--mscale',), dict(dest='mscale', default=1E4,
                                              type=float, help='Mass scale of ensemble.')])
+parser_arguments.append([('--evln-time',), dict(dest='evolution_time', required=True,
+                                                type=float, help='Total time to evolve the ensemble.')])
 parser_arguments.append([('--bandwidth',), dict(dest='kde_bandwidth', default=10.,
                                                 type=float, help='KDE kernel bandwidth.')])
 parser_arguments.append([('--nkld',), dict(dest='nkld', default=256, type=int,
@@ -56,13 +55,13 @@ def worker(task):
     # number of times to compute the KLD
     nkld = task['nkld']
 
+    # total time to evolve the ensembles
+    evolution_time = task['evolution_time']
+
     # if these aren't set, we'll need to estimate them
     dt = task.get('dt',None)
     nsteps = task.get('nsteps',None)
     nsteps_per_period = task.get('nsteps_per_period', 128)
-
-    # if these aren't set, assume defaults
-    nperiods = task['nperiods']
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
@@ -79,91 +78,41 @@ def worker(task):
     #       status >= 2 (previous failure)
 
     try:
-        dt, nsteps = estimate_dt_nsteps(potential, w0[index].copy(),
-                                        nperiods, nsteps_per_period)
+        this_w0, dt, nsteps, apo_ixes = peri_to_apo(w0[index].copy(), potential,
+                                                    evolution_time)
     except RuntimeError:
         logger.warning("Failed to integrate orbit when estimating dt,nsteps")
         all_kld['status'][index] = 3  # failed due to integration
         all_kld.flush()
         return
 
-    # identify first pericenter and estimate dt, nsteps needed for 500 periods
-    t,w = potential.integrate_orbit(this_w0, dt=dt, nsteps=2*nsteps_per_period)
-    R = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
-    peri_ix = argrelmin(R, mode='wrap')[0]
-
-    # update w0 so ensemble starts at pericenter
-    this_w0 = w[peri_ix[0],0]
-
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
     ball_w0 = create_ball(this_w0, potential, N=nensemble, m_scale=mscale)
     logger.debug("Generated ensemble of {0} particles".format(nensemble))
 
-    # manually integrate and don't keep all timesteps so we don't use an
-    #   infinite amount of energy
-    acc = lambda t,w: np.hstack((w[...,3:],potential.acceleration(w[...,:3])))
-    integrator = gi.DOPRI853Integrator(acc, nsteps=4096, atol=1E-8)
+    kld_ts, klds = do_the_kld(ball_w0, potential, apo_ixes, dt=dt, kde_bandwidth=bw)
 
-    # define a function to compute expected density for uniform on energy hypersurface
-    E0 = float(np.squeeze(potential.total_energy(this_w0[:3],this_w0[3:])))
-    predicted_density = lambda x: np.sqrt(E0 - potential(x))
+    KLD = np.zeros(256)
+    KLD[:len(klds)] = np.array(klds)
+    KLD[len(klds):] = np.nan
 
-    # integration and KDE
-    time = 0.
-    w_i = ball_w0
+    KLD_times = np.zeros(256)
+    KLD_times[:len(kld_ts)] = np.array(kld_ts)
 
-    # start after one period - logspace the bins
-    # KLD_ixes = np.linspace(nsteps_per_period, nsteps-1, nkld).astype(int)
-    KLD_ixes = np.logspace(np.log10(nsteps_per_period),
-                           np.log10(nsteps-1), nkld).astype(int)
-    KLD = []
-    KLD_times = []
-    timer0 = pytime.time()
-    for ii in range(nsteps):
-        successful = False
-        jj = 0
-        while not successful and jj < 10:
-            try:
-                t,w_ip1 = integrator.run(w_i, t1=time, dt=dt, nsteps=1)
-                successful = True
-                break
-            except RuntimeError:
-                integrator._ode_kwargs['nsteps'] *= 2
-            jj += 1
-
-        w_i = w_ip1[-1]
-        time += dt
-
-        if ii in KLD_ixes:
-            logger.debug("Computing KLD at index {0} ({1:.2f} seconds)".format(ii,pytime.time()-timer0))
-            kde = KernelDensity(kernel='epanechnikov', bandwidth=bw)
-            kde.fit(w_i[:,:3])
-            kde_densy = np.exp(kde.score_samples(w_i[:,:3]))
-
-            p_densy = predicted_density(w_i[:,:3])
-            D = np.log(kde_densy / p_densy)
-            KLD.append(D[np.isfinite(D)].sum() / nensemble)
-            KLD_times.append(time)
-
-            timer0 = pytime.time()
-
-    KLD = np.array(KLD)
-    KLD_times = np.array(KLD_times)
-
-    # compare final E vs. initial E against ETOL
-    E_end = float(np.squeeze(potential.total_energy(w_i[0,:3], w_i[0,3:])))
-    dE = np.log10(np.abs(E_end - E0))
-    if dE > ETOL:
-        all_kld['status'][index] = 2  # failed due to energy conservation
-        all_kld.flush()
-        return
+    # TODO: compare final E vs. initial E against ETOL?
+    # E_end = float(np.squeeze(potential.total_energy(w_i[0,:3], w_i[0,3:])))
+    # dE = np.log10(np.abs(E_end - E0))
+    # if dE > ETOL:
+    #     all_kld['status'][index] = 2  # failed due to energy conservation
+    #     all_kld.flush()
+    #     return
 
     all_kld['kld'][index] = KLD
     all_kld['kld_t'][index] = KLD_times
     all_kld['dt'][index] = dt
     all_kld['nsteps'][index] = nsteps
-    all_kld['dE_max'][index] = dE
+    all_kld['dE_max'][index] = 0.  # TODO:
     all_kld['status'][index] = 1  # success!
     all_kld.flush()
 

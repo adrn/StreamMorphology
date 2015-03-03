@@ -10,6 +10,9 @@ from astropy.coordinates.angles import rotation_matrix
 import gary.integrate as gi
 import numpy as np
 from scipy.signal import argrelmax, argrelmin
+from sklearn.neighbors import KernelDensity
+
+from .fast_ensemble import ensemble_integrate
 
 __all__ = ['create_ball', 'peri_to_apo', 'align_ensemble']
 
@@ -38,14 +41,12 @@ def peri_to_apo(w0, potential, evolution_time, dt=1.):
     apos = argrelmax(r)[0]
     pers = argrelmin(r)[0]
 
-    # t1 = t[pers[0]]
-    t1 = t[apos[0]]
+    t1 = t[pers[0]]
     t2 = t[apos]
     t2 = t[apos[np.abs((t2-t1) - evolution_time).argmin()]]
 
     nsteps = int((t2-t1) / dt)
-    # w0 = w[pers[0], 0]
-    w0 = w[apos[0], 0]
+    w0 = w[pers[0], 0]
 
     t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps,
                                     Integrator=gi.DOPRI853Integrator)
@@ -85,3 +86,35 @@ def align_ensemble(ws):
     new_ws = np.array(R.dot(ws[:,:3].T).T)
 
     return new_ws
+
+def do_the_kld(ball_w0, potential, apo_ixes, dt=1., kde_bandwidth=10.):
+    ww = np.ascontiguousarray(ball_w0.copy())
+    nensemble = ball_w0.shape[0]
+
+    # energy of parent orbit
+    E0 = float(np.squeeze(potential.total_energy(ww[0,:3],ww[0,3:])))
+    predicted_density = lambda x, E0: np.sqrt(E0 - potential(x))
+
+    klds = []
+    ts = []
+    apo_ixes = np.append([0], apo_ixes)
+    t = 0.
+    for i,left_step,right_step in zip(range(len(apo_ixes)-1), apo_ixes[:-1], apo_ixes[1:]):
+        dstep = right_step - left_step
+        www = ensemble_integrate(potential.c_instance, ww, dt, dstep, 0.)
+
+        t += dt*dstep
+        ts.append(t)
+
+        kde = KernelDensity(kernel='epanechnikov', bandwidth=kde_bandwidth)
+        kde.fit(www[:,:3])
+        kde_densy = np.exp(kde.score_samples(www[:,:3]))
+
+        p_densy = predicted_density(www[:,:3], E0)
+        D = np.log(kde_densy / p_densy)
+        KLD = D[np.isfinite(D)].sum() / float(nensemble)
+        klds.append(KLD)
+
+        ww = www.copy()
+
+    return ts, klds
