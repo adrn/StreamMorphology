@@ -31,7 +31,7 @@ C=======================================================================
      &         tfac2,c,vh2,tend,
      &         ml,rl,Gmh,rh,vu,tub
 C       Potential parametrs
-        REAL*8 myn_a,myn_b,myn_M,hqs_c,hqs_M,nfw_rs,nfw_vh,
+        REAL*8 myn_a,myn_b,myn_M,hqs_c,hqs_M,nfw_rs,nfw_vc,
      &         nfw_a,nfw_b,nfw_c,nfw_phi,nfw_theta,nfw_psi
 
 	    REAL cputime0,cputime1,cputime,tick
@@ -55,7 +55,7 @@ C       Potential parametrs
         COMMON/orbcom/xframe,yframe,zframe,vxframe,vyframe,vzframe,
      &                strength,ru,mu,c,vh2
         COMMON/lumpcom/ml,rl,GMh,rh,vu
-        COMMON/potential/myn_a,myn_b,myn_M,hqs_c,hqs_M,nfw_rs,nfw_vh,
+        COMMON/potential/myn_a,myn_b,myn_M,hqs_c,hqs_M,nfw_rs,nfw_vc,
      &                   nfw_a,nfw_b,nfw_c,nfw_phi,nfw_theta,nfw_psi
 
 C=======================================================================

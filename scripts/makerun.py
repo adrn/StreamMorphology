@@ -59,11 +59,11 @@ base_SCFPOT = """(comment) Miyamoto-Nagai disk parameters
 0.3             c [kpc]
 0            mass scale [Msun]
 (comment) Triaxial NFW halo parameters
-30.             rs (scale radius) [kpc]
-532.24177023   vh (scale velocity) [km/s]
-1.             a (major axis)
-0.8              b (intermediate axis)
-0.6             c (minor axis)
+20.      rs (scale radius) [kpc]
+180.     vc (scale velocity) [km/s]
+1.       a (major axis)
+0.8      b (intermediate axis)
+0.6      c (minor axis)
 0        phi (use for rotating halo) [radian]
 0        theta (use for rotating halo) [radian]
 0        psi (use for rotating halo) [radian]
@@ -74,7 +74,7 @@ base_submit = """#!/bin/sh
 # Directives
 #PBS -N scf_{name}
 #PBS -W group_list=yetiastro
-#PBS -l nodes=1:ppn=1,walltime=8:00:00,mem=8gb
+#PBS -l nodes=1:ppn=1,walltime=1:00:00,mem=4gb
 #PBS -M amp2217@columbia.edu
 #PBS -m abe
 #PBS -V

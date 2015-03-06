@@ -39,7 +39,7 @@ C     --------------------------------
       READ(upotpars,*) hqs_M
       READ(upotpars,'(a)') pcomment
       READ(upotpars,*) nfw_rs
-      READ(upotpars,*) nfw_vh
+      READ(upotpars,*) nfw_vc
       READ(upotpars,*) nfw_a
       READ(upotpars,*) nfw_b
       READ(upotpars,*) nfw_c
@@ -68,10 +68,12 @@ C   -------------------------------
       REAL*8 r2,z2,rad,tsrad,sqz2b2,tdr,
      &         tdz,phim,phis,phih,
      &         tu,gee,msun,cmpkpc,secperyr,
-     &         a,b,hs,vcirc2,GMs,GM,
+     &         a,b,hs,vcirc2,GMs,GM,nfw_vh,
      &         mvir,rvir,cee,rs,mhalo,phi0,mr,p,
+     &         coa,boa,cob,eb2,ec2,
      &         yor2,zor2,axh,ayh,azh,
-     &         xx,yy,zz
+     &         xx,yy,zz,
+     &         tmp
 
       PARAMETER(gee=6.673840e-8,
      &          msun=1.9890999999999997e33,
@@ -80,7 +82,7 @@ C   -------------------------------
 
       LOGICAL firstc
       DATA firstc/.TRUE./
-      SAVE firstc,vcirc2,a,b,GM,GMs,hs,tu,rs,mhalo,phi0
+      SAVE firstc,vcirc2,a,b,GM,GMs,hs,tu,rs,mhalo,phi0,eb2,ec2
 
 C -----------------------------------------------------------------------
 C       Three Component Galaxy model:
@@ -125,7 +127,15 @@ C           Hernquist parameters
 
 C           NFW halo parameters
             rs = nfw_rs/ru
-            phi0 = nfw_vh**2/vu/vu
+            boa = nfw_b/nfw_a
+            coa = nfw_c/nfw_a
+            eb2 = 1.0d0 - boa*boa
+            ec2 = 1.0d0 - coa*coa
+            tmp = DLOG(2.0d0) - 0.5 + (DLOG(2.0d0)-0.75)*eb2 +
+     &            (DLOG(2.0d0)-0.75)*ec2
+            nfw_vh = nfw_vc / sqrt(tmp)
+            WRITE(6,*) "vh vc",tmp
+            phi0 = nfw_vh*nfw_vh/vu/vu
             mhalo = rs*phi0/G
 
       END IF
@@ -161,7 +171,7 @@ C     Compute potential, acceleration due to disk
       potext(i) = potext(i) + strength*phim
 
 C     Compute potential, acceleration due to halo
-      CALL accp_trix(i,phi0,rad,rs,xx,yy,zz,
+      CALL accp_trix(i,phi0,rad,rs,eb2,ec2,xx,yy,zz,
      &               phih,axh,ayh,azh)
 
       ax(i)=ax(i) + strength*axh
@@ -178,7 +188,7 @@ C     Compute potential, acceleration due to halo
 C***********************************************************************
 C
 C
-      SUBROUTINE accp_trix(k,phi0,r,r_h,xf,yf,zf,
+      SUBROUTINE accp_trix(k,phi0,r,r_h,eb2,ec2,xf,yf,zf,
      &                     phih,axh,ayh,azh)
 C
 C
@@ -194,25 +204,17 @@ C   -------------------------------
       REAL*8 phi,theta,psi
       REAL*8 eb2,ec2,r_h,phi0
       REAL*8 phih,p,r,yor2,zor2,axh,ayh,azh,ax_h,ay_h,az_h
-      REAL*8 coa,boa,cob
       REAL*8 R11,R12,R13,R21,R22,R23,R31,R32,R33
       REAL*8 x0,x1,x2,x4,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,
      &       x16,x17,x18,x19,x20,x21,x22
 
-      SAVE boa,coa,eb2,ec2,c2,
-     &     R11,R12,R13,R21,R22,R23,R31,R32,R33
+      SAVE R11,R12,R13,R21,R22,R23,R31,R32,R33
 
 C -----------------------------------------------------------------------
       IF(k.EQ.1)THEN
             phi = nfw_phi
             theta = nfw_theta
             psi = nfw_psi
-
-            boa = nfw_b/nfw_a
-            coa = nfw_c/nfw_a
-
-            eb2 = 1.0d0 - boa*boa
-            ec2 = 1.0d0 - coa*coa
 
             R11 = -sin(phi)*sin(psi)*cos(theta) + cos(phi)*cos(psi)
             R12 = sin(phi)*cos(psi) + sin(psi)*cos(phi)*cos(theta)
