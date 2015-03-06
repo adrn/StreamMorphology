@@ -19,7 +19,7 @@ date
 cd /vega/astro/users/amp2217/projects/morphology/simulations/runs/talk_sim
 make
 ./scf
-/vega/astro/users/amp2217/projects/gary/bin/moviesnap --path=/vega/astro/users/amp2217/projects/morphology/simulations/runs/talk_sim
+/vega/astro/users/amp2217/tmp/moviesnap --path=/vega/astro/users/amp2217/projects/morphology/simulations/runs/talk_sim
 
 date
 
