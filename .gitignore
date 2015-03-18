@@ -16,3 +16,4 @@ misc
 simulations/pal5
 simulations/old
 *.c
+*.ipynb
