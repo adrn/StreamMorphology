@@ -125,10 +125,6 @@ def worker(task):
     freqs2,d2,ixs2 = naff2.find_fundamental_frequencies(fs2, nintvec=8)
 
     max_amp_freq_ix = d1['|A|'][ixs1].argmax()
-    print("freqs1", freqs1)
-    print("freqs2", freqs2)
-    import sys
-    sys.exit(0)
 
     # save to output array
     allfreqs = np.memmap(allfreqs_filename, mode='r+',
