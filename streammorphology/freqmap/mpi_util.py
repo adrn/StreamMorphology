@@ -114,7 +114,7 @@ def worker(task):
         new_ws = gd.align_circulation_with_z(ws, circ)
         new_ws = gc.poincare_polar(new_ws)
         fs1 = [(new_ws[sl1,j] + 1j*new_ws[sl1,j+3]) for j in range(3)]
-        fs1 = [(new_ws[sl2,j] + 1j*new_ws[sl2,j+3]) for j in range(3)]
+        fs2 = [(new_ws[sl2,j] + 1j*new_ws[sl2,j+3]) for j in range(3)]
     else:  # box
         fs1 = [(ws[sl1,0,j] + 1j*ws[sl1,0,j+3]) for j in range(3)]
         fs2 = [(ws[sl2,0,j] + 1j*ws[sl2,0,j+3]) for j in range(3)]
