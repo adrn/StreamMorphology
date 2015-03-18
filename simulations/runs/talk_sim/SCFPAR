@@ -17,5 +17,5 @@ TRUE            orbiting in NFW potential?
 500             number of steps to turn on MW potential
 4.3e-02           satellite scale (kpc)
 2.5e+06           satellite mass (Msun)
-40.00000000 2.00000000 2.00000000
-0.00000 10.00000 150.00000
+40.00000000 0.00000000 0.00000000
+0.00000 0.00000 180.00000
