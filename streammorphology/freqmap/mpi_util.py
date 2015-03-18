@@ -121,8 +121,16 @@ def worker(task):
 
     # freqs1,d1,ixs1,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[:nsteps//2+1])
     # freqs2,d2,ixs2,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[nsteps//2:])
-    freqs1,d1,ixs1 = naff1.find_fundamental_frequencies(fs1, nintvec=8)
-    freqs2,d2,ixs2 = naff2.find_fundamental_frequencies(fs2, nintvec=8)
+    try:
+        freqs1,d1,ixs1 = naff1.find_fundamental_frequencies(fs1, nintvec=8)
+        freqs2,d2,ixs2 = naff2.find_fundamental_frequencies(fs2, nintvec=8)
+    except:
+        allfreqs = np.memmap(allfreqs_filename, mode='r+',
+                             shape=(norbits,), dtype=dtype)
+        allfreqs['freqs'][index] = np.nan
+        allfreqs['success'][index] = False
+        allfreqs.flush()
+        return
 
     max_amp_freq_ix = d1['|A|'][ixs1].argmax()
 
