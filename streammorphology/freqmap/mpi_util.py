@@ -11,6 +11,7 @@ import numpy as np
 from astropy import log as logger
 
 # Project
+import gary.coordinates as gc
 import gary.dynamics as gd
 import gary.integrate as gi
 import gary.potential as gp
@@ -68,39 +69,25 @@ def worker(task):
             allfreqs.flush()
             return
 
-    logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
+    logger.info("Orbit {}: dt={}, nsteps={}".format(index, dt, nsteps))
 
-    # TODO: do I instead want to refine the internal number of steps?
-    maxiter = 3  # maximum number of times to refine integration step
-    for i in range(maxiter+1):
-        # integrate orbit
-        logger.debug("Iteration {} -- integrating orbit...".format(i+1))
-        try:
-            t,ws = potential.integrate_orbit(w0[index].copy(), dt=dt, nsteps=nsteps,
-                                             Integrator=gi.DOPRI853Integrator,
-                                             Integrator_kwargs=dict(nsteps=4096,atol=1E-8))
-        except RuntimeError:  # ODE integration failed
-            dt /= 2.
-            nsteps *= 2
-            logger.warning("Orbit integration failed. Shrinking timestep to "
-                           "dt={}".format(dt))
-            continue
-
+    # integrate orbit
+    logger.debug("Integrating orbit...")
+    try:
+        t,ws = potential.integrate_orbit(w0[index].copy(), dt=dt, nsteps=nsteps,
+                                         Integrator=gi.DOPRI853Integrator,
+                                         Integrator_kwargs=dict(atol=1E-10))
+    except RuntimeError:  # ODE integration failed
+        logger.warning("Orbit integration failed.")
+        dEmax = 1E10
+    else:
         logger.debug('Orbit integrated successfully, checking energy conservation...')
 
         # check energy conservation for the orbit
         E = potential.total_energy(ws[:,0,:3].copy(), ws[:,0,3:].copy())
         dE = np.abs(E[1:] - E[0])
         dEmax = dE.max() / np.abs(E[0])
-
         logger.debug('max(∆E) = {0:.2e}'.format(dEmax))
-        if dEmax < ETOL:
-            break
-
-        nsteps *= 2
-        dt /= 2.
-        logger.debug("Refining orbit {} to: dt,nsteps=({},{}). Max. dE={}"
-                     .format(index, dt, nsteps, dEmax))
 
     if dEmax > ETOL:
         allfreqs = np.memmap(allfreqs_filename, mode='r+',
@@ -111,16 +98,43 @@ def worker(task):
         return
 
     # start finding the frequencies -- do first half then second half
-    freqs1,d1,ixs1,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[:nsteps//2+1])
-    freqs2,d2,ixs2,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[nsteps//2:])
+    naff1 = gd.NAFF(t[:nsteps//2+1])
+    naff2 = gd.NAFF(t[nsteps//2:])
+
+    # classify orbit full orbit
+    circ = gd.classify_orbit(ws)
+    is_tube = np.any(circ)
+
+    # define slices for first and second parts
+    sl1 = slice(None,nsteps//2+1)
+    sl2 = slice(nsteps//2,None)
+
+    if is_tube:
+        # need to flip coordinates until circulation is around z axis
+        new_ws = gd.align_circulation_with_z(ws, circ)
+        new_ws = gc.poincare_polar(new_ws)
+        fs1 = [(new_ws[sl1,0,j] + 1j*new_ws[sl1,0,j+3]) for j in range(3)]
+        fs1 = [(new_ws[sl2,0,j] + 1j*new_ws[sl2,0,j+3]) for j in range(3)]
+    else:  # box
+        fs1 = [(ws[sl1,0,j] + 1j*ws[sl1,0,j+3]) for j in range(3)]
+        fs2 = [(ws[sl2,0,j] + 1j*ws[sl2,0,j+3]) for j in range(3)]
+
+    # freqs1,d1,ixs1,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[:nsteps//2+1])
+    # freqs2,d2,ixs2,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[nsteps//2:])
+    freqs1,d1,ixs1 = naff1.find_fundamental_frequencies(fs1, nintvec=8)
+    freqs2,d2,ixs2 = naff2.find_fundamental_frequencies(fs2, nintvec=8)
 
     max_amp_freq_ix = d1['|A|'][ixs1].argmax()
+    print("freqs1", freqs1)
+    print("freqs2", freqs2)
+    import sys
+    sys.exit(0)
 
     # save to output array
     allfreqs = np.memmap(allfreqs_filename, mode='r+',
                          shape=(norbits,), dtype=dtype)
     allfreqs['freqs'][index][0] = freqs1
-    allfreqs['freqs'][index][1] = freqs1
+    allfreqs['freqs'][index][1] = freqs2
     allfreqs['dE_max'][index] = dEmax
     allfreqs['is_tube'][index] = float(is_tube)
     allfreqs['dt'][index] = float(dt)
