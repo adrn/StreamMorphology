@@ -38,8 +38,11 @@ def main(path, vbounds=None):
 
     periods = np.abs(2*np.pi / d['freqs'][:,0])
     nperiods = d['dt']*d['nsteps'] / periods.max(axis=1)
-    freq_diff_per_orbit = np.abs((d['freqs'][:,1] - d['freqs'][:,0]) / d['freqs'][:,0] / (nperiods[:,None]/2.))
-    max_freq_diff_per_orbit = freq_diff_per_orbit.max(axis=1)
+    freq_diff_per_orbit = np.abs((np.abs(d['freqs'][:,1]) - np.abs(d['freqs'][:,0])) / d['freqs'][:,0] / (nperiods[:,None]/2.))
+    ix = d['max_amp_freq_ix']
+    max_freq_diff_per_orbit = np.array([freq_diff_per_orbit[j,i] for j,i in enumerate(ix)])
+    # max_freq_diff_per_orbit = freq_diff_per_orbit.max(axis=1)
+    # print(max_freq_diff_per_orbit.shape, ix.shape, freq_diff_per_orbit.shape)
 
     good_ix = np.isfinite(max_freq_diff_per_orbit)
     max_freq_diff_per_orbit = np.log10(max_freq_diff_per_orbit[good_ix])
