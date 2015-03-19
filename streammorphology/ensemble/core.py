@@ -5,6 +5,7 @@ from __future__ import division, print_function
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Third-party
+from astropy import log as logger
 import astropy.units as u
 from astropy.coordinates.angles import rotation_matrix
 import gary.integrate as gi
@@ -111,6 +112,8 @@ def do_the_kld(nkld, ball_w0, potential, dt, nsteps, kde_bandwidth,
     t[0] = 0.
     kld = np.empty(nkld)
     for i in range(nkld):
+        logger.debug("KLD step: {0}/{1}".format(i+1, nkld))
+
         # number of steps to advance the ensemble
         dstep = kld_idx[i+1] - kld_idx[i]
         www = ensemble_integrate(potential.c_instance, ww, dt, dstep, 0.)
@@ -131,6 +134,7 @@ def do_the_kld(nkld, ball_w0, potential, dt, nsteps, kde_bandwidth,
         D = np.log(kde_densy / p_densy)
         KLD = D[np.isfinite(D)].sum() / float(nensemble)
         kld[i] = KLD
+        logger.debug("KLD value: {0}".format(KLD))
 
         ww = www.copy()
 
