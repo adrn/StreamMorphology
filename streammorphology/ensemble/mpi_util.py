@@ -91,14 +91,8 @@ def worker(task):
     ball_w0 = create_ball(peri_w0, potential, N=nensemble, m_scale=mscale)
     logger.debug("Generated ensemble of {0} particles".format(nensemble))
 
-    kld_ts, klds = do_the_kld(ball_w0, potential, apo_ixes, dt=dt, kde_bandwidth=bw)
-
-    KLD = np.zeros(256)
-    KLD[:len(klds)] = np.array(klds)
-    KLD[len(klds):] = np.nan
-
-    KLD_times = np.zeros(256)
-    KLD_times[:len(kld_ts)] = np.array(kld_ts)
+    # compute the KLD at specified intervals
+    kld_t, kld = do_the_kld(nkld, ball_w0, potential, dt, nsteps, bw)
 
     # TODO: compare final E vs. initial E against ETOL?
     # E_end = float(np.squeeze(potential.total_energy(w_i[0,:3], w_i[0,3:])))
@@ -108,8 +102,8 @@ def worker(task):
     #     all_kld.flush()
     #     return
 
-    all_kld['kld'][index] = KLD
-    all_kld['kld_t'][index] = KLD_times
+    all_kld['kld'][index] = kld
+    all_kld['kld_t'][index] = kld_t
     all_kld['dt'][index] = dt
     all_kld['nsteps'][index] = nsteps
     all_kld['dE_max'][index] = 0.  # TODO:
