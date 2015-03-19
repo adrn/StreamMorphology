@@ -85,34 +85,53 @@ def align_ensemble(ws):
     new_v = np.array(R.dot(ws[-1,:,3:].T).T)
     return new_x, new_v
 
-def do_the_kld(ball_w0, potential, apo_ixes, dt=1., kde_bandwidth=10.):
+def do_the_kld(nkld, ball_w0, potential, dt, nsteps, kde_bandwidth,
+               density_thresholds):
+    """
+    Parameters
+    ----------
+    nkld : int
+        Number of times to evaluate the KLD.
+    ...TODO
+    """
+
     ww = np.ascontiguousarray(ball_w0.copy())
-    nensemble = ball_w0.shape[0]
+    nensemble = ww.shape[0]
 
     # energy of parent orbit
     E0 = float(np.squeeze(potential.total_energy(ww[0,:3],ww[0,3:])))
     predicted_density = lambda x, E0: np.sqrt(E0 - potential(x))
 
-    klds = []
-    ts = []
-    apo_ixes = np.append([0], apo_ixes)
-    t = 0.
-    for i,left_step,right_step in zip(range(len(apo_ixes)-1), apo_ixes[:-1], apo_ixes[1:]):
-        dstep = right_step - left_step
+    kld_idx = np.linspace(0, nsteps, nkld+1).astype(int)
+
+    # container to store fraction of stars with density above each threshold
+    frac_above_dens = np.zeros((nkld,len(density_thresholds)))
+
+    t = np.empty(nkld+1)
+    t[0] = 0.
+    kld = np.empty(nkld)
+    for i in range(nkld):
+        # number of steps to advance the ensemble
+        dstep = kld_idx[i+1] - kld_idx[i]
         www = ensemble_integrate(potential.c_instance, ww, dt, dstep, 0.)
 
-        t += dt*dstep
-        ts.append(t)
+        # store the time
+        t[i+1] = t[i] + dt*dstep
 
+        # build an estimate of the configuration space density of the ensemble
         kde = KernelDensity(kernel='epanechnikov', bandwidth=kde_bandwidth)
         kde.fit(www[:,:3])
         kde_densy = np.exp(kde.score_samples(www[:,:3]))
 
+        # TODO: here, need to figure out # of stars with density > threshold
+        for j,h in enumerate(density_thresholds):
+            frac_above_dens[i,j] = (kde_densy > h).sum() / float(nensemble)
+
         p_densy = predicted_density(www[:,:3], E0)
         D = np.log(kde_densy / p_densy)
         KLD = D[np.isfinite(D)].sum() / float(nensemble)
-        klds.append(KLD)
+        kld[i] = KLD
 
         ww = www.copy()
 
-    return ts, klds
+    return t[1:], kld
