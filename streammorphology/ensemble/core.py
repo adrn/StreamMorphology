@@ -55,37 +55,50 @@ def peri_to_apo(w0, potential, evolution_time, dt=1.):
 
     return w0, dt, nsteps, apo_ixes
 
-def align_ensemble(ws):
-    # progenitor position
-    new_cen_x = ws[0,:3].copy()
-    new_cen_v = ws[0,3:].copy()
+def compute_align_matrix(w):
+    """
+    Given a single phase-space position, compute the rotation matrix that
+    orients the angular momentum with the z axis and places the point
+    along the x axis.
 
-    # put endpoint on x axis in x-z plane
+    Parameters
+    ----------
+    w : array_like
+    """
 
-    # first about y
-    theta = np.arctan2(new_cen_x[2],new_cen_x[0]) * u.radian
-    R1 = rotation_matrix(-theta, 'y')
-    new_cen_x = np.asarray(R1.dot(new_cen_x))[0]
-    new_cen_v = np.asarray(R1.dot(new_cen_v))[0]
+    if w.ndim > 1:
+        raise ValueError("Input phase-space position should be 1D.")
 
-    # then about z
-    theta = np.arctan2(new_cen_x[1],new_cen_x[0]) * u.radian
-    R2 = rotation_matrix(theta, 'z')
-    new_cen_x = np.asarray(R2.dot(new_cen_x))[0]
-    new_cen_v = np.asarray(R2.dot(new_cen_v))[0]
+    x = w[:3].copy()
+    v = w[3:].copy()
+
+    # first rotate about z to put on x-z plane
+    theta = np.arctan2(x[1], x[0]) * u.radian
+    R1 = rotation_matrix(theta, 'z')
+    x = np.asarray(R1.dot(x))[0]
+    v = np.asarray(R1.dot(v))[0]
+
+    # now rotate about y to put on x axis
+    theta = np.arctan2(x[2], x[0]) * u.radian
+    R2 = rotation_matrix(-theta, 'y')
+    x = np.asarray(R2.dot(x))[0]
+    v = np.asarray(R2.dot(v))[0]
 
     # now align L with z axis
-    L = np.cross(new_cen_x, new_cen_v)
-    theta = np.arccos(L[2] / np.sqrt(np.sum(L**2))) * u.radian
-    R3 = rotation_matrix(theta, 'x')
-    new_cen_x = np.asarray(R3.dot(new_cen_x))[0]
-    new_cen_v = np.asarray(R3.dot(new_cen_v))[0]
+    # theta = np.arccos(L[2] / np.sqrt(np.sum(L**2))) * u.radian
+    L = np.cross(x, v)
+    theta = np.arctan2(L[2], L[1]) * u.radian
+    R3 = rotation_matrix(theta - 90*u.deg, 'x')
+    x = np.asarray(R3.dot(x))[0]
+    v = np.asarray(R3.dot(v))[0]
 
-    R = R3*R2*R1
+    return R3*R2*R1
 
-    new_ws = np.array(R.dot(ws[:,:3].T).T)
-
-    return new_ws
+def align_ensemble(ws):
+    R = compute_align_matrix(ws[-1,0])
+    new_x = np.array(R.dot(ws[-1,:,:3].T).T)
+    new_v = np.array(R.dot(ws[-1,:,3:].T).T)
+    return new_x, new_v
 
 def do_the_kld(ball_w0, potential, apo_ixes, dt=1., kde_bandwidth=10.):
     ww = np.ascontiguousarray(ball_w0.copy())
