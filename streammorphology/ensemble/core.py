@@ -9,7 +9,7 @@ import astropy.units as u
 from astropy.coordinates.angles import rotation_matrix
 import gary.integrate as gi
 import numpy as np
-from scipy.signal import argrelmax, argrelmin
+from scipy.signal import argrelmin
 from sklearn.neighbors import KernelDensity
 
 from .fast_ensemble import ensemble_integrate
@@ -123,7 +123,7 @@ def do_the_kld(nkld, ball_w0, potential, dt, nsteps, kde_bandwidth,
         kde.fit(www[:,:3])
         kde_densy = np.exp(kde.score_samples(www[:,:3]))
 
-        # TODO: here, need to figure out # of stars with density > threshold
+        # number of stars with density > threshold
         for j,h in enumerate(density_thresholds):
             frac_above_dens[i,j] = (kde_densy > h).sum() / float(nensemble)
 
@@ -134,4 +134,5 @@ def do_the_kld(nkld, ball_w0, potential, dt, nsteps, kde_bandwidth,
 
         ww = www.copy()
 
-    return t[1:], kld
+    print(frac_above_dens)
+    return t[1:], kld, frac_above_dens

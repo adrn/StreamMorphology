@@ -11,6 +11,7 @@ import time as pytime
 from astropy import log as logger
 import gary.potential as gp
 import numpy as np
+from sklearn.neighbors import KernelDensity
 
 # Project
 from .. import ETOL
@@ -23,20 +24,29 @@ __all__ = ['worker', 'parser_arguments']
 parser_arguments = list()
 
 # list of [args, kwargs]
-parser_arguments.append([('--nensemble',), dict(dest='nensemble', required=True,
-                                                type=int, help='Number of orbits per ensemble.')])
-parser_arguments.append([('--mscale',), dict(dest='mscale', default=1E4,
-                                             type=float, help='Mass scale of ensemble.')])
-parser_arguments.append([('--bandwidth',), dict(dest='kde_bandwidth', default=10.,
-                                                type=float, help='KDE kernel bandwidth.')])
-parser_arguments.append([('--nkld',), dict(dest='nkld', default=256, type=int,
-                                           help='Number of times to evaluate the KLD over the '
-                                                'integration of the ensemble.')])
-parser_arguments.append([('--nperiods',), dict(dest='nperiods', default=1024, type=int,
-                                               help='Number of periods to integrate for, in units '
-                                                    'of the parent orbit periods.')])
-parser_arguments.append([('--nsteps_per_period',), dict(dest='nsteps_per_period', default=250, type=int,
-                                                        help='Number of steps to take per min. period.')])
+parser_arguments.append([('--nensemble',),
+                         dict(dest='nensemble', required=True,
+                              type=int, help='Number of orbits per ensemble.')])
+parser_arguments.append([('--mscale',),
+                         dict(dest='mscale', default=1E4,
+                              type=float, help='Mass scale of ensemble.')])
+parser_arguments.append([('--bandwidth',),
+                         dict(dest='kde_bandwidth', default=10.,
+                              type=float, help='KDE kernel bandwidth.')])
+parser_arguments.append([('--nkld',),
+                         dict(dest='nkld', default=256, type=int,
+                              help='Number of times to evaluate the KLD over the integration '
+                                   'of the ensemble.')])
+parser_arguments.append([('--nperiods',),
+                         dict(dest='nperiods', default=1024, type=int,
+                              help='Number of periods to integrate for, in units of the parent '
+                                   'orbit periods.')])
+parser_arguments.append([('--nsteps_per_period',),
+                         dict(dest='nsteps_per_period', default=250, type=int,
+                              help='Number of steps to take per min. period.')])
+parser_arguments.append([('--ndensity_threshold',),
+                         dict(dest='ndensity_threshold', default=16, type=int,
+                              help='Number of density thresholds.')])
 
 def worker(task):
 
@@ -56,16 +66,19 @@ def worker(task):
     # number of times to compute the KLD
     nkld = task['nkld']
 
-    # if these aren't set, assume defaults
+    # number of periods to integrate the ensemble
     nperiods = task['nperiods']
     nsteps_per_period = task['nsteps_per_period']
+
+    # number of times to evaluate the number of particles above a density threshold
+    ndensity_threshold = task['ndensity_threshold']
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
     norbits = len(w0)
     this_w0 = w0[index].copy()
     all_kld = np.memmap(filename, mode='r+',
-                        shape=(norbits,), dtype=get_dtype(nkld))
+                        shape=(norbits,), dtype=get_dtype(nkld, ndensity_threshold))
 
     # short-circuit if this orbit is already done
     # TODO: handle status == 0 (not attempted) different from
@@ -92,7 +105,19 @@ def worker(task):
     logger.debug("Generated ensemble of {0} particles".format(nensemble))
 
     # compute the KLD at specified intervals
-    kld_t, kld = do_the_kld(nkld, ball_w0, potential, dt, nsteps, bw)
+    # kde = KernelDensity(kernel='epanechnikov', bandwidth=bw)
+    # kde.fit(ball_w0[:,:3])
+    # kde_densy = np.exp(kde.score_samples(ball_w0[:,:3]))
+    # dens_max = kde_densy.mean()
+    # TODO: don't hardcode this in you ass
+    dens_max = -3.2
+
+    # compute the density thresholds ranging from the mean density of the initial ball down
+    #   to two orders of magnitude lower density
+    density_thresholds = 10**np.linspace(np.log10(dens_max), np.log10(dens_max) - 3.,
+                                         ndensity_threshold)
+    kld_t, kld, frac_above_dens = do_the_kld(nkld, ball_w0, potential, dt, nsteps, bw,
+                                             density_thresholds)
 
     # TODO: compare final E vs. initial E against ETOL?
     # E_end = float(np.squeeze(potential.total_energy(w_i[0,:3], w_i[0,3:])))
@@ -102,6 +127,8 @@ def worker(task):
     #     all_kld.flush()
     #     return
 
+    all_kld['density_thresholds'] = density_thresholds
+    all_kld['frac_above_dens'] = frac_above_dens
     all_kld['kld'][index] = kld
     all_kld['kld_t'][index] = kld_t
     all_kld['dt'][index] = dt
