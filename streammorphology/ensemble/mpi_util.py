@@ -110,7 +110,7 @@ def worker(task):
     # kde_densy = np.exp(kde.score_samples(ball_w0[:,:3]))
     # dens_max = kde_densy.mean()
     # TODO: don't hardcode this in you ass
-    dens_max = -3.2
+    dens_max = 10**(-3.2)
 
     # compute the density thresholds ranging from the mean density of the initial ball down
     #   to two orders of magnitude lower density
