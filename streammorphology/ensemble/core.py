@@ -134,5 +134,4 @@ def do_the_kld(nkld, ball_w0, potential, dt, nsteps, kde_bandwidth,
 
         ww = www.copy()
 
-    print(frac_above_dens)
     return t[1:], kld, frac_above_dens
