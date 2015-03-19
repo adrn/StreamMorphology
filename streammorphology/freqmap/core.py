@@ -110,7 +110,7 @@ def estimate_periods(t, w, min=False):
     else:
         return np.array([np.nan]*w.shape[-1])
 
-def estimate_dt_nsteps(potential, w0, nperiods, nsteps_per_period):
+def estimate_dt_nsteps(potential, w0, nperiods, nsteps_per_period, return_periods=False):
     """
     Estimate the timestep and number of steps to integrate for given a potential
     and set of initial conditions.
@@ -123,6 +123,8 @@ def estimate_dt_nsteps(potential, w0, nperiods, nsteps_per_period):
         Number of (max) periods to integrate.
     nsteps_per_period : int
         Number of steps to take per (max) orbital period.
+    return_periods : bool (optional)
+        Also return the estimated periods for the orbit.
 
     """
 
@@ -140,4 +142,7 @@ def estimate_dt_nsteps(potential, w0, nperiods, nsteps_per_period):
     if dt == 0.:
         raise ValueError("Timestep is zero!")
 
-    return dt, nsteps
+    if return_periods:
+        return dt, nsteps, T
+    else:
+        return dt, nsteps
