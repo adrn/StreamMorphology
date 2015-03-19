@@ -14,7 +14,7 @@ from sklearn.neighbors import KernelDensity
 
 from .fast_ensemble import ensemble_integrate
 
-__all__ = ['create_ball', 'peri_to_apo', 'align_ensemble']
+__all__ = ['create_ball', 'nearest_pericenter', 'align_ensemble']
 
 def create_ball(w0, potential, N=1000, m_scale=1E4):
     menc = potential.mass_enclosed(w0)
@@ -27,33 +27,18 @@ def create_ball(w0, potential, N=1000, m_scale=1E4):
 
     return np.vstack((w0,ball_w0))
 
-def peri_to_apo(w0, potential, evolution_time, dt=1.):
+def nearest_pericenter(w0, potential, dt, T):
     """
-    Find the nearest pericenter to w0, then figure out the number of steps
-    to integrate for to evolve for the specified evolution time and end
-    at apocenter.
+    Find the nearest pericenter to w0
     """
 
-    t,w = potential.integrate_orbit(w0, dt=dt, nsteps=int(evolution_time),
+    t,w = potential.integrate_orbit(w0, dt=dt, nsteps=T*10,
                                     Integrator=gi.DOPRI853Integrator)
 
     r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
-    apos = argrelmax(r)[0]
-    pers = argrelmin(r)[0]
+    peris = argrelmin(r)[0]
 
-    t1 = t[pers[0]]
-    t2 = t[apos]
-    t2 = t[apos[np.abs((t2-t1) - evolution_time).argmin()]]
-
-    nsteps = int((t2-t1) / dt)
-    w0 = w[pers[0], 0]
-
-    t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps,
-                                    Integrator=gi.DOPRI853Integrator)
-    r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
-    apo_ixes = argrelmax(r)[0]
-
-    return w0, dt, nsteps, apo_ixes
+    return w[peris[0], 0]
 
 def compute_align_matrix(w):
     """
