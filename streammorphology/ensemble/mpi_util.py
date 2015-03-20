@@ -118,8 +118,8 @@ def worker(task):
                                          ndensity_threshold)
 
     try:
-        kld_t, kld, frac_above_dens = do_the_kld(nkld, ball_w0, potential, dt, nsteps, bw,
-                                                 density_thresholds)
+        kld_t, kld, frac_above_dens,mean_dens = do_the_kld(nkld, ball_w0, potential, dt, nsteps, bw,
+                                                           density_thresholds)
     except:
         logger.warning("Unexpected failure: {0}".format(sys.exc_info()))
         all_kld['status'][index] = 4  # some kind of catastrophic failure
@@ -135,6 +135,7 @@ def worker(task):
     #     return
 
     all_kld['frac_above_dens'][index] = frac_above_dens
+    all_kld['mean_dens'][index] = mean_dens
     all_kld['kld'][index] = kld
     all_kld['kld_t'][index] = kld_t
     all_kld['dt'][index] = dt

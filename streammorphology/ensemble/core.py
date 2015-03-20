@@ -108,6 +108,7 @@ def do_the_kld(nkld, ball_w0, potential, dt, nsteps, kde_bandwidth,
 
     # container to store fraction of stars with density above each threshold
     frac_above_dens = np.zeros((nkld,len(density_thresholds)))
+    mean_dens = np.zeros(nkld)
 
     t = np.empty(nkld+1)
     t[0] = 0.
@@ -131,6 +132,9 @@ def do_the_kld(nkld, ball_w0, potential, dt, nsteps, kde_bandwidth,
         for j,h in enumerate(density_thresholds):
             frac_above_dens[i,j] = (kde_densy > h).sum() / float(nensemble)
 
+        # median density
+        mean_dens[i] = np.mean(kde_densy)
+
         p_densy = predicted_density(www[:,:3], E0)
         D = np.log(kde_densy / p_densy)
         KLD = D[np.isfinite(D)].sum() / float(nensemble)
@@ -139,4 +143,4 @@ def do_the_kld(nkld, ball_w0, potential, dt, nsteps, kde_bandwidth,
 
         ww = www.copy()
 
-    return t[1:], kld, frac_above_dens
+    return t[1:], kld, frac_above_dens, mean_dens

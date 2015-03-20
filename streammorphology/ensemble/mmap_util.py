@@ -18,7 +18,8 @@ def get_dtype(nkld, ndensity_threshold):
     # define indices of columns -- need this for the memmap'd file
     dtype = [('kld','f8',(nkld,)), ('kld_t','f8',(nkld,)), ('dE_max','f8'),
              ('dt','f8'), ('nsteps','i8'), ('status','i8'),
-             ('frac_above_dens','f8',(nkld,ndensity_threshold))]
+             ('frac_above_dens','f8',(nkld,ndensity_threshold)),
+             ('mean_dens', 'f8', (nkld,))]
     return dtype
 
 def read_allkld(f, nkld, ndensity_threshold, norbits=None):
