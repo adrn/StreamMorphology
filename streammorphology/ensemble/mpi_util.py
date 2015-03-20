@@ -38,7 +38,7 @@ parser_arguments.append([('--nkld',),
                               help='Number of times to evaluate the KLD over the integration '
                                    'of the ensemble.')])
 parser_arguments.append([('--nperiods',),
-                         dict(dest='nperiods', default=1024, type=int,
+                         dict(dest='nperiods', default=256, type=int,
                               help='Number of periods to integrate for, in units of the parent '
                                    'orbit periods.')])
 parser_arguments.append([('--nsteps_per_period',),
@@ -110,12 +110,13 @@ def worker(task):
     # kde_densy = np.exp(kde.score_samples(ball_w0[:,:3]))
     # dens_max = kde_densy.mean()
     # TODO: don't hardcode this in you ass
-    dens_max = 10**(-3.2)
+    dens_max = 10**-3.2
 
     # compute the density thresholds ranging from the mean density of the initial ball down
     #   to two orders of magnitude lower density
-    density_thresholds = 10**np.linspace(np.log10(dens_max), np.log10(dens_max) - 3.,
+    density_thresholds = 10**np.linspace(np.log10(dens_max), np.log10(dens_max) - 2.,
                                          ndensity_threshold)
+
     kld_t, kld, frac_above_dens = do_the_kld(nkld, ball_w0, potential, dt, nsteps, bw,
                                              density_thresholds)
 
@@ -127,7 +128,6 @@ def worker(task):
     #     all_kld.flush()
     #     return
 
-    all_kld['density_thresholds'] = density_thresholds
     all_kld['frac_above_dens'] = frac_above_dens
     all_kld['kld'][index] = kld
     all_kld['kld_t'][index] = kld_t
