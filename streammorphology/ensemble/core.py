@@ -103,7 +103,8 @@ def do_the_kld(nkld, ball_w0, potential, dt, nsteps, kde_bandwidth,
     E0 = float(np.squeeze(potential.total_energy(ww[0,:3],ww[0,3:])))
     predicted_density = lambda x, E0: np.sqrt(E0 - potential(x))
 
-    kld_idx = np.linspace(0, nsteps, nkld+1).astype(int)
+    kld_idx = np.append(np.linspace(0, nsteps//4, nkld//2+1),
+                        np.linspace(nsteps//4, nsteps, nkld//2+1)[1:]).astype(int)
 
     # container to store fraction of stars with density above each threshold
     frac_above_dens = np.zeros((nkld,len(density_thresholds)))
