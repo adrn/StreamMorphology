@@ -5,7 +5,7 @@ from __future__ import division, print_function
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Standard library
-import time as pytime
+import sys
 
 # Third-party
 from astropy import log as logger
@@ -117,8 +117,14 @@ def worker(task):
     density_thresholds = 10**np.linspace(np.log10(dens_max), np.log10(dens_max) - 2.,
                                          ndensity_threshold)
 
-    kld_t, kld, frac_above_dens = do_the_kld(nkld, ball_w0, potential, dt, nsteps, bw,
-                                             density_thresholds)
+    try:
+        kld_t, kld, frac_above_dens = do_the_kld(nkld, ball_w0, potential, dt, nsteps, bw,
+                                                 density_thresholds)
+    except:
+        logger.warning("Unexpected failure: {0}".format(sys.exc_info()))
+        all_kld['status'][index] = 4  # some kind of catastrophic failure
+        all_kld.flush()
+        return
 
     # TODO: compare final E vs. initial E against ETOL?
     # E_end = float(np.squeeze(potential.total_energy(w_i[0,:3], w_i[0,3:])))
@@ -128,7 +134,7 @@ def worker(task):
     #     all_kld.flush()
     #     return
 
-    all_kld['frac_above_dens'] = frac_above_dens
+    all_kld['frac_above_dens'][index] = frac_above_dens
     all_kld['kld'][index] = kld
     all_kld['kld_t'][index] = kld_t
     all_kld['dt'][index] = dt
