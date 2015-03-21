@@ -50,7 +50,7 @@ def main(worker, path, cache_filename, cache_dtype, mpi=False, overwrite=False, 
 
     tasks = [dict(index=i, w0_filename=w0_filename,
                   cache_filename=cache_path,
-                  potential_filename=pot_filename, **kwargs) for i in range(5000,norbits)]
+                  potential_filename=pot_filename, **kwargs) for i in range(norbits)]
 
     pool.map(worker, tasks)
     pool.close()
