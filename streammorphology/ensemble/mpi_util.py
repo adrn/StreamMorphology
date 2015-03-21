@@ -96,7 +96,13 @@ def worker(task):
         return
 
     # find the nearest (in time) pericenter to the given initial condition
-    peri_w0 = nearest_pericenter(this_w0, potential, dt, T.max())
+    try:
+        peri_w0 = nearest_pericenter(this_w0, potential, dt, T.max())
+    except:
+        logger.warning("Failed to find nearest pericenter.")
+        all_kld['status'][index] = 3  # failed due to integration
+        all_kld.flush()
+        return
 
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
@@ -118,8 +124,8 @@ def worker(task):
                                          ndensity_threshold)
 
     try:
-        kld_t, kld, frac_above_dens,mean_dens = do_the_kld(nkld, ball_w0, potential, dt, nsteps, bw,
-                                                           density_thresholds)
+        kld_t, kld, mean_dens = do_the_kld(nkld, ball_w0, potential, dt, nsteps, bw,
+                                           density_thresholds)
     except:
         logger.warning("Unexpected failure: {0}".format(sys.exc_info()))
         all_kld['status'][index] = 4  # some kind of catastrophic failure
@@ -134,7 +140,7 @@ def worker(task):
     #     all_kld.flush()
     #     return
 
-    all_kld['frac_above_dens'][index] = frac_above_dens
+    # all_kld['frac_above_dens'][index] = frac_above_dens
     all_kld['mean_dens'][index] = mean_dens
     all_kld['kld'][index] = kld
     all_kld['kld_t'][index] = kld_t
