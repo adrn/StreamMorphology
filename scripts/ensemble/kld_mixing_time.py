@@ -33,7 +33,7 @@ else:
 
 dargs = dict(args._get_kwargs())
 main(worker=worker, path=dargs.pop('path'),
-     cache_filename='allkld.dat', cache_dtype=get_dtype(args.nkld,args.ndensity_threshold),
+     cache_filename='allkld.dat', cache_dtype=get_dtype(args.nkld),
      mpi=dargs.pop('mpi'), overwrite=dargs.pop('overwrite'), seed=dargs.pop('seed'),
      **dargs)
 

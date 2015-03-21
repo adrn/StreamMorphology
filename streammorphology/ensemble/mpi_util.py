@@ -78,7 +78,7 @@ def worker(task):
     norbits = len(w0)
     this_w0 = w0[index].copy()
     all_kld = np.memmap(filename, mode='r+',
-                        shape=(norbits,), dtype=get_dtype(nkld, ndensity_threshold))
+                        shape=(norbits,), dtype=get_dtype(nkld))
 
     # short-circuit if this orbit is already done
     # TODO: handle status == 0 (not attempted) different from
