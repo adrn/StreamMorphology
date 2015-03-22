@@ -22,7 +22,7 @@ def get_dtype(nkld):  #, ndensity_threshold):
              ('mean_dens', 'f8', (nkld,))]
     return dtype
 
-def read_allkld(f, nkld, ndensity_threshold, norbits=None):
+def read_allkld(f, nkld, norbits=None):
     """
     Read the numpy memmap'd file containing results from an ensemble KLD
     mapping. This function returns a numpy structured array with named
@@ -47,6 +47,6 @@ def read_allkld(f, nkld, ndensity_threshold, norbits=None):
         norbits = len(w0)
 
     # first get the memmap array
-    allfreqs = np.memmap(f, mode='r', shape=(norbits,), dtype=get_dtype(nkld,ndensity_threshold))
+    allfreqs = np.memmap(f, mode='r', shape=(norbits,), dtype=get_dtype(nkld))
 
     return allfreqs
