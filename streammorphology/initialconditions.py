@@ -82,6 +82,87 @@ def tube_grid_xz(E, potential, dx, dz):
 
     return np.hstack((xyz, vxyz))
 
+def tube_grid_xz_zoom(E, potential, nx=0, nz=0, bounds=[]):
+    r"""
+    Generate a zoom grid of points in the :math:`x-z` plane (:math:`y=0`)
+    starting with initial velocities :math:`v_x = v_z = 0`. :math`v_y`
+    is solved for as:
+
+    .. math::
+
+        v_y = \sqrt(2(E - \Phi(x,0,z)))
+
+    where :math:`E` is the energy and :math:`\Phi` is the potential. This
+    is not meant to generate all orbits within the energy boundary, but
+    instead will generate a grid of points within some rectangular boundary.
+
+    Parameters
+    ----------
+    E : numeric
+        Energy of the orbits - defines the zero-velocity curve within
+        which the initial conditions are determined.
+    potential : :class:`~gary.potential.Potential`
+        A :class:`~gary.potential.Potential` subclass instance.
+    nx : int
+        Number of points along :math:`x` axis.
+    nz : int
+        Number of points along :math:`z` axis.
+    bounds : iterable
+        An iterable containing the rectangular boundary of the
+        grid. Should be specified as ``[min_x,max_x,min_z,max_z]``.
+
+    """
+
+    xbounds = bounds[:2]
+    zbounds = bounds[2:]
+
+    # find maximum x on z=0
+    def func(x):
+        return (E - potential.value(np.array([[x[0],0,0]])))**2
+    res = minimize(func, x0=[10.], method='powell')
+    if not res.success:
+        raise ValueError("Failed to find boundary of ZVC on x-axis.")
+    max_x = res.x
+
+    if xbounds[1] > max_x:
+        raise ValueError("x bounds go outside of allowed energy region.")
+
+    xgrid = np.linspace(xbounds[0], xbounds[1], nx)
+
+    # compute ZVC boundary for each x
+    for xg in xgrid:
+        # find maximum allowed z along x=xx
+        def func(x):
+            return (E - potential.value(np.array([[xg,0,x[0]]])))**2
+        res = minimize(func, x0=[25.], method='powell')
+        max_z = np.abs(res.x)
+        if not res.success or max_z == 25.:
+            vals = np.linspace(0.1,100)
+            plt.clf()
+            plt.plot(vals,[func([derp]) for derp in vals])
+            plt.show()
+            raise ValueError("Failed to find boundary of ZVC for x={}.".format(xg))
+
+        if zbounds[1] > max_z:
+            raise ValueError("z bounds go outside of allowed energy region.")
+
+        zgrid = np.linspace(zbounds[0], zbounds[1], nz)
+        xs = np.zeros_like(zgrid) + xg
+        try:
+            xz = np.hstack((xz, np.vstack((xs,zgrid))))
+        except NameError:
+            xz = np.vstack((xs,zgrid))
+
+    xyz = np.zeros((xz.shape[-1],3))
+    xyz[:,0] = xz[0]
+    xyz[:,2] = xz[1]
+
+    # now, for each grid point, compute the y velocity
+    vxyz = np.zeros_like(xyz)
+    vxyz[:,1] = np.sqrt(2*(E - potential.value(xyz)))
+
+    return np.hstack((xyz, vxyz))
+
 def box_grid(E, potential, approx_num=1000):
     r"""
     Generate a grid of points on an equipotential surface starting with
