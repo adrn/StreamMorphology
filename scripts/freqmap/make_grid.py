@@ -99,12 +99,22 @@ if __name__ == '__main__':
             continue
 
         argspec = inspect.getargspec(getattr(ic,fn_name))
-        for arg in argspec.args:
+        if argspec.defaults is not None:
+            pad = len(argspec.args) - len(argspec.defaults)
+            defaults = [None]*pad + list(argspec.defaults)
+        else:
+            defaults = [None]*len(argspec.args)
+
+        for arg,default in zip(argspec.args,defaults):
             if arg in ['E','potential']:
                 continue
 
-            parser.add_argument("--{}".format(arg), dest=arg, type=float,
-                                help="Used in initial condition function: {}".format(fn_name))
+            if isinstance(default, list):
+                parser.add_argument("--{}".format(arg), dest=arg, type=float, nargs='+',
+                                    help="Used in initial condition function: {}".format(fn_name))
+            else:
+                parser.add_argument("--{}".format(arg), dest=arg, type=type(default),
+                                    help="Used in initial condition function: {}".format(fn_name))
 
     args = parser.parse_args()
 
