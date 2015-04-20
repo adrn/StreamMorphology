@@ -16,7 +16,7 @@ For example, you might do::
 
 and then run this module on::
 
-    python scripts/freqmap/freqmap.py --path=/path/to/triaxial-NFW/E-0.140_tube_grid_xz/
+    python scripts/freqmap/freqmap.py --path=output/freqmap/triaxial-NFW/E-0.140_tube_grid_xz/
 
 """
 
