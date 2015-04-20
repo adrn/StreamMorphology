@@ -72,6 +72,9 @@ if __name__ == '__main__':
     import logging
     import inspect
 
+    # list of possible potentials
+    all_potentials = [x.rstrip('.yml') for x in os.listdir(os.path.join(project_path, 'potentials'))]
+
     # Define parser object
     parser = ArgumentParser(description="")
     parser.add_argument("-v", "--verbose", action="store_true", dest="verbose",
@@ -90,7 +93,7 @@ if __name__ == '__main__':
                         help="Energy of the orbits.")
     parser.add_argument("--potential", dest="potential_name", type=str, required=True,
                         help="Name of the potential from the potential registry. Can be "
-                        "one of: {}".format(",".join(potential_registry.keys())))
+                        "one of: {}".format(",".join(all_potentials)))
     parser.add_argument("--ic-func", dest="ic_func", type=str, required=True,
                         help="Name of the initial condition function to use. Can be "
                         "one of: {}".format(",".join([f for f in dir(ic) if 'grid' in f])))
