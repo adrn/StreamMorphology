@@ -11,7 +11,7 @@ in the ``potential_registry``).
 
 For example, you might do::
 
-    python scripts/freqmap/make_grid.py -E -0.14 --potential=triaxial-NFW \
+    python scripts/make_grid.py -E -0.14 --potential=triaxial-NFW \
     --ic-func=tube_grid_xz --dx=5 --dz=5
 
 and then run this module on::
