@@ -12,7 +12,7 @@ import os
 # Third-party
 import numpy as np
 
-__all__ = ['read_allfreqs', 'dtype']
+__all__ = ['read_allfreqs', 'dtype', 'error_codes']
 
 # define indices of columns -- need this for the memmap'd file
 dtype = [('freqs','f8',(2,3)), ('dE_max','f8'), ('success','b1'),

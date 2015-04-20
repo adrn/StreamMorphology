@@ -12,7 +12,7 @@ import os
 # Third-party
 import numpy as np
 
-from streammorphology.freqmap import read_allfreqs
+from streammorphology.freqmap import read_allfreqs, error_codes
 
 def main(path, index=None):
     # read allfreqs into structured array
@@ -22,9 +22,18 @@ def main(path, index=None):
     fail = np.any(np.any(np.isnan(d['freqs']), axis=-1), axis=-1)
     nfail = fail.sum()
 
-    print("Number of orbits: {}".format(len(d)))
-    print("Successful: {}".format(nsuccess))
-    print("Failures: {}".format(nfail))
+    print("Number of orbits: {0}".format(len(d)))
+    print("Successful: {0}".format(nsuccess))
+    print("Total num. failures: {0}".format(nfail))
+
+    count = 0
+    for k,error_msg in error_codes.items():
+        nnn = (d['error_code'] == k).sum()
+        count += nnn
+        print("\t - {0}: {1}".format(nnn, error_msg))
+
+    if count != nfail:
+        print("\t - Unaccounted for: {0}".format(nfail - count))
 
     if index is not None:
         w0 = np.load(os.path.join(os.path.split(path)[0], 'w0.npy'))
