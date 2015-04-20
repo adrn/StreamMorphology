@@ -6,63 +6,12 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Third-party
 import numpy as np
-from scipy.signal import argrelmax, argrelmin
 
 # Project
 import gary.dynamics as gd
 import gary.integrate as gi
 
-__all__ = ['ptp_periods', 'estimate_periods', 'estimate_dt_nsteps']
-
-def ptp_periods(t, *coords):
-    """
-    Estimate the dominant periods of given coordinates by
-    computing the mean peak-to-peak time.
-
-    Parameters
-    ----------
-    t : array_like
-        Array of times. Must have same shape as individual coordinates.
-    *coords
-        Positional arguments allow specifying coordinates to compute the
-        periods of. For example, these could simply be x,y,z, or
-        could be R,phi,z for cylindrical coordinates.
-
-    """
-
-    freqs = []
-    for x in coords:
-        # find peaks
-        max_ix = argrelmax(x, mode='wrap')[0]
-        max_ix = max_ix[(max_ix != 0) & (max_ix != (len(x)-1))]
-
-        # find troughs
-        min_ix = argrelmin(x, mode='wrap')[0]
-        min_ix = min_ix[(min_ix != 0) & (min_ix != (len(x)-1))]
-
-        # neglect minor oscillations
-        tol = 1E-2
-        if abs(np.mean(x[max_ix]) - np.mean(x[min_ix])) < tol:
-            freqs.append(np.nan)
-            continue
-
-        # first compute mean peak-to-peak
-
-        if len(max_ix) > 0:
-            f_max = np.mean(t[max_ix[1:]] - t[max_ix[:-1]])
-        else:
-            f_max = np.nan
-
-        # now compute mean trough-to-trough
-        if len(min_ix) > 0:
-            f_min = np.mean(t[min_ix[1:]] - t[min_ix[:-1]])
-        else:
-            f_min = np.nan
-
-        # then take the mean of these two
-        freqs.append(np.mean([f_max, f_min]))
-
-    return np.array(freqs)
+__all__ = ['estimate_periods', 'estimate_dt_nsteps']
 
 def estimate_periods(t, w, min=False):
     """
@@ -99,10 +48,10 @@ def estimate_periods(t, w, min=False):
         phi = np.arctan2(new_w[:,1], new_w[:,0])
         z = new_w[:,2]
 
-        T = ptp_periods(t, R, phi, z)
+        T = np.array([gd.peak_to_peak_period(t, f) for f in [R, phi, z]])
 
     else:  # BOX ORBIT - pass x,y,z
-        T = ptp_periods(t, *w[:,:3].T)
+        T = np.array([gd.peak_to_peak_period(t, f) for f in w[:,:3].T])
 
     if np.any(np.isfinite(T)):
         return np.array(T[np.isfinite(T)])
