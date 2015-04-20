@@ -45,6 +45,9 @@ def worker(task):
     nperiods = task['nperiods']
     nsteps_per_period = task['nsteps_per_period']
 
+    # the order of the Hamming filter
+    p = task.get('p', 2)
+
     # read out just this initial condition
     w0 = np.load(w0_filename)
     norbits = len(w0)
@@ -98,8 +101,8 @@ def worker(task):
         return
 
     # start finding the frequencies -- do first half then second half
-    naff1 = gd.NAFF(t[:nsteps//2+1])
-    naff2 = gd.NAFF(t[nsteps//2:])
+    naff1 = gd.NAFF(t[:nsteps//2+1], p=p)
+    naff2 = gd.NAFF(t[nsteps//2:], p=p)
 
     # classify orbit full orbit
     circ = gd.classify_orbit(ws)
