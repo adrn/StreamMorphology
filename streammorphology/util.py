@@ -46,7 +46,7 @@ def main(worker, path, cache_filename, cache_dtype, mpi=False, overwrite=False, 
     if not os.path.exists(cache_path):
         # make sure memmap file exists
         d = np.memmap(cache_path, mode='w+', dtype=cache_dtype, shape=(norbits,))
-        d[:] = np.zeros(shape=(norbits), dtype=cache_dtype)
+        d[:] = np.zeros(shape=(norbits), dtype=cache_dtype) + 9999
 
     tasks = [dict(index=i, w0_filename=w0_filename,
                   cache_filename=cache_path,
