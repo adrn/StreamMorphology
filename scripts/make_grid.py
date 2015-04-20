@@ -20,7 +20,7 @@ import numpy as np
 from streammorphology import project_path
 import streammorphology.initialconditions as ic
 
-def main(potential_name, E, ic_func, output_path=None, overwrite=False, plot=False, **kwargs):
+def main(potential_name, E, ic_func, run_name=None, output_path=None, overwrite=False, plot=False, **kwargs):
     """ Calls one of the grid-making utility functions to generate a
         grid of initial conditions for frequency mapping, and saves the
         grid to a file.
@@ -33,8 +33,10 @@ def main(potential_name, E, ic_func, output_path=None, overwrite=False, plot=Fal
     # create path
     if output_path is None:
         output_path = os.path.join(project_path, "output")
-    path = os.path.join(output_path, 'freqmap', potential_name,
-                        'E{:.3f}_{}'.format(E, ic_func.func_name))
+
+    if run_name is None:
+        run_name = 'E{:.3f}_{}'.format(E, ic_func.func_name)
+    path = os.path.join(output_path, 'freqmap', potential_name, run_name)
 
     logger.info("Caching to: {}".format(path))
     if not os.path.exists(path):
@@ -88,6 +90,8 @@ if __name__ == '__main__':
                         default=False, help="Plot dat ish.")
     parser.add_argument("-p","--output-path", dest="output_path", default=None,
                         help="Path to the 'output' directory.")
+    parser.add_argument("--run-name", dest="run_name", default=None,
+                        help="Name of the run.")
 
     parser.add_argument("-E", "--energy", dest="energy", type=float, required=True,
                         help="Energy of the orbits.")
@@ -146,6 +150,7 @@ if __name__ == '__main__':
          ic_func=getattr(ic,args.ic_func),
          overwrite=args.overwrite,
          output_path=args.output_path,
+         run_name=args.run_name,
          plot=args.plot,
          **arg_dict)
 
