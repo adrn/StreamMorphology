@@ -11,12 +11,13 @@ import os
 import sys
 
 # Third-party
+from astropy import log as logger
+import gary.potential as gp
 import matplotlib.pyplot as plt
 import numpy as np
-from astropy import log as logger
 
 # Project
-from streammorphology import potential_registry, project_path
+from streammorphology import project_path
 import streammorphology.initialconditions as ic
 
 def main(potential_name, E, ic_func, output_path=None, overwrite=False, plot=False, **kwargs):
@@ -26,7 +27,8 @@ def main(potential_name, E, ic_func, output_path=None, overwrite=False, plot=Fal
     """
 
     # read the potential from the registry
-    potential = potential_registry[potential_name]
+    potential_path = os.path.join(project_path, "potentials/{0}.yml".format(potential_name))
+    potential = gp.load(potential_path)
 
     # create path
     if output_path is None:
