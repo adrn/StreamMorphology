@@ -48,12 +48,6 @@ def main(worker, path, cache_filename, cache_dtype, mpi=False, overwrite=False, 
         d = np.memmap(cache_path, mode='w+', dtype=cache_dtype, shape=(norbits,))
         d[:] = np.zeros(shape=(norbits), dtype=cache_dtype)
 
-        for row in cache_dtype:
-            if 'b' in row[1]:  # skip booleans
-                continue
-
-            d[row[0]] = np.typeDict[row[1]](-99999999)
-
     tasks = [dict(index=i, w0_filename=w0_filename,
                   cache_filename=cache_path,
                   potential_filename=pot_filename, **kwargs) for i in range(norbits)]

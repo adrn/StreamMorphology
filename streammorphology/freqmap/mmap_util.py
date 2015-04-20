@@ -19,9 +19,9 @@ dtype = [('freqs','f8',(2,3)), ('dE_max','f8'), ('success','b1'),
          ('is_tube','b1'), ('dt','f8'), ('nsteps','i8'),
          ('max_amp_freq_ix','i8'), ('error_code','i8')]
 
-error_codes = {0: "Failed to integrate orbit or estimate dt, nsteps.",
-               1: "Energy conservation criteria not met.",
-               2: "NAFF failed on find_fundamental_frequencies()."}
+error_codes = {1: "Failed to integrate orbit or estimate dt, nsteps.",
+               2: "Energy conservation criteria not met.",
+               3: "NAFF failed on find_fundamental_frequencies()."}
 
 def read_allfreqs(f, norbits=None):
     """
