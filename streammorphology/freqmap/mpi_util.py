@@ -69,6 +69,7 @@ def worker(task):
                                  shape=(norbits,), dtype=dtype)
             allfreqs['freqs'][index] = np.nan
             allfreqs['success'][index] = False
+            allfreqs['error_code'][index] = 0
             allfreqs.flush()
             return
 
@@ -97,6 +98,7 @@ def worker(task):
                              shape=(norbits,), dtype=dtype)
         allfreqs['freqs'][index] = np.nan
         allfreqs['success'][index] = False
+        allfreqs['error_code'][index] = 1
         allfreqs.flush()
         return
 
@@ -132,6 +134,7 @@ def worker(task):
                              shape=(norbits,), dtype=dtype)
         allfreqs['freqs'][index] = np.nan
         allfreqs['success'][index] = False
+        allfreqs['error_code'][index] = 2
         allfreqs.flush()
         return
 
