@@ -116,10 +116,12 @@ if __name__ == '__main__':
 
             if isinstance(default, list):
                 parser.add_argument("--{}".format(arg), dest=arg, type=float, nargs='+',
-                                    help="Used in initial condition function: {}".format(fn_name))
+                                    help="[float] Used in initial condition function: {0}".format(fn_name))
             else:
-                parser.add_argument("--{}".format(arg), dest=arg, type=type(default),
-                                    help="Used in initial condition function: {}".format(fn_name))
+                typ = type(default).__name__
+                helpstr = "[{0}] Used in initial condition function: {1}".format(typ, fn_name)
+                parser.add_argument("--{0}".format(arg), dest=arg,
+                                    type=type(default), help=helpstr)
 
     args = parser.parse_args()
 
