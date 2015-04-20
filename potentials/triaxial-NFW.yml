@@ -1,0 +1,24 @@
+class: LeeSutoTriaxialNFWPotential
+parameters:
+  R:
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  a: 1.0
+  b: 0.77
+  c: 0.55
+  r_s: 20.0
+  v_c: 0.17897462888439886
+units:
+  angle: rad
+  angular speed: mas / yr
+  length: kpc
+  mass: solMass
+  speed: km / s
+  time: Myr

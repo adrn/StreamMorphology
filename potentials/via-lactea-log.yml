@@ -1,0 +1,24 @@
+class: LogarithmicPotential
+parameters:
+  R:
+  - -0.012943311780485637
+  - 0.9999162318315236
+  - 0.0
+  - -0.9999162318315236
+  - -0.012943311780485637
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  q1: 0.872614
+  q2: 1.0
+  q3: 1.16395
+  r_h: 5.87963
+  v_c: 0.20302471402129763
+units:
+  angle: rad
+  angular speed: mas / yr
+  length: kpc
+  mass: solMass
+  speed: km / s
+  time: Myr
