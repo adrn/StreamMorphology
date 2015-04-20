@@ -6,18 +6,16 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Standard library
 import os
-import sys
 import logging
 
 # Third-party
-import matplotlib.pyplot as plt
 import numpy as np
 from astropy import log as logger
-import gary.dynamics as gd
+import gary.potential as gp
 
 # Project
+from ... import project_path
 from ..core import align_ensemble, compute_align_matrix
-from ...potential import potential_registry
 
 logger.setLevel(logging.DEBUG)
 
@@ -25,7 +23,7 @@ plot_path = "plots/tests/TODO"
 if not os.path.exists(plot_path):
     os.makedirs(plot_path)
 
-potential = potential_registry['triaxial-NFW']
+potential = gp.load(os.path.join(project_path,'potentials/triaxial-NFW.yml'))
 
 def test_align_orbit():
     # start with an orbit that circulates x
