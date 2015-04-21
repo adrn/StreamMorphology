@@ -146,19 +146,20 @@ def worker(task):
     return result
 
 def callback(result):
+    print("holla back")
     allfreqs = np.memmap(result['mmap_filename'], mode='r+',
                          shape=(result['norbits'],), dtype=dtype)
 
     if result['error_code'] != 0.:
         # error happened
-        for key,val in allfreqs.dtype.names:
+        for key in allfreqs.dtype.names:
             if key in result:
-                allfreqs[key][result['index']] = val
+                allfreqs[key][result['index']] = result[key]
 
     else:
         # all is well
-        for key,val in allfreqs.dtype.names:
-            allfreqs[key][result['index']] = val
+        for key in allfreqs.dtype.names:
+            allfreqs[key][result['index']] = result[key]
 
     # flush to output array
     allfreqs.flush()
