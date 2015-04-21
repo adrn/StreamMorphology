@@ -50,8 +50,14 @@ def worker(task):
                          shape=(norbits,), dtype=dtype)
 
     # short-circuit if this orbit is already done
-    if all_lyap['status'][index] == 1:
+    if all_lyap['success'][index]:
         return
+
+    # container for return
+    result = dict()
+    result['mmap_filename'] = alllyap_filename
+    result['norbits'] = norbits
+    result['index'] = index
 
     # automatically estimate dt, nsteps
     if dt is None or nsteps is None:
@@ -60,20 +66,12 @@ def worker(task):
                                             nperiods, nsteps_per_period)
         except RuntimeError:
             logger.warning("Failed to integrate orbit when estimating dt,nsteps")
-            alllyap = np.memmap(alllyap_filename, mode='r+',
-                                shape=(norbits,), dtype=dtype)
-            alllyap['status'][index] = 2
-            alllyap.flush()
-            return
+            result['lyap_exp'] = np.nan
+            result['success'] = False
+            result['error_code'] = 1
+            return result
 
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
-
-    # def F_max(t,w):
-    #     x,y,z,px,py,pz = w.T
-    #     term1 = np.array([px, py, pz]).T
-    #     term2 = potential.acceleration(w[...,:3])
-    #     return np.hstack((term1,term2))
-    # integrator = gi.DOPRI853Integrator(F_max)
 
     maxiter = 3  # maximum number of times to refine integration step
     for i in range(maxiter+1):
@@ -108,16 +106,13 @@ def worker(task):
                      .format(index, dt, nsteps, dEmax))
 
     if dEmax > ETOL:
-        alllyap = np.memmap(alllyap_filename, mode='r+',
-                            shape=(norbits,), dtype=dtype)
-        alllyap['status'][index] = 2
-        alllyap.flush()
-        return
+        result['lyap_exp'] = np.nan
+        result['success'] = False
+        result['error_code'] = 2
+        return result
 
-    alllyap = np.memmap(alllyap_filename, mode='r+',
-                        shape=(norbits,), dtype=dtype)
-    alllyap['lyap_exp'][index] = np.mean(LEs[-100:])
-    alllyap['status'][index] = 1
-    alllyap.flush()
+    result['lyap_exp'] = np.mean(LEs[-500:])
+    result['success'] = True
+    result['error_code'] = 0
 
-    return
+    return result

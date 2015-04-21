@@ -12,10 +12,13 @@ import os
 # Third-party
 import numpy as np
 
-__all__ = ['read_alllyap', 'dtype']
+__all__ = ['read_alllyap', 'dtype', 'error_codes']
 
 # define indices of columns -- need this for the memmap'd file
-dtype = [('lyap_exp','f8'), ('status','i8')]
+dtype = [('lyap_exp','f8'), ('success','b1'), ('error_code','i8')]
+
+error_codes = {1: "Failed to integrate orbit or estimate dt, nsteps.",
+               2: "Energy conservation criteria not met."}
 
 def read_alllyap(f, norbits=None):
     """

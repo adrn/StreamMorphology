@@ -14,7 +14,7 @@ import sys
 from astropy import log as logger
 
 # project
-from streammorphology.util import main, get_parser
+from streammorphology.util import main, get_parser, callback
 from streammorphology.lyapunov import worker, parser_arguments, dtype
 
 parser = get_parser()
@@ -32,7 +32,7 @@ else:
     logger.setLevel(logging.INFO)
 
 dargs = dict(args._get_kwargs())
-main(worker=worker, path=dargs.pop('path'),
+main(worker=worker, callback=callback, path=dargs.pop('path'),
      cache_filename='alllyap.dat', cache_dtype=dtype,
      mpi=dargs.pop('mpi'), overwrite=dargs.pop('overwrite'), seed=dargs.pop('seed'),
      **dargs)
