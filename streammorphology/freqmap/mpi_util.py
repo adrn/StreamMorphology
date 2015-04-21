@@ -19,7 +19,7 @@ from .mmap_util import dtype
 from .core import estimate_dt_nsteps
 from .. import ETOL
 
-__all__ = ['worker', 'callback', 'parser_arguments']
+__all__ = ['worker', 'parser_arguments']
 
 parser_arguments = list()
 
@@ -146,23 +146,3 @@ def worker(task):
     result['success'] = True
     result['error_code'] = 0
     return result
-
-def callback(result):
-    allfreqs = np.memmap(result['mmap_filename'], mode='r+',
-                         shape=(result['norbits'],), dtype=dtype)
-
-    logger.debug("Flushing to output array...")
-    if result['error_code'] != 0.:
-        # error happened
-        for key,val in allfreqs.dtype.names:
-            if key in result:
-                allfreqs[key][result['index']] = val
-
-    else:
-        # all is well
-        for key,val in allfreqs.dtype.names:
-            allfreqs[key][result['index']] = val
-
-    # flush to output array
-    allfreqs.flush()
-    logger.debug("...flushed, washing hands.")

@@ -79,3 +79,26 @@ def get_parser():
                              "initial conditions grid).")
 
     return parser
+
+def callback(result):
+    if result is None:
+        return
+
+    memmap = np.memmap(result['mmap_filename'], mode='r+',
+                       shape=(result['norbits'],), dtype=result['dtype'])
+
+    logger.debug("Flushing to output array...")
+    if result['error_code'] != 0.:
+        # error happened
+        for key,val in memmap.dtype.names:
+            if key in result:
+                memmap[key][result['index']] = val
+
+    else:
+        # all is well
+        for key,val in memmap.dtype.names:
+            memmap[key][result['index']] = val
+
+    # flush to output array
+    memmap.flush()
+    logger.debug("...flushed, washing hands.")
