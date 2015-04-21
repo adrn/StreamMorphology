@@ -123,6 +123,8 @@ def worker(task):
     else:  # box
         fs1 = [(ws[sl1,0,j] + 1j*ws[sl1,0,j+3]) for j in range(3)]
         fs2 = [(ws[sl2,0,j] + 1j*ws[sl2,0,j+3]) for j in range(3)]
+    
+    logger.debug("NAFFing the orbits")
 
     # freqs1,d1,ixs1,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[:nsteps//2+1])
     # freqs2,d2,ixs2,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[nsteps//2:])
@@ -139,6 +141,8 @@ def worker(task):
         return
 
     max_amp_freq_ix = d1['|A|'][ixs1].argmax()
+    
+    logger.debug("Flushing to output array...")
 
     # save to output array
     allfreqs = np.memmap(allfreqs_filename, mode='r+',
@@ -152,3 +156,5 @@ def worker(task):
     allfreqs['max_amp_freq_ix'][index] = max_amp_freq_ix
     allfreqs['success'][index] = True
     allfreqs.flush()
+
+    logger.debug("...flushed, washing hands.")
