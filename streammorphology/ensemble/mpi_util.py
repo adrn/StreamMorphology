@@ -77,32 +77,38 @@ def worker(task):
     w0 = np.load(w0_filename)
     norbits = len(w0)
     this_w0 = w0[index].copy()
-    all_kld = np.memmap(filename, mode='r+',
+    all_kld = np.memmap(filename, mode='r',
                         shape=(norbits,), dtype=get_dtype(nkld))
 
     # short-circuit if this orbit is already done
     # TODO: handle status == 0 (not attempted) different from
     #       status >= 2 (previous failure)
-    if all_kld['status'][index] == 1:
+    if all_kld['success'][index]:
         return
+
+    # container for return
+    result = dict()
+    result['mmap_filename'] = filename
+    result['norbits'] = norbits
+    result['index'] = index
 
     try:
         dt,nsteps,T = estimate_dt_nsteps(potential, this_w0, nperiods, nsteps_per_period,
                                          return_periods=True)
     except RuntimeError:
         logger.warning("Failed to integrate orbit when estimating dt,nsteps")
-        all_kld['status'][index] = 3  # failed due to integration
-        all_kld.flush()
-        return
+        result['success'] = False
+        result['error_code'] = 1
+        return result
 
     # find the nearest (in time) pericenter to the given initial condition
     try:
         peri_w0 = nearest_pericenter(this_w0, potential, dt, T.max())
     except:
         logger.warning("Failed to find nearest pericenter.")
-        all_kld['status'][index] = 3  # failed due to integration
-        all_kld.flush()
-        return
+        result['success'] = False
+        result['error_code'] = 2
+        return result
 
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
@@ -128,9 +134,9 @@ def worker(task):
                                            density_thresholds)
     except:
         logger.warning("Unexpected failure: {0}".format(sys.exc_info()))
-        all_kld['status'][index] = 4  # some kind of catastrophic failure
-        all_kld.flush()
-        return
+        result['success'] = False
+        result['error_code'] = 3
+        return result
 
     # TODO: compare final E vs. initial E against ETOL?
     # E_end = float(np.squeeze(potential.total_energy(w_i[0,:3], w_i[0,3:])))
@@ -141,14 +147,16 @@ def worker(task):
     #     return
 
     # all_kld['frac_above_dens'][index] = frac_above_dens
-    all_kld['mean_dens'][index] = mean_dens
-    all_kld['kld'][index] = kld
-    all_kld['kld_t'][index] = kld_t
-    all_kld['dt'][index] = dt
-    all_kld['nsteps'][index] = nsteps
-    all_kld['dE_max'][index] = 0.  # TODO:
-    all_kld['status'][index] = 1  # success!
-    all_kld.flush()
+    result['mean_dens'] = mean_dens
+    result['kld'] = kld
+    result['kld_t'] = kld_t
+    result['dt'] = dt
+    result['nsteps'] = nsteps
+    result['dE_max'] = 0.  # TODO:
+    result['success'] = True
+    result['error_code'] = 0
+
+    return result
 
     # # fit a power law to the KLDs
     # model = lambda p,t: p[0] * t**p[1]
