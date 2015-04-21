@@ -17,7 +17,8 @@ from gary.util import get_pool
 
 __all__ = ['main', 'get_parser']
 
-def main(worker, path, cache_filename, cache_dtype, mpi=False, overwrite=False, seed=42, **kwargs):
+def main(worker, path, cache_filename, cache_dtype, callback=None,
+         mpi=False, overwrite=False, seed=42, **kwargs):
     np.random.seed(seed)
 
     # get a pool object for multiprocessing / MPI
@@ -52,7 +53,7 @@ def main(worker, path, cache_filename, cache_dtype, mpi=False, overwrite=False, 
                   cache_filename=cache_path,
                   potential_filename=pot_filename, **kwargs) for i in range(norbits)]
 
-    pool.map(worker, tasks)
+    pool.map(worker, tasks, callback=callback)
     pool.close()
 
     sys.exit(0)

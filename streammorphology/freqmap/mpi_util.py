@@ -19,7 +19,7 @@ from .mmap_util import dtype
 from .core import estimate_dt_nsteps
 from .. import ETOL
 
-__all__ = ['worker', 'parser_arguments']
+__all__ = ['worker', 'callback', 'parser_arguments']
 
 parser_arguments = list()
 
@@ -58,6 +58,12 @@ def worker(task):
     if allfreqs['success'][index]:
         return
 
+    # container for return
+    result = dict()
+    result['mmap_filename'] = allfreqs_filename
+    result['norbits'] = norbits
+    result['index'] = index
+
     # automatically estimate dt, nsteps
     if dt is None or nsteps is None:
         try:
@@ -65,13 +71,10 @@ def worker(task):
                                             nperiods, nsteps_per_period)
         except RuntimeError:
             logger.warning("Failed to integrate orbit when estimating dt,nsteps")
-            allfreqs = np.memmap(allfreqs_filename, mode='r+',
-                                 shape=(norbits,), dtype=dtype)
-            allfreqs['freqs'][index] = np.nan
-            allfreqs['success'][index] = False
-            allfreqs['error_code'][index] = 0
-            allfreqs.flush()
-            return
+            result['freqs'] = np.nan*allfreqs['freqs'][index]
+            result['success'] = False
+            result['error_code'] = 1
+            return result
 
     logger.info("Orbit {}: dt={}, nsteps={}".format(index, dt, nsteps))
 
@@ -94,13 +97,10 @@ def worker(task):
         logger.debug('max(∆E) = {0:.2e}'.format(dEmax))
 
     if dEmax > ETOL:
-        allfreqs = np.memmap(allfreqs_filename, mode='r+',
-                             shape=(norbits,), dtype=dtype)
-        allfreqs['freqs'][index] = np.nan
-        allfreqs['success'][index] = False
-        allfreqs['error_code'][index] = 1
-        allfreqs.flush()
-        return
+        result['freqs'] = np.nan*allfreqs['freqs'][index]
+        result['success'] = False
+        result['error_code'] = 2
+        return result
 
     # start finding the frequencies -- do first half then second half
     naff1 = gd.NAFF(t[:nsteps//2+1], p=p)
@@ -123,7 +123,7 @@ def worker(task):
     else:  # box
         fs1 = [(ws[sl1,0,j] + 1j*ws[sl1,0,j+3]) for j in range(3)]
         fs2 = [(ws[sl2,0,j] + 1j*ws[sl2,0,j+3]) for j in range(3)]
-    
+
     logger.debug("NAFFing the orbits")
 
     # freqs1,d1,ixs1,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[:nsteps//2+1])
@@ -132,29 +132,37 @@ def worker(task):
         freqs1,d1,ixs1 = naff1.find_fundamental_frequencies(fs1, nintvec=8)
         freqs2,d2,ixs2 = naff2.find_fundamental_frequencies(fs2, nintvec=8)
     except:
-        allfreqs = np.memmap(allfreqs_filename, mode='r+',
-                             shape=(norbits,), dtype=dtype)
-        allfreqs['freqs'][index] = np.nan
-        allfreqs['success'][index] = False
-        allfreqs['error_code'][index] = 2
-        allfreqs.flush()
-        return
+        result['freqs'] = np.nan*allfreqs['freqs'][index]
+        result['success'] = False
+        result['error_code'] = 3
+        return result
 
-    max_amp_freq_ix = d1['|A|'][ixs1].argmax()
-    
+    result['freqs'] = np.vstack((freqs1, freqs2))
+    result['dE_max'] = dEmax
+    result['is_tube'] = float(is_tube)
+    result['dt'] = float(dt)
+    result['nsteps'] = nsteps
+    result['max_amp_freq_ix'] = d1['|A|'][ixs1].argmax()
+    result['success'] = True
+    result['error_code'] = 0
+    return result
+
+def callback(result):
+    allfreqs = np.memmap(result['mmap_filename'], mode='r+',
+                         shape=(result['norbits'],), dtype=dtype)
+
     logger.debug("Flushing to output array...")
+    if result['error_code'] != 0.:
+        # error happened
+        for key,val in allfreqs.dtype.names:
+            if key in result:
+                allfreqs[key][result['index']] = val
 
-    # save to output array
-    allfreqs = np.memmap(allfreqs_filename, mode='r+',
-                         shape=(norbits,), dtype=dtype)
-    allfreqs['freqs'][index][0] = freqs1
-    allfreqs['freqs'][index][1] = freqs2
-    allfreqs['dE_max'][index] = dEmax
-    allfreqs['is_tube'][index] = float(is_tube)
-    allfreqs['dt'][index] = float(dt)
-    allfreqs['nsteps'][index] = nsteps
-    allfreqs['max_amp_freq_ix'][index] = max_amp_freq_ix
-    allfreqs['success'][index] = True
+    else:
+        # all is well
+        for key,val in allfreqs.dtype.names:
+            allfreqs[key][result['index']] = val
+
+    # flush to output array
     allfreqs.flush()
-
     logger.debug("...flushed, washing hands.")
