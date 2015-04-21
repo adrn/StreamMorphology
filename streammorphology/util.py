@@ -90,14 +90,14 @@ def callback(result):
     logger.debug("Flushing to output array...")
     if result['error_code'] != 0.:
         # error happened
-        for key,val in memmap.dtype.names:
+        for key in memmap.dtype.names:
             if key in result:
-                memmap[key][result['index']] = val
+                memmap[key][result['index']] = result[key]
 
     else:
         # all is well
-        for key,val in memmap.dtype.names:
-            memmap[key][result['index']] = val
+        for key in memmap.dtype.names:
+            memmap[key][result['index']] = result[key]
 
     # flush to output array
     memmap.flush()
