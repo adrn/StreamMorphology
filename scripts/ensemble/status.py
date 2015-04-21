@@ -34,7 +34,7 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--path", dest="path", required=True,
                         help="Path to a Numpy memmap file containing the results "
                              "of frequency mapping.")
-    parser.add_argument("--nkld", dest="nkld", required=True,
+    parser.add_argument("--nkld", dest="nkld", required=True, type=int,
                         help="Number of times the KLD was computed and saved.")
 
     args = parser.parse_args()
