@@ -91,6 +91,7 @@ def worker(task):
     result['mmap_filename'] = filename
     result['norbits'] = norbits
     result['index'] = index
+    result['dtype'] = dtype
 
     try:
         dt,nsteps,T = estimate_dt_nsteps(potential, this_w0, nperiods, nsteps_per_period,

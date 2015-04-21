@@ -63,6 +63,7 @@ def worker(task):
     result['mmap_filename'] = allfreqs_filename
     result['norbits'] = norbits
     result['index'] = index
+    result['dtype'] = dtype
 
     # automatically estimate dt, nsteps
     if dt is None or nsteps is None:
