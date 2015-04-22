@@ -87,7 +87,7 @@ def callback(result):
     memmap = np.memmap(result['mmap_filename'], mode='r+',
                        shape=(result['norbits'],), dtype=result['dtype'])
 
-    logger.debug("Flushing to output array...")
+    logger.debug("Flushing {0} to output array...".format(result['index']))
     if result['error_code'] != 0.:
         # error happened
         for key in memmap.dtype.names:
