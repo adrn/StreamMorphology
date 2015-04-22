@@ -35,4 +35,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.path, nkld=args.nkld)
+    main(args.path)
