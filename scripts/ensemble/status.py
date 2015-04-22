@@ -12,11 +12,11 @@ def main(path, nkld):
     # read allfreqs into structured array
     d = read_allkld(path, nkld=nkld)
 
-    ndone = (d['status'] > 0).sum()
-    nsuccess = (d['status'] == 1).sum()
-    nfail_energy = (d['status'] == 2).sum()
-    nfail_integrate = (d['status'] == 3).sum()
-    nfail_kld = (d['status'] == 4).sum()
+    ndone = (d['dt'] != 0.).sum()
+    nsuccess = d['success'].sum()
+    nfail_energy = (d['error_code'] == 1).sum()
+    nfail_integrate = (d['error_code'] == 2).sum()
+    nfail_kld = (d['error_code'] == 3).sum()
 
     print("Number of orbits: {}".format(len(d)))
     print("Done processing: {}".format(ndone))
