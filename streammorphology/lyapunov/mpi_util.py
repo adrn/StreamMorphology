@@ -74,37 +74,26 @@ def worker(task):
 
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
-    maxiter = 3  # maximum number of times to refine integration step
-    for i in range(maxiter+1):
-        # integrate orbit
-        logger.debug("Iteration {} -- integrating orbit...".format(i+1))
-        try:
-            # lyap = gd.lyapunov_max(w0[index].copy(), integrator, dt=dt, nsteps=nsteps)
-            lyap = gd.fast_lyapunov_max(w0[index].copy(), potential, dt=dt, nsteps=nsteps)
+    # integrate orbit
+    logger.debug("Integrating orbit / computing Lyapunov exponent...")
+    try:
+        # lyap = gd.lyapunov_max(w0[index].copy(), integrator, dt=dt, nsteps=nsteps)
+        lyap = gd.fast_lyapunov_max(w0[index].copy(), potential, dt=dt, nsteps=nsteps)
 
-        except RuntimeError:  # ODE integration failed
-            dt /= 2.
-            nsteps *= 2
-            logger.warning("Orbit integration failed. Shrinking timestep to "
-                           "dt={}".format(dt))
-            continue
-
-        LEs,ts,ws = lyap
+    except RuntimeError:  # ODE integration failed
+        logger.warning("Orbit integration failed.")
+        dEmax = 1E10
+    else:
         logger.debug('Orbit integrated successfully, checking energy conservation...')
 
+        # unpack lyap
+        LEs,ts,ws = lyap
+
         # check energy conservation for the orbit
-        E = potential.total_energy(ws[:,:3].copy(), ws[:,3:].copy())
+        E = potential.total_energy(ws[:,0,:3].copy(), ws[:,0,3:].copy())
         dE = np.abs(E[1:] - E[0])
         dEmax = dE.max() / np.abs(E[0])
-
         logger.debug('max(∆E) = {0:.2e}'.format(dEmax))
-        if dEmax < ETOL:
-            break
-
-        nsteps *= 2
-        dt /= 2.
-        logger.debug("Refining orbit {} to: dt,nsteps=({},{}). Max. dE={}"
-                     .format(index, dt, nsteps, dEmax))
 
     if dEmax > ETOL:
         result['lyap_exp'] = np.nan
