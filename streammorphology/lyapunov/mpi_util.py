@@ -26,6 +26,8 @@ parser_arguments.append([('--nperiods',), dict(dest='nperiods', default=1000, ty
                                                help='Number of periods to integrate for.')])
 parser_arguments.append([('--nsteps_per_period',), dict(dest='nsteps_per_period', default=250, type=int,
                                                         help='Number of steps to take per min. period.')])
+parser_arguments.append([('--noffset_orbits',), dict(dest='noffset_orbits', default=4, type=int,
+                                                     help='Number of offset orbits to integrate and average.')])
 
 def worker(task):
 
@@ -42,6 +44,7 @@ def worker(task):
     # if these aren't set, assume defaults
     nperiods = task['nperiods']
     nsteps_per_period = task['nsteps_per_period']
+    noffset_orbits = task['noffset_orbits']
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
@@ -78,7 +81,8 @@ def worker(task):
     logger.debug("Integrating orbit / computing Lyapunov exponent...")
     try:
         # lyap = gd.lyapunov_max(w0[index].copy(), integrator, dt=dt, nsteps=nsteps)
-        lyap = gd.fast_lyapunov_max(w0[index].copy(), potential, dt=dt, nsteps=nsteps)
+        lyap = gd.fast_lyapunov_max(w0[index].copy(), potential, dt=dt, nsteps=nsteps,
+                                    noffset_orbits=noffset_orbits)
 
     except RuntimeError:  # ODE integration failed
         logger.warning("Orbit integration failed.")
@@ -101,7 +105,8 @@ def worker(task):
         result['error_code'] = 2
         return result
 
-    result['lyap_exp'] = np.mean(LEs[-500:])
+    result['lyap_exp'] = np.mean(LEs[-1])
+    result['lyap_exp_end'] = np.mean(LEs[-8192::8], axis=1)
     result['success'] = True
     result['error_code'] = 0
 
