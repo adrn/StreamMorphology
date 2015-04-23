@@ -106,7 +106,7 @@ def worker(task):
         return result
 
     result['lyap_exp'] = np.mean(LEs[-1])
-    result['lyap_exp_end'] = np.mean(LEs[-8192::8], axis=1)
+    result['lyap_exp_end'] = np.mean(LEs[-16384::16], axis=1)
     result['success'] = True
     result['error_code'] = 0
 
