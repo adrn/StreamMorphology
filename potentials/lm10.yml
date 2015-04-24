@@ -1,0 +1,25 @@
+class: LM10Potential
+parameters:
+  bulge:
+    c: 0.7
+    m: 34000000000.0
+  disk:
+    a: 6.5
+    b: 0.26
+    m: 100000000000.0
+  halo:
+    phi: 1.6929693744344996
+    psi: 0.0
+    q1: 1.38
+    q2: 1.0
+    q3: 1.36
+    r_h: 12.0
+    theta: 0.0
+    v_c: 0.17624729719037474
+units:
+  angle: rad
+  angular speed: mas / yr
+  length: kpc
+  mass: solMass
+  speed: km / s
+  time: Myr
