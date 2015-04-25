@@ -33,7 +33,7 @@ def nearest_pericenter(w0, potential, dt, T):
     Find the nearest pericenter to w0
     """
 
-    t,w = potential.integrate_orbit(w0, dt=dt, nsteps=T*10,
+    t,w = potential.integrate_orbit(w0, dt=dt, nsteps=int(T*10),
                                     Integrator=gi.DOPRI853Integrator)
 
     r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
