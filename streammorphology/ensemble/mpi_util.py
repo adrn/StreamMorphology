@@ -64,7 +64,7 @@ def worker(task):
     bw = task['kde_bandwidth']
 
     # number of times to compute the KLD
-    nkld = task['nkld']
+    nkld = int(task['nkld'])
 
     # number of periods to integrate the ensemble
     nperiods = task['nperiods']
@@ -148,9 +148,9 @@ def worker(task):
     #     return
 
     # all_kld['frac_above_dens'][index] = frac_above_dens
-    result['mean_dens'] = mean_dens
-    result['kld'] = kld
-    result['kld_t'] = kld_t
+    result['mean_dens'] = np.array(mean_dens).copy()
+    result['kld'] = np.array(kld).copy()
+    result['kld_t'] = np.array(kld_t).copy()
     result['dt'] = dt
     result['nsteps'] = nsteps
     result['dE_max'] = 0.  # TODO:

@@ -105,3 +105,5 @@ def callback(result):
     # flush to output array
     memmap.flush()
     logger.debug("...flushed, washing hands.")
+
+    del memmap  # explicitly try to close?
