@@ -14,8 +14,9 @@ import numpy as np
 
 __all__ = ['read_allkld', 'get_dtype', 'error_codes']
 
-def get_dtype(nkld):  #, ndensity_threshold):
+def get_dtype(nkld): # ndensity_threshold):
     # define indices of columns -- need this for the memmap'd file
+    nkld = int(nkld)
     dtype = [('kld','f8',(nkld,)), ('kld_t','f8',(nkld,)), ('dE_max','f8'),
              ('dt','f8'), ('nsteps','i8'), ('error_code','i8'), ('success','b1'),
              # ('frac_above_dens','f8',(nkld,ndensity_threshold)),
