@@ -28,7 +28,11 @@ def main():
 
     dt,nsteps = estimate_dt_nsteps(potential, w0, nperiods=50000, nsteps_per_period=250)
 
+    print("estimated dt, nsteps: {0:2f}, {1:d}".format(dt,nsteps))
+
     le,t,w = gd.fast_lyapunov_max(w0, potential, dt, nsteps)
+
+    print("saving stuff to: {0}".format(outpath))
 
     np.save(os.path.join(outpath, "le.npy"), le)
     np.save(os.path.join(outpath, "t.npy"), t)
