@@ -17,7 +17,7 @@ import numpy as np
 # Project
 from streammorphology.freqmap import read_allfreqs
 
-def main(path, vbounds=None):
+def main(path, bounds=None, vbounds=None):
 
     # read in initial conditions
     w0 = np.load(os.path.join(path, 'w0.npy'))
@@ -60,8 +60,12 @@ def main(path, vbounds=None):
     if np.all(w0[:,1] == 0.):
         # plot initial condition grid, colored by fractional diffusion rate
         fig,ax = plt.subplots(1,1,figsize=(9.75,8))
-        ax.set_xlim(0, max([w0[:,0].max(),w0[:,2].max()]))
-        ax.set_ylim(*ax.get_xlim())
+
+        if bounds is None:
+            bounds = (0, max([w0[:,0].max(),w0[:,2].max()]))
+
+        ax.set_xlim(*bounds)
+        ax.set_ylim(*bounds)
 
         # automatically determine symbol size
         xy_pixels = ax.transData.transform(np.vstack([w0[good_ix,0],w0[good_ix,2]]).T)
@@ -149,14 +153,21 @@ if __name__ == '__main__':
                         help="Path to a Numpy memmap file containing the results "
                              "of frequency mapping.")
 
+    parser.add_argument("--bounds", dest="bounds", default=None, type=str,
+                        help="bounds of plot")
     parser.add_argument("--vbounds", dest="vbounds", default=None, type=str,
                         help="bounds of color scale")
 
     args = parser.parse_args()
+
+    if args.bounds is not None:
+        bounds = map(float, args.bounds.split(","))
+    else:
+        bounds = None
 
     if args.vbounds is not None:
         vbounds = map(float, args.vbounds.split(","))
     else:
         vbounds = None
 
-    main(args.path, vbounds=vbounds)
+    main(args.path, bounds=bounds, vbounds=vbounds)
