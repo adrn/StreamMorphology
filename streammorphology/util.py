@@ -45,7 +45,6 @@ def main(worker, path, cache_filename, cache_dtype, callback=None,
         os.remove(cache_path)
 
     logger.info("Cache dtype: {0}".format(cache_dtype))
-    logger.info("Cache norbits: {0}".format(norbits))
 
     if not os.path.exists(cache_path):
         # make sure memmap file exists

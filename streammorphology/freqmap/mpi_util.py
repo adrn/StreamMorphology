@@ -56,7 +56,8 @@ def worker(task):
 
     # short-circuit if this orbit is already done
     if allfreqs['success'][index]:
-        return
+        logger.debug("Orbit {0} already successfully completed.".format(index))
+        return None
 
     # container for return
     result = dict()
