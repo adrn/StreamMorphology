@@ -90,6 +90,8 @@ def callback(result_path):
     with open(result_path, 'r') as f:
         result = pickle.load(f)
 
+    os.remove(result_path)
+
     memmap = np.memmap(result['mmap_filename'], mode='r+',
                        shape=(result['norbits'],), dtype=result['dtype'])
 
