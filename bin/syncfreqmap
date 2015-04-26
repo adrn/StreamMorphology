@@ -1,3 +1,3 @@
 #!/bin/bash
 
-echo `rsync -zvr yeti:/vega/astro/users/amp2217/projects/morphology/output/freqmap ~/projects/morphology/output/`
+echo `rsync -zvr --exclude 'bkup_*' yeti:/vega/astro/users/amp2217/projects/morphology/output/freqmap ~/projects/morphology/output/`
