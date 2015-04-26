@@ -6,6 +6,11 @@ from __future__ import division, print_function
 
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
+# Standard library
+import uuid
+import os
+import cPickle as pickle
+
 # Third-party
 import numpy as np
 from astropy import log as logger
@@ -28,6 +33,14 @@ parser_arguments.append([('--nperiods',), dict(dest='nperiods', default=250, typ
                                                help='Number of periods to integrate for.')])
 parser_arguments.append([('--nsteps_per_period',), dict(dest='nsteps_per_period', default=250, type=int,
                                                         help='Number of steps to take per min. period.')])
+
+def writetmp(result):
+    name = str(uuid.uuid4())
+    path = os.path.split(result['mmap_filename'])[0]
+    path = os.path.join(path, "{0}.pickle".format(name))
+    with open(path, 'w') as f:
+        pickle.dump(result, f)
+    return os.path.abspath(path)
 
 def worker(task):
 
@@ -76,7 +89,7 @@ def worker(task):
             result['freqs'] = np.nan*allfreqs['freqs'][index]
             result['success'] = False
             result['error_code'] = 1
-            return result
+            return writetmp(result)
 
     logger.info("Orbit {}: dt={}, nsteps={}".format(index, dt, nsteps))
 
@@ -102,7 +115,7 @@ def worker(task):
         result['freqs'] = np.nan*allfreqs['freqs'][index]
         result['success'] = False
         result['error_code'] = 2
-        return result
+        return writetmp(result)
 
     # start finding the frequencies -- do first half then second half
     naff1 = gd.NAFF(t[:nsteps//2+1], p=p)
@@ -137,7 +150,7 @@ def worker(task):
         result['freqs'] = np.nan*allfreqs['freqs'][index]
         result['success'] = False
         result['error_code'] = 3
-        return result
+        return writetmp(result)
 
     result['freqs'] = np.vstack((freqs1, freqs2))
     result['dE_max'] = dEmax
@@ -147,4 +160,4 @@ def worker(task):
     result['max_amp_freq_ix'] = d1['|A|'][ixs1].argmax()
     result['success'] = True
     result['error_code'] = 0
-    return result
+    return writetmp(result)

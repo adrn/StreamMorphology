@@ -38,7 +38,7 @@ parser_arguments.append([('--nkld',),
                               help='Number of times to evaluate the KLD over the integration '
                                    'of the ensemble.')])
 parser_arguments.append([('--nperiods',),
-                         dict(dest='nperiods', default=256, type=int,
+                         dict(dest='nperiods', default=250, type=int,
                               help='Number of periods to integrate for, in units of the parent '
                                    'orbit periods.')])
 parser_arguments.append([('--nsteps_per_period',),

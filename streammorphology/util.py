@@ -9,6 +9,7 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 # Standard library
 import os
 import sys
+import cPickle as pickle
 
 # Third-party
 from astropy import log as logger
@@ -82,9 +83,12 @@ def get_parser():
 
     return parser
 
-def callback(result):
-    if result is None:
+def callback(result_path):
+    if result_path is None:
         return
+
+    with open(result_path, 'r') as f:
+        result = pickle.load(f)
 
     memmap = np.memmap(result['mmap_filename'], mode='r+',
                        shape=(result['norbits'],), dtype=result['dtype'])
