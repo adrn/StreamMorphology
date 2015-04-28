@@ -28,6 +28,8 @@ parser_arguments.append([('--nperiods',), dict(dest='nperiods', default=250, typ
                                                help='Number of periods to integrate for.')])
 parser_arguments.append([('--nsteps_per_period',), dict(dest='nsteps_per_period', default=250, type=int,
                                                         help='Number of steps to take per min. period.')])
+parser_arguments.append([('--hammingp',), dict(dest='hammingp', default=4, type=int,
+                                               help='Power of Hamming filter.')])
 
 def worker(task):
 
@@ -46,7 +48,7 @@ def worker(task):
     nsteps_per_period = task['nsteps_per_period']
 
     # the order of the Hamming filter
-    p = task.get('p', 2)
+    p = task['p']
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
@@ -99,6 +101,7 @@ def worker(task):
         logger.debug('max(∆E) = {0:.2e}'.format(dEmax))
 
     if dEmax > ETOL:
+        logger.warning("Failed due to energy conservation check.")
         result['freqs'] = np.nan*allfreqs['freqs'][index]
         result['success'] = False
         result['error_code'] = 2
