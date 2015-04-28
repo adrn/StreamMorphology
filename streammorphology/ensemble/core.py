@@ -11,6 +11,7 @@ from astropy.coordinates.angles import rotation_matrix
 import gary.integrate as gi
 import numpy as np
 from scipy.signal import argrelmin
+from scipy.stats import kurtosis, skew
 from sklearn.neighbors import KernelDensity
 
 from .fast_ensemble import ensemble_integrate
@@ -86,61 +87,61 @@ def align_ensemble(ws):
     new_v = np.array(R.dot(ws[-1,:,3:].T).T)
     return new_x, new_v
 
-def do_the_kld(nkld, ball_w0, potential, dt, nsteps, kde_bandwidth,
-               density_thresholds):
-    """
-    Parameters
-    ----------
-    nkld : int
-        Number of times to evaluate the KLD.
-    ...TODO
-    """
-
+default_metrics = dict(mean=np.mean,
+                       median=np.median,
+                       skewness_log=lambda x: skew(np.log10(x)),
+                       kurtosis_log=lambda x: kurtosis(np.log10(x)))
+def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth, metrics=default_metrics):
     ww = np.ascontiguousarray(ball_w0.copy())
     nensemble = ww.shape[0]
 
-    # energy of parent orbit
-    E0 = float(np.squeeze(potential.total_energy(ww[0,:3],ww[0,3:])))
-    predicted_density = lambda x, E0: np.sqrt(E0 - potential(x))
+#     kld_idx = np.append(np.linspace(0, nsteps//4, nkld//2+1),
+#                         np.linspace(nsteps//4, nsteps, nkld//2+1)[1:]).astype(int)
+    kld_idx = np.linspace(0, nsteps, nkld+1).astype(int)
 
-    kld_idx = np.append(np.linspace(0, nsteps//4, nkld//2+1),
-                        np.linspace(nsteps//4, nsteps, nkld//2+1)[1:]).astype(int)
+    # sort so I preserve some order around here
+    metric_names = sorted(metrics.keys())
 
     # container to store fraction of stars with density above each threshold
-    # frac_above_dens = np.zeros((nkld,len(density_thresholds)))
-    mean_dens = np.zeros(nkld)
+    dtype = []
+    for name in metric_names:
+        dtype.append((name,'f8'))
+    metric_data = np.zeros(nkld, dtype=dtype)
 
-    t = np.empty(nkld+1)
-    t[0] = 0.
-    kld = np.empty(nkld)
+    # store energies
+    Es = np.empty((nkld+1,nensemble))
+    Es[0] = potential.total_energy(ball_w0[:,:3], ball_w0[:,3:])
+
+    # time container
+    t = np.empty(nkld)
     for i in range(nkld):
-        logger.debug("KLD step: {0}/{1}".format(i+1, nkld))
+        print("KLD step: {0}/{1}".format(i+1, nkld))
 
-        # number of steps to advance the ensemble
+        # number of steps to advance the ensemble -- not necessarily constant
         dstep = kld_idx[i+1] - kld_idx[i]
         www = ensemble_integrate(potential.c_instance, ww, dt, dstep, 0.)
 
+        Es[i+1] = potential.total_energy(www[:,:3], www[:,3:])
+
         # store the time
-        t[i+1] = t[i] + dt*dstep
+        if i == 0:
+            t[i] = dt*dstep
+        else:
+            t[i] = t[i-1] + dt*dstep
 
         # build an estimate of the configuration space density of the ensemble
         kde = KernelDensity(kernel='epanechnikov', bandwidth=kde_bandwidth)
         kde.fit(www[:,:3])
-        kde_densy = np.exp(kde.score_samples(www[:,:3]))
 
-        # number of stars with density > threshold
-        # for j,h in enumerate(density_thresholds):
-        #     frac_above_dens[i,j] = (kde_densy > h).sum() / float(nensemble)
+        # evaluate density at the position of the particles
+        ln_densy = kde.score_samples(www[:,:3])
+        density = np.exp(ln_densy)
 
-        # median density
-        mean_dens[i] = np.mean(kde_densy)
+        # evaluate the metrics and save
+        for name in metric_names:
+            metric_data[name][i] = metrics[name](density)
 
-        p_densy = predicted_density(www[:,:3], E0)
-        D = np.log(kde_densy / p_densy)
-        KLD = D[np.isfinite(D)].sum() / float(nensemble)
-        kld[i] = KLD
-        logger.debug("KLD value: {0}".format(KLD))
-
+        # reset initial conditions
         ww = www.copy()
 
-    return t[1:], kld, mean_dens
+    return t, metric_data, Es
