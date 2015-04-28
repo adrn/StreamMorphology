@@ -44,9 +44,6 @@ parser_arguments.append([('--nperiods',),
 parser_arguments.append([('--nsteps_per_period',),
                          dict(dest='nsteps_per_period', default=250, type=int,
                               help='Number of steps to take per min. period.')])
-parser_arguments.append([('--ndensity_threshold',),
-                         dict(dest='ndensity_threshold', default=16, type=int,
-                              help='Number of density thresholds.')])
 
 def worker(task):
 
@@ -78,8 +75,6 @@ def worker(task):
                         shape=(norbits,), dtype=dtype)
 
     # short-circuit if this orbit is already done
-    # TODO: handle status == 0 (not attempted) different from
-    #       status >= 2 (previous failure)
     if all_kld['success'][index]:
         return
 
@@ -129,8 +124,8 @@ def worker(task):
         result['error_code'] = 4
         return result
 
-    dE_max = np.abs(ball_E[1:] - ball_E[0]).max()
-    if dE_max > ETOL:
+    dE_end = np.abs(ball_E[-1] - ball_E[0])
+    if (dE_end > ETOL).sum() > nensemble*0.1: # more than 10% don't meet criteria
         logger.warning("Failed due to energy conservation check.")
         result['success'] = False
         result['error_code'] = 3
@@ -146,7 +141,7 @@ def worker(task):
     result['thresh_t'] = thresh_t
     result['dt'] = dt
     result['nsteps'] = nsteps
-    result['dE_max'] = dE_max
+    result['dE_max'] = dE_end.max()
     result['success'] = True
     result['error_code'] = 0
 
