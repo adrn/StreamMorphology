@@ -12,7 +12,7 @@ import os
 # Third-party
 import numpy as np
 
-__all__ = ['read_allkld', 'dtype', 'error_codes']
+__all__ = ['read', 'dtype', 'error_codes']
 
 # define indices of columns -- need this for the memmap'd file
 dtype = [('thresh_t','f8'), ('dt','f8'), ('nsteps','i8'),
@@ -23,7 +23,7 @@ error_codes = {1: "Failed to integrate orbit or estimate dt, nsteps.",
                3: "Energy conservation criteria not met.",
                4: "Catastrophic, unexpected, OMG failure."}
 
-def read_allkld(f, norbits=None):
+def read(f, norbits=None):
     """
     Read the numpy memmap'd file containing results from an ensemble KLD
     mapping. This function returns a numpy structured array with named

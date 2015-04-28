@@ -12,7 +12,7 @@ import os
 # Third-party
 import numpy as np
 
-__all__ = ['read_allfreqs', 'dtype', 'error_codes']
+__all__ = ['read', 'dtype', 'error_codes']
 
 # define indices of columns -- need this for the memmap'd file
 dtype = [('freqs','f8',(2,3)), ('dE_max','f8'), ('success','b1'),
@@ -23,7 +23,7 @@ error_codes = {1: "Failed to integrate orbit or estimate dt, nsteps.",
                2: "Energy conservation criteria not met.",
                3: "NAFF failed on find_fundamental_frequencies()."}
 
-def read_allfreqs(f, norbits=None):
+def read(f, norbits=None):
     """
     Read the numpy memmap'd file containing results from a frequency
     mapping. This function returns a numpy structured array with named

@@ -12,7 +12,7 @@ import os
 # Third-party
 import numpy as np
 
-__all__ = ['read_alllyap', 'dtype', 'error_codes']
+__all__ = ['read', 'dtype', 'error_codes']
 
 # define indices of columns -- need this for the memmap'd file
 dtype = [('lyap_exp','f8'), ('success','b1'), ('error_code','i8'),
@@ -21,7 +21,7 @@ dtype = [('lyap_exp','f8'), ('success','b1'), ('error_code','i8'),
 error_codes = {1: "Failed to integrate orbit or estimate dt, nsteps.",
                2: "Energy conservation criteria not met."}
 
-def read_alllyap(f, norbits=None):
+def read(f, norbits=None):
     """
     Read the numpy memmap'd file containing results from a Lyapunov
     mapping. This function returns a numpy structured array with named
