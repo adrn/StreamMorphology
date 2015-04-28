@@ -17,15 +17,15 @@ __all__ = ['read_allkld', 'get_dtype', 'error_codes']
 def get_dtype(nkld): # ndensity_threshold):
     # define indices of columns -- need this for the memmap'd file
     nkld = int(nkld)
-    dtype = [('kld','f8',(nkld,)), ('kld_t','f8',(nkld,)), ('dE_max','f8'),
+    dtype = [('dens_drop_time','f8',(nkld,)), ('kld_t','f8',(nkld,)), ('dE_max','f8'),
              ('dt','f8'), ('nsteps','i8'), ('error_code','i8'), ('success','b1'),
-             # ('frac_above_dens','f8',(nkld,ndensity_threshold)),
              ('mean_dens', 'f8', (nkld,))]
     return dtype
 
 error_codes = {1: "Failed to integrate orbit or estimate dt, nsteps.",
                2: "Failed to find nearest pericenter.",
-               3: "Catastrophic, unexpected, OMG failure."}
+               3: "Energy conservation criteria not met.",
+               4: "Catastrophic, unexpected, OMG failure."}
 
 def read_allkld(f, nkld, norbits=None):
     """

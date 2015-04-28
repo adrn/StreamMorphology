@@ -70,9 +70,6 @@ def worker(task):
     nperiods = task['nperiods']
     nsteps_per_period = task['nsteps_per_period']
 
-    # number of times to evaluate the number of particles above a density threshold
-    ndensity_threshold = task['ndensity_threshold']
-
     # read out just this initial condition
     w0 = np.load(w0_filename)
     norbits = len(w0)
@@ -117,55 +114,40 @@ def worker(task):
     ball_w0 = create_ball(peri_w0, potential, N=nensemble, m_scale=mscale)
     logger.debug("Generated ensemble of {0} particles".format(nensemble))
 
-    # compute the KLD at specified intervals
-    # kde = KernelDensity(kernel='epanechnikov', bandwidth=bw)
-    # kde.fit(ball_w0[:,:3])
-    # kde_densy = np.exp(kde.score_samples(ball_w0[:,:3]))
-    # dens_max = kde_densy.mean()
-    # TODO: don't hardcode this in you ass
-    dens_max = 10**-3.2
-
-    # compute the density thresholds ranging from the mean density of the initial ball down
-    #   to two orders of magnitude lower density
-    density_thresholds = 10**np.linspace(np.log10(dens_max), np.log10(dens_max) - 2.,
-                                         ndensity_threshold)
+    # get the initial density
+    kde = KernelDensity(kernel='epanechnikov', bandwidth=bw)
+    kde.fit(ball_w0[:,:3])
+    ball_dens0 = np.exp(kde.score_samples(ball_w0[:,:3]))
 
     try:
-        kld_t, kld, mean_dens = do_the_kld(nkld, ball_w0, potential, dt, nsteps, bw,
-                                           density_thresholds)
+        t, metric_d, ball_E = do_the_kld(ball_w0, potential, dt, nsteps,
+                                         nkld=nkld, kde_bandwidth=bw,
+                                         metrics=dict(mean=np.mean))
     except:
         logger.warning("Unexpected failure: {0}".format(sys.exc_info()))
+        result['success'] = False
+        result['error_code'] = 4
+        return result
+
+    dE_max = np.abs(ball_E[1:] - ball_E[0]).max()
+    if dE_max > ETOL:
+        logger.warning("Failed due to energy conservation check.")
         result['success'] = False
         result['error_code'] = 3
         return result
 
-    # TODO: compare final E vs. initial E against ETOL?
-    # E_end = float(np.squeeze(potential.total_energy(w_i[0,:3], w_i[0,3:])))
-    # dE = np.log10(np.abs(E_end - E0))
-    # if dE > ETOL:
-    #     all_kld['status'][index] = 2  # failed due to energy conservation
-    #     all_kld.flush()
-    #     return
+    # threshold defined as 1/10 initial mean density
+    thresh = ball_dens0.mean() / 10.
 
-    # all_kld['frac_above_dens'][index] = frac_above_dens
-    result['mean_dens'] = np.array(mean_dens).copy()
-    result['kld'] = np.array(kld).copy()
-    result['kld_t'] = np.array(kld_t).copy()
+    # time at which mean density falls below threshold
+    ix = metric_d['mean'] < thresh
+    thresh_t = t[ix][0]
+
+    result['thresh_t'] = thresh_t
     result['dt'] = dt
     result['nsteps'] = nsteps
-    result['dE_max'] = 0.  # TODO:
+    result['dE_max'] = dE_max
     result['success'] = True
     result['error_code'] = 0
 
     return result
-
-    # # fit a power law to the KLDs
-    # model = lambda p,t: p[0] * t**p[1]
-    # errfunc = lambda p,t,y: (y - model(p,t))
-    # p_opt,ier = so.leastsq(errfunc, x0=(0.01,-0.15), args=(KLD_times,KLD))
-    # if ier not in [1,2,3,4]:
-    #     all_kld[index,0] = np.nan
-    #     all_kld[index,1] = 3.  # failed due to leastsq
-
-    # # power-law index
-    # k = p_opt[1]
