@@ -15,7 +15,7 @@ from astropy import log as logger
 
 # project
 from streammorphology.util import main, get_parser, callback
-from streammorphology.ensemble import worker, parser_arguments, get_dtype
+from streammorphology.ensemble import worker, parser_arguments, dtype
 
 parser = get_parser()
 for args,kwargs in parser_arguments:
@@ -33,7 +33,7 @@ else:
 
 dargs = dict(args._get_kwargs())
 main(worker=worker, callback=callback, path=dargs.pop('path'),
-     cache_filename='allkld.dat', cache_dtype=get_dtype(args.nkld),
+     cache_filename='allkld.dat', cache_dtype=dtype,
      mpi=dargs.pop('mpi'), overwrite=dargs.pop('overwrite'), seed=dargs.pop('seed'),
      **dargs)
 
