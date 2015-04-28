@@ -15,7 +15,7 @@ from sklearn.neighbors import KernelDensity
 
 # Project
 from .. import ETOL
-from .mmap_util import get_dtype
+from .mmap_util import dtype
 from .core import create_ball, nearest_pericenter, do_the_kld
 from ..freqmap import estimate_dt_nsteps
 
@@ -75,7 +75,7 @@ def worker(task):
     norbits = len(w0)
     this_w0 = w0[index].copy()
     all_kld = np.memmap(filename, mode='r',
-                        shape=(norbits,), dtype=get_dtype(nkld))
+                        shape=(norbits,), dtype=dtype)
 
     # short-circuit if this orbit is already done
     # TODO: handle status == 0 (not attempted) different from
@@ -88,7 +88,7 @@ def worker(task):
     result['mmap_filename'] = filename
     result['norbits'] = norbits
     result['index'] = index
-    result['dtype'] = get_dtype(nkld)
+    result['dtype'] = dtype
 
     try:
         dt,nsteps,T = estimate_dt_nsteps(potential, this_w0, nperiods, nsteps_per_period,

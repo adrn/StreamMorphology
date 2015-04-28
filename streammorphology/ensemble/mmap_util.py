@@ -12,22 +12,18 @@ import os
 # Third-party
 import numpy as np
 
-__all__ = ['read_allkld', 'get_dtype', 'error_codes']
+__all__ = ['read_allkld', 'dtype', 'error_codes']
 
-def get_dtype(nkld): # ndensity_threshold):
-    # define indices of columns -- need this for the memmap'd file
-    nkld = int(nkld)
-    dtype = [('dens_drop_time','f8',(nkld,)), ('kld_t','f8',(nkld,)), ('dE_max','f8'),
-             ('dt','f8'), ('nsteps','i8'), ('error_code','i8'), ('success','b1'),
-             ('mean_dens', 'f8', (nkld,))]
-    return dtype
+# define indices of columns -- need this for the memmap'd file
+dtype = [('thresh_t','f8'), ('dt','f8'), ('nsteps','i8'),
+         ('dE_max','f8'), ('error_code','i8'), ('success','b1')]
 
 error_codes = {1: "Failed to integrate orbit or estimate dt, nsteps.",
                2: "Failed to find nearest pericenter.",
                3: "Energy conservation criteria not met.",
                4: "Catastrophic, unexpected, OMG failure."}
 
-def read_allkld(f, nkld, norbits=None):
+def read_allkld(f, norbits=None):
     """
     Read the numpy memmap'd file containing results from an ensemble KLD
     mapping. This function returns a numpy structured array with named
@@ -52,6 +48,6 @@ def read_allkld(f, nkld, norbits=None):
         norbits = len(w0)
 
     # first get the memmap array
-    allfreqs = np.memmap(f, mode='r', shape=(norbits,), dtype=get_dtype(nkld))
+    allfreqs = np.memmap(f, mode='r', shape=(norbits,), dtype=dtype)
 
     return allfreqs
