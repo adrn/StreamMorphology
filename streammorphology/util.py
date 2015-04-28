@@ -7,6 +7,7 @@ from __future__ import division, print_function
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Standard library
+import logging
 import os
 import sys
 
@@ -17,9 +18,18 @@ from gary.util import get_pool
 
 __all__ = ['main', 'get_parser']
 
-def main(worker, path, cache_filename, cache_dtype, callback=None,
-         mpi=False, overwrite=False, seed=42, **kwargs):
+def main(worker, path, cache_filename, cache_dtype, callback=None, index=None,
+         mpi=False, overwrite=False, seed=42, verbose=False, quiet=False, str_index=None,
+         **kwargs):
     np.random.seed(seed)
+
+    # Set logger level based on verbose flags
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+    elif quiet:
+        logger.setLevel(logging.ERROR)
+    else:
+        logger.setLevel(logging.INFO)
 
     # get a pool object for multiprocessing / MPI
     pool = get_pool(mpi=mpi)
@@ -27,6 +37,18 @@ def main(worker, path, cache_filename, cache_dtype, callback=None,
         logger.info("|----------- Using MPI -----------|")
     else:
         logger.info("|----------- Running in serial -----------|")
+
+    if str_index is None:
+        index = None
+    else:
+        try:
+            index = slice(*map(int, str_index.split(":")))
+        except:
+            try:
+                index = np.array(map(int,str_index.split(",")))
+            except:
+                # index is None
+                index = None
 
     # file that will hold all results
     cache_path = os.path.join(path, cache_filename)
@@ -51,9 +73,16 @@ def main(worker, path, cache_filename, cache_dtype, callback=None,
         d = np.memmap(cache_path, mode='w+', dtype=cache_dtype, shape=(norbits,))
         d[:] = np.zeros(shape=(norbits,), dtype=cache_dtype)
 
-    tasks = [dict(index=i, w0_filename=w0_filename,
-                  cache_filename=cache_path,
-                  potential_filename=pot_filename, **kwargs) for i in range(norbits)]
+    if index is None:
+        tasks = [dict(index=i, w0_filename=w0_filename,
+                      cache_filename=cache_path,
+                      potential_filename=pot_filename, **kwargs)
+                 for i in range(norbits)]
+    else:
+        tasks = [dict(index=i, w0_filename=w0_filename,
+                      cache_filename=cache_path,
+                      potential_filename=pot_filename, **kwargs)
+                 for i in np.arange(norbits,dtype=int)[index]]
 
     pool.map(worker, tasks, callback=callback)
     pool.close()
@@ -79,6 +108,10 @@ def get_parser():
     parser.add_argument("--path", dest="path", type=str, required=True,
                         help="Path to cache everything to (e.g., where to save the "
                              "initial conditions grid).")
+
+    parser.add_argument("--index", dest="index", type=str, default=None,
+                        help="Specify a subset of orbits to run, e.g., "
+                             "--index=20:40 to do only orbits 20-39.")
 
     return parser
 

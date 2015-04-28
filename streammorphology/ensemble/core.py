@@ -115,7 +115,7 @@ def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth, metrics=defa
     # time container
     t = np.empty(nkld)
     for i in range(nkld):
-        print("KLD step: {0}/{1}".format(i+1, nkld))
+        logger.debug("KLD step: {0}/{1}".format(i+1, nkld))
 
         # number of steps to advance the ensemble -- not necessarily constant
         dstep = kld_idx[i+1] - kld_idx[i]

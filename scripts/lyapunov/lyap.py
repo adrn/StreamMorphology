@@ -7,11 +7,7 @@ from __future__ import division, print_function
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Standard library
-import logging
 import sys
-
-# Third-party
-from astropy import log as logger
 
 # project
 from streammorphology.util import main, get_parser, callback
@@ -23,18 +19,11 @@ for args,kwargs in parser_arguments:
 
 args = parser.parse_args()
 
-# Set logger level based on verbose flags
-if args.verbose:
-    logger.setLevel(logging.DEBUG)
-elif args.quiet:
-    logger.setLevel(logging.ERROR)
-else:
-    logger.setLevel(logging.INFO)
-
 dargs = dict(args._get_kwargs())
 main(worker=worker, callback=callback, path=dargs.pop('path'),
-     cache_filename='alllyap.dat', cache_dtype=dtype,
+     cache_filename='alllyap.dat', cache_dtype=dtype, str_index=dargs.pop('index'),
      mpi=dargs.pop('mpi'), overwrite=dargs.pop('overwrite'), seed=dargs.pop('seed'),
+     verbose=dargs.pop('verbose'), quiet=dargs.pop('quiet'),
      **dargs)
 
 sys.exit(0)
