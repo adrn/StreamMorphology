@@ -62,10 +62,12 @@ def main(path, bounds=None, vbounds=None):
         fig,ax = plt.subplots(1,1,figsize=(9.75,8))
 
         if bounds is None:
-            bounds = (0, max([w0[:,0].max(),w0[:,2].max()]))
+            xbounds = ybounds = (0, max([w0[:,0].max(),w0[:,2].max()]))
+        else:
+            xbounds,ybounds = bounds
 
-        ax.set_xlim(*bounds)
-        ax.set_ylim(*bounds)
+        ax.set_xlim(*xbounds)
+        ax.set_ylim(*ybounds)
 
         # automatically determine symbol size
         xy_pixels = ax.transData.transform(np.vstack([w0[good_ix,0],w0[good_ix,2]]).T)
@@ -77,7 +79,7 @@ def main(path, bounds=None, vbounds=None):
         ypix = height - ypix
 
         # this assumes that your data-points are equally spaced
-        sz = max((xpix[1]-xpix[0])**2, (ypix[1]-ypix[0])**2)
+        sz = max((xpix[1]-xpix[0])**2, (ypix[1]-ypix[0])**2) + 3.
 
         # plot bad points
         ax.scatter(w0[~good_ix,0], w0[~good_ix,2], c='r', s=sz, marker='s')
@@ -162,6 +164,8 @@ if __name__ == '__main__':
 
     if args.bounds is not None:
         bounds = map(float, args.bounds.split(","))
+        if len(bounds) > 2:
+            bounds = (bounds[:2], bounds[2:])
     else:
         bounds = None
 
