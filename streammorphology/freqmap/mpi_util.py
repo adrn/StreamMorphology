@@ -48,7 +48,7 @@ def worker(task):
     nsteps_per_period = task['nsteps_per_period']
 
     # the order of the Hamming filter
-    p = task['p']
+    p = task['hammingp']
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
