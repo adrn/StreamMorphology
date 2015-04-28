@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Project
-from streammorphology.freqmap import read_allfreqs
+from streammorphology.freqmap import read
 
 def main(path, bounds=None, vbounds=None):
 
@@ -25,7 +25,7 @@ def main(path, bounds=None, vbounds=None):
 
     # read freqmap output
     allfreqs_filename = os.path.join(path, 'allfreqs.dat')
-    d = read_allfreqs(allfreqs_filename, norbits=len(w0))
+    d = read(allfreqs_filename, norbits=len(w0))
 
     logger.info("{} total orbits".format(norbits))
     logger.info("\t{} successful".format(d['success'].sum()))
