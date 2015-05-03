@@ -12,15 +12,14 @@ import sys
 import shutil
 
 # Third-party
-import numpy as np
 from astropy.constants import G
 from astropy import log as logger
 import astropy.units as u
 
 # Project
 
-base_SCFPAR = """test           comment
-test            comment
+base_SCFPAR = """empty           comment
+empty            comment
 "../../scf/SCFBI" path to SCFBI file
 {nsteps:d}           nsteps
 {ncen:d}             noutlog
@@ -33,7 +32,7 @@ FALSE           output expansion coefficients
 FALSE           zero odd expansion coefficients
 FALSE           zero even expansion coefficients
 FALSE           fix zero CoM acceleration?
-TRUE            orbiting in NFW potential?
+TRUE            orbiting in an external potential?
 500             how often to re-adjust center?
 {ntide:d}             number of steps to turn on MW potential
 {rscale:.1e}           satellite scale (kpc)
