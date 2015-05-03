@@ -69,7 +69,7 @@ def worker(args):
     t = np.load(time_file)
 
     naff = gd.NAFF(t[:nsteps+1])
-    fs = gd.poincare_polar(w[:nsteps+1,0])
+    fs = gd.cartesian_to_poincare_polar(w[:nsteps+1,0])
     try:
         freqs1,d,nvec = naff.find_fundamental_frequencies(fs)
     except:
@@ -77,7 +77,7 @@ def worker(args):
         freqs1 = np.ones(3)*np.nan
 
     naff = gd.NAFF(t[nsteps:])
-    fs = gd.poincare_polar(w[nsteps:,0])
+    fs = gd.cartesian_to_poincare_polar(w[nsteps:,0])
     try:
         freqs2,d,nvec = naff.find_fundamental_frequencies(fs)
     except:
@@ -105,7 +105,7 @@ def main(mpi=False):
     pool.map(worker, tasks)
 
     pool.close()
-    
+
     slow_fqz = np.zeros((nball,2,3))
     for i,filename in enumerate(glob.glob(os.path.join(path,"slow_freq*"))):
         slow_fqz[i] = np.load(filename)

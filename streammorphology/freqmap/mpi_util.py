@@ -122,7 +122,7 @@ def worker(task):
     if is_tube:
         # need to flip coordinates until circulation is around z axis
         new_ws = gd.align_circulation_with_z(ws, circ)
-        new_ws = gc.poincare_polar(new_ws)
+        new_ws = gc.cartesian_to_poincare_polar(new_ws)
         fs1 = [(new_ws[sl1,j] + 1j*new_ws[sl1,j+3]) for j in range(3)]
         fs2 = [(new_ws[sl2,j] + 1j*new_ws[sl2,j+3]) for j in range(3)]
     else:  # box
