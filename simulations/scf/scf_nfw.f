@@ -10,7 +10,8 @@ C
 C
 C    Note!
 C
-C    This code has been modified to use a triaxial NFW halo potential.
+C    This code has been modified to make it a little easier to change
+C    the external potential and parameter values.
 C
 C                                                 - Adrian Price-Whelan
 C
@@ -899,6 +900,7 @@ C
         CALL inparams
 C            --------
         CALL potparams
+        WRITE (*,*) "flerp", myn_a
 C            --------
         CALL initpars
 C            --------
