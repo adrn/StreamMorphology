@@ -16,6 +16,7 @@ C
 C=======================================================================
 
       INCLUDE 'scf.h'
+      INCLUDE 'potential.h'
 
       CHARACTER *1 pcomment
       CHARACTER*8 filepar,filename
