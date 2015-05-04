@@ -43,7 +43,7 @@ TRUE            orbiting in an external potential?
 """
 
 base_Makefile = """scf:
-        gfortran ../../scf/scf_nfw.f ../../scf/{potentialname:s}/potential.f ../../scf/{potentialname:s}/potential.h -o scf
+        gfortran ../../scf/scf_nfw.f ../../scf/{potentialname:s}.f -o scf
 
 clean:
         rm scf
@@ -97,7 +97,7 @@ date
 #End of script
 """
 
-def main(name, x, v, scfpars, overwrite=False, submit=False):
+def main(name, x, v, scfpars, potential_name, overwrite=False, submit=False):
     run_path = os.path.abspath(os.path.join(project_path, "simulations", "runs"))
     logger.debug("Run path: {}".format(run_path))
 
@@ -133,7 +133,7 @@ def main(name, x, v, scfpars, overwrite=False, submit=False):
         f.write(base_SCFPAR.format(x=x, v=v, **scfpars))
 
     with open(os.path.join(path, "Makefile"), 'w') as f:
-        f.write(base_Makefile)
+        f.write(base_Makefile.format(potentialname=potential_name))
 
     cmd = "unexpand {fn} > {fn}2".format(fn=os.path.join(path, "Makefile"))
     os.system(cmd)
@@ -161,6 +161,7 @@ if __name__ == '__main__':
                         default=False, help="DESTROY. DESTROY.")
 
     parser.add_argument("--name", dest="name", type=str, help="Name.", required=True)
+    parser.add_argument("--potential", dest="potential", type=str, help="Potential name.", required=True)
     parser.add_argument("-s", "--submit", action="store_true", dest="submit",
                         default=True, help="Generate a submit.sh file as well.")
     parser.add_argument("--pos", dest="x", required=True,
@@ -221,4 +222,5 @@ if __name__ == '__main__':
     scfpars['ntide'] = args.ntide
 
     main(name=args.name, x=args.x, v=args.v, scfpars=scfpars,
-         overwrite=args.overwrite, submit=args.submit)
+         potential_name=args.potential, overwrite=args.overwrite,
+         submit=args.submit)
