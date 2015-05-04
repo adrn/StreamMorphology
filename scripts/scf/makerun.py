@@ -17,6 +17,7 @@ from astropy import log as logger
 import astropy.units as u
 
 # Project
+from streammorphology import project_path
 
 base_SCFPAR = """empty           comment
 empty            comment
@@ -97,8 +98,7 @@ date
 """
 
 def main(name, x, v, scfpars, overwrite=False, submit=False):
-    _path = os.path.split(__file__)[0]
-    run_path = os.path.abspath(os.path.join(_path, "..", "simulations", "runs"))
+    run_path = os.path.abspath(os.path.join(project_path, "simulations", "runs"))
     logger.debug("Run path: {}".format(run_path))
 
     path = os.path.join(run_path, name)
