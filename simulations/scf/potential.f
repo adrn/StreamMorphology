@@ -54,7 +54,7 @@ C     --------------------------------
 C***********************************************************************
 C
 C
-                          SUBROUTINE accp_DAVID
+                          SUBROUTINE accp_external
 C
 C
 C***********************************************************************
@@ -124,8 +124,8 @@ C           Hernquist parameters
             hs = hqs_c/ru
 
 C           NFW halo parameters
-            rs = nfw_rs/ru
-            phi0 = nfw_vh**2/vu/vu
+            nfw_rs = nfw_rs/ru
+            nfw_vh = nfw_vh/vu
             mhalo = rs*phi0/G
 
       END IF
@@ -161,12 +161,12 @@ C     Compute potential, acceleration due to disk
       potext(i) = potext(i) + strength*phim
 
 C     Compute potential, acceleration due to halo
-      CALL accp_trix(i,phi0,rad,rs,xx,yy,zz,
+      CALL accp_trix(i,rad,xx,yy,zz,
      &               phih,axh,ayh,azh)
 
-      ax(i)=ax(i) + strength*axh
-      ay(i)=ay(i) + strength*ayh
-      az(i)=az(i) + strength*azh
+      ax(i) = ax(i) + strength*axh
+      ay(i) = ay(i) + strength*ayh
+      az(i) = az(i) + strength*azh
 
       potext(i) = potext(i) + strength*phih
 
@@ -178,7 +178,7 @@ C     Compute potential, acceleration due to halo
 C***********************************************************************
 C
 C
-      SUBROUTINE accp_trix(k,phi0,r,r_h,xf,yf,zf,
+      SUBROUTINE accp_trix(k,r,xf,yf,zf,
      &                     phih,axh,ayh,azh)
 C
 C
@@ -192,14 +192,14 @@ C   -------------------------------
       INTEGER k
       REAL*8 xx,yy,zz,xf,yf,zf
       REAL*8 phi,theta,psi
-      REAL*8 eb2,ec2,r_h,phi0
+      REAL*8 eb2,ec2,phi0
       REAL*8 phih,p,r,yor2,zor2,axh,ayh,azh,ax_h,ay_h,az_h
       REAL*8 coa,boa,cob
       REAL*8 R11,R12,R13,R21,R22,R23,R31,R32,R33
       REAL*8 x0,x1,x2,x4,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,
      &       x16,x17,x18,x19,x20,x21,x22
 
-      SAVE boa,coa,eb2,ec2,c2,
+      SAVE boa,coa,eb2,ec2,c2,phi0,
      &     R11,R12,R13,R21,R22,R23,R31,R32,R33
 
 C -----------------------------------------------------------------------
@@ -223,9 +223,11 @@ C -----------------------------------------------------------------------
             R31 = sin(phi)*sin(theta)
             R32 = -sin(theta)*cos(phi)
             R33 = cos(theta)
+
+            phi0 = nfw_vh*nfw_vh
       ENDIF
 
-      p = r/r_h
+      p = r/nfw_rs
       yor2 = yf*yf/rad/rad
       zor2 = zf*zf/rad/rad
 
@@ -233,30 +235,31 @@ C -----------------------------------------------------------------------
       yy = R21*xf + R22*yf + R23*zf
       zz = R31*xf + R32*yf + R33*zf
 
-      x0 = r + r_h
+      x0 = r + nfw_rs
       x1 = x0**2
       x2 = phi0/(12*r**7*x1)
       x4 = yy*yy
       x6 = zz*zz
       x7 = eb2*x4 + ec2*x6
-      x8 = r_h**2
+      x8 = nfw_rs**2
       x9 = 6*x8
-      x10 = DLOG(x0/r_h)
+      x10 = DLOG(x0/nfw_rs)
       x11 = x0*x10
-      x12 = 3*r_h
+      x12 = 3*nfw_rs
       x13 = r*x12
       x14 = xx*xx
       x15 = x13 - x14 - x4 - x6
       x16 = x15 + x9
-      x17 = 6*r_h*x0*(r*x16 - x11*x9)
+      x17 = 6*nfw_rs*x0*(r*x16 - x11*x9)
       x18 = x1*x10
       x19 = r**2
       x20 = x0*x19
       x21 = 2*r*x0
-      x22 = -12*r**5*r_h*x0 + 12*x19*x19*r_h*x18 + x12*x7*(x16*x19 -
-     &      18*x18*x8 + x20*(2*r - x12) + x21*(x15 + 9*x8)) - x20*
-     &      (eb2 + ec2)*(-6*r*r_h*(x19 - x8) + 6*r_h*x11*(x19 - 3*x8)
-     &      + x20*(-4*r + x12) + x21*(-x13 + 2*x14 + 2*x4 + 2*x6 + x9))
+      x22 = -12*r**5*nfw_rs*x0 + 12*x19*x19*nfw_rs*x18 +
+     & x12*x7*(x16*x19 - 18*x18*x8 + x20*(2*r - x12) + x21*
+     & (x15 + 9*x8)) - x20*(eb2 + ec2)*(-6*r*nfw_rs*(x19 - x8) +
+     & 6*nfw_rs*x11*(x19 - 3*x8) + x20*(-4*r + x12) + x21*
+     & (-x13 + 2*x14 + 2*x4 + 2*x6 + x9))
 
       phih = phi0*((eb2/2 + ec2/2)*((1/p - 1/p**3)*x10 - 1 + (2*x19/x8
      &      - 3*p + 6)/(6*x19/x8)) + (eb2*x4/(2*x19) + ec2*x6/(2*x19))

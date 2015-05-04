@@ -126,7 +126,7 @@ C            -------
 
 C   If tidal interaction turn on field.
 C   -----------------------------------
-        IF(david.AND.ntide.GT.0)THEN
+        IF(external_field.AND.ntide.GT.0)THEN
 	   CALL tidalstart
 C               ----------
 	ENDIF
@@ -498,7 +498,7 @@ C               -------
            IF(fixacc) CALL corracc
 C                          -------
 
-           IF(david) CALL accp_DAVID
+           IF(external_field) CALL accp_external
 C                         ----------
         ENDIF
 
@@ -510,7 +510,7 @@ C                         ----------
               pot(i)=0.0
  10        CONTINUE
 
-           IF(david) CALL accp_DAVID
+           IF(external_field) CALL accp_external
 C                         ----------
         ENDIF
 
@@ -801,7 +801,7 @@ C       nbodies=nbodies
       DO 10 i=1,nbodies
          READ(ubodsin,*) mass(i),x(i),y(i),z(i),vx(i),vy(i),vz(i)
 	   mass(i)=mass(i)*10.d0
-	   IF(david.AND.ntide.EQ.0)THEN
+	   IF(external_field.AND.ntide.EQ.0)THEN
 	      x(i)=x(i)-xframe
 	      y(i)=y(i)-yframe
 	      z(i)=z(i)-zframe
@@ -919,7 +919,7 @@ C            --------
 C            --------
         CALL accpot
 C            ------
-        IF(david) CALL frame(0)
+        IF(external_field) CALL frame(0)
 C                      -----
         CALL outstate(0)
 C            --------
@@ -1031,7 +1031,7 @@ C   --------------------------------
       READ(upars,*) zeroodd
       READ(upars,*) zeroeven
       READ(upars,*) fixacc
-      READ(upars,*) david
+      READ(upars,*) external_field
 	    READ(upars,*) nsort
 	    READ(upars,*) ntide
 	    READ(upars,*) ru
@@ -1162,7 +1162,7 @@ C=======================================================================
  20     FORMAT(1x,1i6,1pe14.6)
 
         DO 30 i=1,nbodies
-           IF(david)THEN
+           IF(external_field)THEN
               IF(selfgrav)WRITE(ubodsout,111) mass(i),
      &             x(i)+xframe,y(i)+yframe,z(i)+zframe,
      &              vx(i),vy(i),vz(i),
@@ -1241,7 +1241,7 @@ C 20     CONTINUE
         epselfg=0.0
 
 	IF(selfgrav)THEN
-	   IF(.NOT.david) THEN
+	   IF(.NOT.external_field) THEN
 	      xcm=0.0
 	      ycm=0.0
 	      zcm=0.0
@@ -1261,7 +1261,7 @@ C 20     CONTINUE
            epselfg=epselfg+0.5*mass(i)*pot(i)
            ektot=ektot+0.5*mass(i)*((vx(i))**2+
      &         (vy(i))**2+(vz(i))**2)
-           IF(.NOT.david) THEN
+           IF(.NOT.external_field) THEN
               xcm=xcm+mass(i)*x(i)
               ycm=ycm+mass(i)*y(i)
               zcm=zcm+mass(i)*z(i)
@@ -1278,7 +1278,7 @@ C 20     CONTINUE
  99     FORMAT(5(1pe14.4))
         etot=ektot+epext+epselfg
 
-        IF(david)THEN
+        IF(external_field)THEN
            xcm=xframe
            ycm=yframe
            zcm=zframe
@@ -1302,7 +1302,7 @@ C 20     CONTINUE
         END IF
 
         WRITE(ucen,120) tnow,dtime,xcm,ycm,zcm,vxcm,vycm,vzcm
-        IF(DAVID)THEN
+        IF(external_field)THEN
 	   IF(nsave.LT.3)THEN
 	      nsave=nsave+1
 	      ep0=epselfg
@@ -1372,7 +1372,7 @@ C            ------
 
         IF(n.EQ.0) THEN
 
-           IF(david)THEN
+           IF(external_field)THEN
 c	      CALL stepsize
 C                  --------
               IF(ntide.EQ.0)CALL findrem(n)
@@ -1403,7 +1403,7 @@ C               ------
 
               CALL corrvel('correct')
 C                  -------
-              IF(david)THEN
+              IF(external_field)THEN
 	         IF(selfgrav)THEN
 c                    CALL stepsize
 C                        --------
@@ -1579,7 +1579,7 @@ C=======================================================================
 
         CALL steppos
 C            -------
-        IF (david.AND.selfgrav) CALL frame(n)
+        IF (external_field.AND.selfgrav) CALL frame(n)
 C                                    -----
         CALL accpot
 C            ------

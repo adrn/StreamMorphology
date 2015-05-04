@@ -22,7 +22,7 @@ C=======================================================================
         INTEGER nsteps,noutbod,nbodies,noutlog,ibound,ntide,nsort,
      &          nlumps,nlumpsin
         LOGICAL selfgrav,inptcoef,outpcoef,zeroodd,zeroeven,fixacc,
-     &          david,disk,flat
+     &          external_field,disk,flat
         REAL*8 tnow,x,y,z,vx,vy,vz,mass,pot,dtime,G,ax,ay,az,one,pi,
      &         twoopi,onesixth,tpos,tvel,
      &         potext,two,zero,tiny,
@@ -46,7 +46,7 @@ C       Potential parametrs
         COMMON/parcomr/dtime,G,one,pi,twoopi,onesixth,two,tiny,zero
         COMMON/parcomc/headline
         COMMON/parcoml/selfgrav,inptcoef,outpcoef,zeroodd,zeroeven,
-     &                 fixacc,david,disk,flat
+     &                 fixacc,external_field,disk,flat
         COMMON/timecom/tpos,tnow,tvel,dt0,tfac2,tend
         COMMON/cpucom/cputime0,cputime1,cputime,tick
         COMMON/coefcom/sinsum(0:nmax,0:lmax,0:lmax),
