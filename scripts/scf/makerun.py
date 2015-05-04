@@ -43,7 +43,7 @@ TRUE            orbiting in an external potential?
 """
 
 base_Makefile = """scf:
-        gfortran ../../scf/scf_nfw.f ../../scf/potential.f -o scf
+        gfortran ../../scf/scf_nfw.f ../../scf/{potentialname:s}/potential.f ../../scf/{potentialname:s}/potential.h -o scf
 
 clean:
         rm scf
