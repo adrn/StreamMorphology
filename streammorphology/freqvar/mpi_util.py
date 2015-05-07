@@ -150,8 +150,6 @@ def worker(task):
         allfreqs.append(freqs.tolist())
     allfreqs = np.array(allfreqs)
 
-    print(allfreqs.shape)
-
     result['freqs'] = np.mean(allfreqs, axis=0)
     result['freq_std'] = np.std(allfreqs, axis=0)
     logger.debug("Frequencies: {0}".format(result['freqs']))
