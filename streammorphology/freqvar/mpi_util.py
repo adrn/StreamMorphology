@@ -118,16 +118,17 @@ def worker(task):
     window_stride = int(task['window_stride'] * nsteps_per_period)
 
     # classify orbit full orbit
-    circ = gd.classify_orbit(ws)
+    circ = gd.classify_orbit(ws[:,0])
     is_tube = np.any(circ)
 
-    logger.debug("NAFFing the orbits")
+    logger.debug("NAFFing the windows:")
 
     allfreqs = []
-    for (i1,i2),ww in rolling_window(ws, window_size=window_width, stride=window_stride, return_idx=True):
+    for (i1,i2),ww in rolling_window(ws[:,0], window_size=window_width, stride=window_stride, return_idx=True):
         if i2 >= nsteps:
             break
 
+        logger.debug("Window: {0}:{1}".format(i1,i2))
         if is_tube:
             # need to flip coordinates until circulation is around z axis
             new_ws = gd.align_circulation_with_z(ww, circ)
@@ -149,8 +150,14 @@ def worker(task):
         allfreqs.append(freqs.tolist())
     allfreqs = np.array(allfreqs)
 
+    print(allfreqs.shape)
+
     result['freqs'] = np.mean(allfreqs, axis=0)
     result['freq_std'] = np.std(allfreqs, axis=0)
+    logger.debug("Frequencies: {0}".format(result['freqs']))
+    logger.debug("Freq std dev: {0}".format(result['freq_std']))
+    logger.debug("Dimensionless freq spread: {0}".format(result['freq_std']/result['freqs']))
+
     result['dE_max'] = dEmax
     result['dt'] = float(dt)
     result['nsteps'] = nsteps
