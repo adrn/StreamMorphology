@@ -61,16 +61,17 @@ def worker(task):
 
     return freqs
 
-def main(mpi=False, threads=None):
+def main(name, mpi=False, threads=None):
     outpath = "output/tests/ensemble_evolution"
     if not os.path.exists(outpath):
-        os.mkdir(outpath)
+        os.makedirs(outpath)
 
-    # initial conditions of parent orbit -- picked from threshold time
-    w0 = np.array([24.700000000000006, 0.0, 18.100000000000005, 0.0, 0.15050763602808698, 0.0]) # regular?
-    name = 'regular'
-    # w0 = np.array([24.700000000000006, 0.0, 21.300000000000004, 0.0, 0.1314325043923756, 0.0]) # chaotic?
-    # name = 'chaotic'
+    if name == 'regular':
+        w0 = np.array([27.300000000000008, 0.0, 20.300000000000004, 0.0, 0.12395598334095129, 0.0]) # regular
+    elif name == 'chaotic':
+        w0 = np.array([27.300000000000008, 0.0, 21.900000000000006, 0.0, 0.11374625738916841, 0.0]) # chaotic
+    else:
+        raise ValueError()
 
     filename = os.path.join(outpath, '{0}_window_freqs.npy'.format(name))
     if not os.path.exists(filename):
@@ -104,6 +105,8 @@ def main(mpi=False, threads=None):
 
     else:
         all_freqs = np.load(filename)
+
+    return
 
     plt.figure(figsize=(10,8))
     plt.plot(all_freqs.T[0]*1000., c='k', alpha=0.4)
@@ -151,10 +154,12 @@ if __name__ == "__main__":
     parser = ArgumentParser(description="")
 
     # threading
+    parser.add_argument("--name", dest="name", required=True, type=str,
+                        help="Name: regular or chaotic")
     parser.add_argument("--mpi", dest="mpi", default=False, action="store_true",
                         help="Run with MPI.")
     parser.add_argument("--threads", dest="threads", default=None, type=int,
                         help="Number of multiprocessing threads to run on.")
     args = parser.parse_args()
 
-    main(mpi=args.mpi, threads=args.threads)
+    main(args.name, mpi=args.mpi, threads=args.threads)
