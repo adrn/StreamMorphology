@@ -36,7 +36,8 @@ def main(path, bounds=None, vbounds=None):
     good_ix = d['success']
 
     ix = d['max_amp_freq_ix']
-    max_amp_freqvar = np.abs([d['freq_std'][j,i]/d['freqs'][j,i] for j,i in enumerate(ix)])
+    # max_amp_freqvar = np.abs([d['freq_std'][j,i]/d['freqs'][j,i] for j,i in enumerate(ix)])
+    max_amp_freqvar = np.abs([d['freq_std'][j,i] for j,i in enumerate(ix)]) * 1000.
     max_amp_freqvar = np.log10(max_amp_freqvar[good_ix])
 
     # color scaling
@@ -60,7 +61,7 @@ def main(path, bounds=None, vbounds=None):
     ax.set_ylim(*ybounds)
 
     # automatically determine symbol size
-    xy_pixels = ax.transData.transform(np.vstack([w0[good_ix,0],w0[good_ix,2]]).T)
+    xy_pixels = ax.transData.transform(np.vstack([w0[:,0],w0[:,2]]).T)
     xpix, ypix = xy_pixels.T
 
     # In matplotlib, 0,0 is the lower left corner, whereas it's usually the upper

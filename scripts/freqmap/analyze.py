@@ -70,7 +70,7 @@ def main(path, bounds=None, vbounds=None):
         ax.set_ylim(*ybounds)
 
         # automatically determine symbol size
-        xy_pixels = ax.transData.transform(np.vstack([w0[good_ix,0],w0[good_ix,2]]).T)
+        xy_pixels = ax.transData.transform(np.vstack([w0[:,0],w0[:,2]]).T)
         xpix, ypix = xy_pixels.T
 
         # In matplotlib, 0,0 is the lower left corner, whereas it's usually the upper
