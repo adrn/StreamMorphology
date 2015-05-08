@@ -105,6 +105,7 @@ def main(name, mpi=False, threads=None, plot=False):
             task['dt'] = dt
             task['nsteps'] = nsteps
             task['w0'] = w0
+            task['potential'] = potential
             tasks.append(task)
 
         results = pool.map(worker, tasks)
