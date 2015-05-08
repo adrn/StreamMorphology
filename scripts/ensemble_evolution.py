@@ -22,6 +22,7 @@ import gary.potential as gp
 from gary.util import rolling_window, get_pool
 
 # Project
+from streammorphology import project_path
 from streammorphology.freqmap import estimate_dt_nsteps
 from streammorphology.ensemble import create_ball
 
@@ -38,7 +39,7 @@ window_width = 50 * nsteps_per_period
 window_stride = 1 * nsteps_per_period
 
 # load potential
-potential = gp.load("/Users/adrian/projects/morphology/potentials/triaxial-NFW.yml")
+potential = gp.load(os.path.join(project_path,"potentials/triaxial-NFW.yml"))
 
 def worker(task):
     dt = task['dt']
@@ -56,13 +57,16 @@ def worker(task):
 
         fs = [(ww[:,0,i]+1j*ww[:,0,i+3]) for i in range(3)]
         naff = gd.NAFF(t[i1:i2], p=4)
-        f,d,ixes = naff.find_fundamental_frequencies(fs, nintvec=5)
+        try:
+            f,d,ixes = naff.find_fundamental_frequencies(fs, nintvec=5)
+        except:
+            f = np.ones(3)*np.nan
         freqs.append(f)
 
     return freqs
 
 def main(name, mpi=False, threads=None):
-    outpath = "output/tests/ensemble_evolution"
+    outpath = os.path.join(project_path, "output/tests/ensemble_evolution")
     if not os.path.exists(outpath):
         os.makedirs(outpath)
 

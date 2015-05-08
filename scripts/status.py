@@ -13,13 +13,14 @@ def main(path, subproject):
     # read cache file
     d = read(path)
 
-    ndone = (d['dt'] != 0.).sum()
+    # ndone = (d['dt'] != 0.).sum()
     nsuccess = d['success'].sum()
+    nfail = ((d['success'] == False) & (d['error_code'] > 0)).sum()
 
     print("Number of orbits: {}".format(len(d)))
-    print("Done processing: {}".format(ndone))
+    # print("Done processing: {}".format(ndone))
     print("Successful: {}".format(nsuccess))
-    print("Failures: {}".format(ndone-nsuccess))
+    print("Failures: {}".format(nfail))
 
     for ecode in sorted(error_codes.keys()):
         nfail = (d['error_code'] == ecode).sum()
