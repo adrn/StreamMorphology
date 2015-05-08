@@ -38,13 +38,11 @@ m_scale = 1E4
 window_width = 50 * nsteps_per_period
 window_stride = 1 * nsteps_per_period
 
-# load potential
-potential = gp.load(os.path.join(project_path,"potentials/triaxial-NFW.yml"))
-
 def worker(task):
     dt = task['dt']
     nsteps = task['nsteps']
     w0 = task['w0']
+    potential = task['potential']
 
     t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps,
                                     Integrator=gi.DOPRI853Integrator)
@@ -70,10 +68,18 @@ def main(name, mpi=False, threads=None, plot=False):
     if not os.path.exists(outpath):
         os.makedirs(outpath)
 
+    # load potential
+    potential = gp.load(os.path.join(project_path,"potentials/triaxial-NFW.yml"))
+
     if name == 'regular':
-        w0 = np.array([27.300000000000008, 0.0, 20.300000000000004, 0.0, 0.12395598334095129, 0.0]) # regular
+        w0 = np.array([27.300000000000008, 0.0, 1.1000000000000003, 0.0, 0.1877759468430073, 0.0]) # regular
     elif name == 'chaotic':
         w0 = np.array([27.300000000000008, 0.0, 21.900000000000006, 0.0, 0.11374625738916841, 0.0]) # chaotic
+    elif name == 'mildly_chaotic':
+        w0 = np.array([27.300000000000008, 0.0, 20.300000000000004, 0.0, 0.12395598334095129, 0.0]) # mild chaos
+    elif name == 'pal5':
+        potential = gp.load(os.path.join(project_path,"potentials/lm10.yml")) # pal5 fanning
+        w0 = np.array([8.312877511, 0.242593717, 16.811943627, -0.053619865077559205, -0.09889356946871429, -0.008341373370759497])
     else:
         raise ValueError()
 
