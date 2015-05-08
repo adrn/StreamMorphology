@@ -65,7 +65,7 @@ def worker(task):
 
     return freqs
 
-def main(name, mpi=False, threads=None):
+def main(name, mpi=False, threads=None, plot=False):
     outpath = os.path.join(project_path, "output/tests/ensemble_evolution")
     if not os.path.exists(outpath):
         os.makedirs(outpath)
@@ -110,47 +110,46 @@ def main(name, mpi=False, threads=None):
     else:
         all_freqs = np.load(filename)
 
-    return
+    if plot:
+        plt.figure(figsize=(10,8))
+        plt.plot(all_freqs.T[0]*1000., c='k', alpha=0.4)
 
-    plt.figure(figsize=(10,8))
-    plt.plot(all_freqs.T[0]*1000., c='k', alpha=0.4)
+        plt.figure(figsize=(10,8))
 
-    plt.figure(figsize=(10,8))
+        ff = np.median(all_freqs[:,0], axis=0)
+        root_var = np.sqrt(np.sum(np.var(all_freqs, axis=1)/ff**2, axis=-1))
+        plt.plot(root_var, c='k', alpha=1.)
+        plt.ylim(0.1,1)
+        plt.ylabel(r'$\sigma_\Omega/\Omega$')
 
-    ff = np.median(all_freqs[:,0], axis=0)
-    root_var = np.sqrt(np.sum(np.var(all_freqs, axis=1)/ff**2, axis=-1))
-    plt.plot(root_var, c='k', alpha=1.)
-    plt.ylim(0.1,1)
-    plt.ylabel(r'$\sigma_\Omega/\Omega$')
+        plt.figure(figsize=(10,10))
+        r1 = all_freqs[...,0] / all_freqs[...,2]
+        r2 = all_freqs[...,1] / all_freqs[...,2]
+        plt.plot(r1, r2, linestyle='none', marker='.', c='k', alpha=0.5)
+        plt.plot(r1[:,0], r2[:,0], linestyle='none', marker='o', c='g', alpha=0.5)
+        plt.plot(r1[:,-1], r2[:,-1], linestyle='none', marker='o', c='r', alpha=0.5)
+        plt.xlabel(r'$\Omega_1/\Omega_3$')
+        plt.ylabel(r'$\Omega_2/\Omega_3$')
 
-    plt.figure(figsize=(10,10))
-    r1 = all_freqs[...,0] / all_freqs[...,2]
-    r2 = all_freqs[...,1] / all_freqs[...,2]
-    plt.plot(r1, r2, linestyle='none', marker='.', c='k', alpha=0.5)
-    plt.plot(r1[:,0], r2[:,0], linestyle='none', marker='o', c='g', alpha=0.5)
-    plt.plot(r1[:,-1], r2[:,-1], linestyle='none', marker='o', c='r', alpha=0.5)
-    plt.xlabel(r'$\Omega_1/\Omega_3$')
-    plt.ylabel(r'$\Omega_2/\Omega_3$')
+        plt.figure(figsize=(10,10))
+        r1 = all_freqs[...,0]*1000
+        r2 = all_freqs[...,1]*1000
+        plt.plot(r1, r2, linestyle='none', marker='.', c='k', alpha=0.5)
+        plt.plot(r1[:,0], r2[:,0], linestyle='none', marker='o', c='g', alpha=0.5)
+        plt.plot(r1[:,-1], r2[:,-1], linestyle='none', marker='o', c='r', alpha=0.5)
+        plt.xlabel(r'$\Omega_1$ [Gyr$^{-1}$]')
+        plt.ylabel(r'$\Omega_2$ [Gyr$^{-1}$]')
 
-    plt.figure(figsize=(10,10))
-    r1 = all_freqs[...,0]*1000
-    r2 = all_freqs[...,1]*1000
-    plt.plot(r1, r2, linestyle='none', marker='.', c='k', alpha=0.5)
-    plt.plot(r1[:,0], r2[:,0], linestyle='none', marker='o', c='g', alpha=0.5)
-    plt.plot(r1[:,-1], r2[:,-1], linestyle='none', marker='o', c='r', alpha=0.5)
-    plt.xlabel(r'$\Omega_1$ [Gyr$^{-1}$]')
-    plt.ylabel(r'$\Omega_2$ [Gyr$^{-1}$]')
+        plt.figure(figsize=(10,10))
+        r1 = all_freqs[...,0]*1000
+        r2 = all_freqs[...,2]*1000
+        plt.plot(r1, r2, linestyle='none', marker='.', c='k', alpha=0.5)
+        plt.plot(r1[:,0], r2[:,0], linestyle='none', marker='o', c='g', alpha=0.5)
+        plt.plot(r1[:,-1], r2[:,-1], linestyle='none', marker='o', c='r', alpha=0.5)
+        plt.xlabel(r'$\Omega_1$ [Gyr$^{-1}$]')
+        plt.ylabel(r'$\Omega_3$ [Gyr$^{-1}$]')
 
-    plt.figure(figsize=(10,10))
-    r1 = all_freqs[...,0]*1000
-    r2 = all_freqs[...,2]*1000
-    plt.plot(r1, r2, linestyle='none', marker='.', c='k', alpha=0.5)
-    plt.plot(r1[:,0], r2[:,0], linestyle='none', marker='o', c='g', alpha=0.5)
-    plt.plot(r1[:,-1], r2[:,-1], linestyle='none', marker='o', c='r', alpha=0.5)
-    plt.xlabel(r'$\Omega_1$ [Gyr$^{-1}$]')
-    plt.ylabel(r'$\Omega_3$ [Gyr$^{-1}$]')
-
-    plt.show()
+        plt.show()
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
@@ -164,6 +163,9 @@ if __name__ == "__main__":
                         help="Run with MPI.")
     parser.add_argument("--threads", dest="threads", default=None, type=int,
                         help="Number of multiprocessing threads to run on.")
+
+    parser.add_argument("--plot", dest="plot", default=False, action="store_true",
+                        help="Show dem plots.")
     args = parser.parse_args()
 
-    main(args.name, mpi=args.mpi, threads=args.threads)
+    main(args.name, mpi=args.mpi, threads=args.threads, plot=args.plot)
