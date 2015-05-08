@@ -36,8 +36,11 @@ def main(path, bounds=None, vbounds=None):
     good_ix = d['success']
 
     ix = d['max_amp_freq_ix']
+    # fractional:
     # max_amp_freqvar = np.abs([d['freq_std'][j,i]/d['freqs'][j,i] for j,i in enumerate(ix)])
-    max_amp_freqvar = np.abs([d['freq_std'][j,i] for j,i in enumerate(ix)]) * 1000.
+
+    # sqrt-sum-of-variance
+    max_amp_freqvar = np.sqrt(np.sum(d['freq_std']**2, axis=1)) * 1000.
     max_amp_freqvar = np.log10(max_amp_freqvar[good_ix])
 
     # color scaling
@@ -77,7 +80,7 @@ def main(path, bounds=None, vbounds=None):
 
     # plot good points, colored
     c = ax.scatter(w0[good_ix,0], w0[good_ix,2], c=max_amp_freqvar,
-                   vmin=vmin, vmax=vmax, cmap='Greys_r', s=sz, marker='s')
+                   vmin=vmin, vmax=vmax, cmap='Greys', s=sz, marker='s')
 
     ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
     ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
