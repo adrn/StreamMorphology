@@ -64,7 +64,7 @@ def main(path, bounds=None, vbounds=None):
 
     # plot good points, colored
     c = ax.scatter(w0[good_ix,0], w0[good_ix,2], c=lyap_t,
-                   vmin=vmin, vmax=vmax, cmap='Greys', s=sz, marker='s')
+                   vmin=vmin, vmax=vmax, cmap='Greys_r', s=sz, marker='s')
 
     ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
     ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
