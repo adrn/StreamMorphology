@@ -26,8 +26,8 @@ def main():
 
     potential = gp.LM10Potential()
 
-    dt,nsteps = estimate_dt_nsteps(potential, w0, nperiods=5000, 
-                                   nsteps_per_period=1024)
+    dt,nsteps = estimate_dt_nsteps(potential, w0, nperiods=10000,
+                                   nsteps_per_period=512)
 
     print("estimated dt, nsteps: {0:2f}, {1:d}".format(dt,nsteps))
 
