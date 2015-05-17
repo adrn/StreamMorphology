@@ -115,8 +115,10 @@ def worker(task):
         result['error_code'] = 2
         return result
 
+    le_end = np.mean(LEs[-16384::16], axis=1)
+    le_end.resize(1024)
     result['lyap_exp'] = np.mean(LEs[-1])
-    result['lyap_exp_end'] = np.mean(LEs[-16384::16], axis=1)
+    result['lyap_exp_end'] = le_end
     result['success'] = True
     result['error_code'] = 0
 
