@@ -11,12 +11,14 @@ import os
 
 # Third-party
 import numpy as np
+from .core import default_metrics
 
 __all__ = ['read', 'dtype', 'error_codes']
 
 # define indices of columns -- need this for the memmap'd file
 dtype = [('thresh_t','f8'), ('dt','f8'), ('nsteps','i8'),
-         ('dE_max','f8'), ('error_code','i8'), ('success','b1')]
+         ('dE_max','f8'), ('error_code','i8'), ('success','b1'),
+         ('metrics_end','f8',len(default_metrics))]
 
 error_codes = {1: "Failed to integrate orbit or estimate dt, nsteps.",
                2: "Failed to find nearest pericenter.",

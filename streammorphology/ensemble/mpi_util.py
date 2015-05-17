@@ -16,7 +16,7 @@ from sklearn.neighbors import KernelDensity
 # Project
 from .. import ETOL
 from .mmap_util import dtype
-from .core import create_ball, nearest_pericenter, do_the_kld
+from .core import create_ball, nearest_pericenter, do_the_kld, default_metrics
 from ..freqmap import estimate_dt_nsteps
 
 __all__ = ['worker', 'parser_arguments']
@@ -117,7 +117,7 @@ def worker(task):
     try:
         t, metric_d, ball_E = do_the_kld(ball_w0, potential, dt, nsteps,
                                          nkld=nkld, kde_bandwidth=bw,
-                                         metrics=dict(mean=np.mean))
+                                         metrics=default_metrics)
     except:
         logger.warning("Unexpected failure: {0}".format(sys.exc_info()))
         result['success'] = False
@@ -144,5 +144,6 @@ def worker(task):
     result['dE_max'] = dE_end.max()
     result['success'] = True
     result['error_code'] = 0
+    result['metrics_end'] = [metric_d[name][-1] for name in sorted(metric_d.dtype.names)]
 
     return result
