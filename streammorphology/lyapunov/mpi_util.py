@@ -28,6 +28,8 @@ parser_arguments.append([('--nsteps_per_period',), dict(dest='nsteps_per_period'
                                                         help='Number of steps to take per min. period.')])
 parser_arguments.append([('--noffset_orbits',), dict(dest='noffset_orbits', default=4, type=int,
                                                      help='Number of offset orbits to integrate and average.')])
+parser_arguments.append([('--nmaxiter',), dict(dest='nmaxiter', default=3, type=int,
+                                               help='Number of times to refine timestep.')])
 
 def worker(task):
 
@@ -45,6 +47,7 @@ def worker(task):
     nperiods = task['nperiods']
     nsteps_per_period = task['nsteps_per_period']
     noffset_orbits = task['noffset_orbits']
+    nmaxiter = task['nmaxiter']
 
     # read out just this initial condition
     w0 = np.load(w0_filename)
@@ -53,7 +56,7 @@ def worker(task):
                          shape=(norbits,), dtype=dtype)
 
     # short-circuit if this orbit is already done
-    if all_lyap['success'][index]:
+    if all_lyap['success'][index] or all_lyap['error_code'][index] != 0:
         return
 
     # container for return
@@ -77,27 +80,34 @@ def worker(task):
 
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
-    # integrate orbit
-    logger.debug("Integrating orbit / computing Lyapunov exponent...")
-    try:
-        # lyap = gd.lyapunov_max(w0[index].copy(), integrator, dt=dt, nsteps=nsteps)
-        lyap = gd.fast_lyapunov_max(w0[index].copy(), potential, dt=dt, nsteps=nsteps,
-                                    noffset_orbits=noffset_orbits)
+    for i in range(nmaxiter):
+        # integrate orbit
+        logger.debug("Integrating orbit / computing Lyapunov exponent...")
+        try:
+            # lyap = gd.lyapunov_max(w0[index].copy(), integrator, dt=dt, nsteps=nsteps)
+            lyap = gd.fast_lyapunov_max(w0[index].copy(), potential, dt=dt, nsteps=nsteps,
+                                        noffset_orbits=noffset_orbits)
 
-    except RuntimeError:  # ODE integration failed
-        logger.warning("Orbit integration failed.")
-        dEmax = 1E10
-    else:
-        logger.debug('Orbit integrated successfully, checking energy conservation...')
+        except RuntimeError:  # ODE integration failed
+            logger.warning("Orbit integration failed.")
+            dEmax = 1E10
+        else:
+            logger.debug('Orbit integrated successfully, checking energy conservation...')
 
-        # unpack lyap
-        LEs,ts,ws = lyap
+            # unpack lyap
+            LEs,ts,ws = lyap
 
-        # check energy conservation for the orbit
-        E = potential.total_energy(ws[:,0,:3].copy(), ws[:,0,3:].copy())
-        dE = np.abs(E[1:] - E[0])
-        dEmax = dE.max() / np.abs(E[0])
-        logger.debug('max(∆E) = {0:.2e}'.format(dEmax))
+            # check energy conservation for the orbit
+            E = potential.total_energy(ws[:,0,:3].copy(), ws[:,0,3:].copy())
+            dE = np.abs(E[1:] - E[0])
+            dEmax = dE.max() / np.abs(E[0])
+            logger.debug('max(∆E) = {0:.2e}'.format(dEmax))
+
+        if dEmax < ETOL:
+            break
+        else:
+            dt /= 2.
+            nsteps *= 2
 
     if dEmax > ETOL:
         result['lyap_exp'] = np.nan
