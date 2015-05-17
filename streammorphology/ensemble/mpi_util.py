@@ -75,7 +75,7 @@ def worker(task):
                         shape=(norbits,), dtype=dtype)
 
     # short-circuit if this orbit is already done
-    if all_kld['success'][index]:
+    if all_kld['success'][index] or all_kld['error_code'][index] != 0:
         return
 
     # container for return
