@@ -16,7 +16,7 @@ from sklearn.neighbors import KernelDensity
 
 from .fast_ensemble import ensemble_integrate
 
-__all__ = ['create_ball', 'nearest_pericenter', 'align_ensemble']
+__all__ = ['create_ball', 'nearest_pericenter', 'align_ensemble', 'do_the_kld']
 
 def create_ball(w0, potential, N=1000, m_scale=1E4):
     menc = potential.mass_enclosed(w0)
@@ -90,7 +90,9 @@ def align_ensemble(ws):
 default_metrics = dict(mean=np.mean,
                        median=np.median,
                        skewness_log=lambda x: skew(np.log10(x)),
-                       kurtosis_log=lambda x: kurtosis(np.log10(x)))
+                       kurtosis_log=lambda x: kurtosis(np.log10(x)),
+                       nabove_mean=lambda dens: (dens >= np.mean(dens)).sum(),
+                       nbelow_mean=lambda dens: (dens <= np.mean(dens)).sum())
 def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth, metrics=default_metrics):
     ww = np.ascontiguousarray(ball_w0.copy())
     nensemble = ww.shape[0]
