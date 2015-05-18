@@ -9,14 +9,16 @@ from astropy import log as logger
 import astropy.units as u
 from astropy.coordinates.angles import rotation_matrix
 import gary.integrate as gi
+import gary.dynamics as gd
 import numpy as np
-from scipy.signal import argrelmin
+from scipy.signal import argrelmin, argrelmax
 from scipy.stats import kurtosis, skew
 from sklearn.neighbors import KernelDensity
 
 from .fast_ensemble import ensemble_integrate
 
-__all__ = ['create_ball', 'nearest_pericenter', 'align_ensemble', 'do_the_kld']
+__all__ = ['create_ball', 'nearest_pericenter', 'align_ensemble', 'do_the_kld',
+           'prepare_parent_orbit']
 
 def create_ball(w0, potential, N=1000, m_scale=1E4):
     menc = potential.mass_enclosed(w0)
@@ -147,3 +149,27 @@ def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth, metrics=defa
         ww = www.copy()
 
     return t, metric_data, Es
+
+def prepare_parent_orbit(w0, potential, nperiods, nsteps_per_period):
+    t,w = potential.integrate_orbit(w0, dt=0.5, nsteps=10000)
+    r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
+    T = gd.peak_to_peak_period(t, r)
+
+    dt = T / nsteps_per_period
+    nsteps = int(round(nperiods * T / dt))
+
+    ix = argrelmin(r)[0]
+#     ix = argrelmax(r)[0]
+    new_w0 = w[ix[0],0]
+
+    t,w = potential.integrate_orbit(new_w0, dt=dt, nsteps=nsteps + nsteps_per_period//2,
+                                    Integrator=gi.DOPRI853Integrator)
+    r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
+    ix = argrelmax(r)[0]
+
+    if len(ix) < nperiods-1:
+        raise ValueError("Dooooooood...")
+
+    nsteps = ix[-1]
+
+    return new_w0,dt,nsteps

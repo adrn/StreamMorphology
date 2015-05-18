@@ -16,8 +16,7 @@ from sklearn.neighbors import KernelDensity
 # Project
 from .. import ETOL
 from .mmap_util import dtype
-from .core import create_ball, nearest_pericenter, do_the_kld, default_metrics
-from ..freqmap import estimate_dt_nsteps
+from .core import create_ball, prepare_parent_orbit, do_the_kld, default_metrics
 
 __all__ = ['worker', 'parser_arguments']
 
@@ -86,27 +85,18 @@ def worker(task):
     result['dtype'] = dtype
 
     try:
-        dt,nsteps,T = estimate_dt_nsteps(potential, this_w0, nperiods, nsteps_per_period,
-                                         return_periods=True)
+        new_w0,dt,nsteps = prepare_parent_orbit(this_w0, potential,
+                                                nperiods, nsteps_per_period)
     except RuntimeError:
         logger.warning("Failed to integrate orbit when estimating dt,nsteps")
         result['success'] = False
         result['error_code'] = 1
         return result
 
-    # find the nearest (in time) pericenter to the given initial condition
-    try:
-        peri_w0 = nearest_pericenter(this_w0, potential, dt, T.max())
-    except:
-        logger.warning("Failed to find nearest pericenter.")
-        result['success'] = False
-        result['error_code'] = 2
-        return result
-
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
     # create an ensemble of particles around this initial condition
-    ball_w0 = create_ball(peri_w0, potential, N=nensemble, m_scale=mscale)
+    ball_w0 = create_ball(new_w0, potential, N=nensemble, m_scale=mscale)
     logger.debug("Generated ensemble of {0} particles".format(nensemble))
 
     # get the initial density
