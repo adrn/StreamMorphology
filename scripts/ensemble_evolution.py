@@ -32,7 +32,7 @@ nensemble = 100
 m_scale = 1E4
 
 # windowing properties
-window_width = 50 * nsteps_per_period
+window_width = 25 * nsteps_per_period
 window_stride = 0.5 * nsteps_per_period
 
 def worker(task):
@@ -96,7 +96,6 @@ def main(name, mpi=False, threads=None, plot=False):
 
         # create an ensemble around the parent orbit
         ball_w0 = create_ball(w0, potential, N=nensemble, m_scale=m_scale)
-        ball_w0[:,3:] = w0[None,3:]
 
         tasks = []
         for n,w0 in enumerate(ball_w0):
