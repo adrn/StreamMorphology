@@ -10,6 +10,7 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 import os
 
 # Third-party
+from astropy import log as logger
 import matplotlib.pyplot as plt
 import numpy as np
 import gary.dynamics as gd
@@ -48,12 +49,14 @@ def worker(task):
                                      stride=window_stride, return_idx=True):
         if i2 >= nsteps:
             break
-
+        logger.debug("{0}:{1}".format(i1,i2))
         fs = [(ww[:,0,i]+1j*ww[:,0,i+3]) for i in range(3)]
         naff = gd.NAFF(t[int(i1):int(i2)], p=4)
         try:
             f,d,ixes = naff.find_fundamental_frequencies(fs, nintvec=5)
+            logger.debug("Successfully found frequencies")
         except:
+            logger.debug("Failed to compute frequencies")
             f = np.ones(3)*np.nan
         freqs.append(f)
 
