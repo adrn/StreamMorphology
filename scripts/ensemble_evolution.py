@@ -159,8 +159,14 @@ def main(name, mpi=False, threads=None, plot=False):
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
+    import logging
 
     parser = ArgumentParser(description="")
+
+    parser.add_argument("-v", "--verbose", action="store_true", dest="verbose",
+                        default=False, help="Be chatty! (default = False)")
+    parser.add_argument("-q", "--quiet", action="store_true", dest="quiet",
+                        default=False, help="Be quiet! (default = False)")
 
     # threading
     parser.add_argument("--name", dest="name", required=True, type=str,
@@ -173,5 +179,13 @@ if __name__ == "__main__":
     parser.add_argument("--plot", dest="plot", default=False, action="store_true",
                         help="Show dem plots.")
     args = parser.parse_args()
+
+    # Set logger level based on verbose flags
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+    elif args.quiet:
+        logger.setLevel(logging.ERROR)
+    else:
+        logger.setLevel(logging.INFO)
 
     main(args.name, mpi=args.mpi, threads=args.threads, plot=args.plot)
