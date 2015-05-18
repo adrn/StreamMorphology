@@ -130,7 +130,10 @@ def worker(task):
     thresh_t_10 = t[ix][0]
 
     ix = metric_d['mean'] < thresh100
-    thresh_t_100 = t[ix][0]
+    try:
+        thresh_t_100 = t[ix][0]
+    except:
+        thresh_t_100 = np.nan
 
     result['thresh_t_10'] = thresh_t_10
     result['thresh_t_100'] = thresh_t_100
