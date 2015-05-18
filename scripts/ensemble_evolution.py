@@ -35,8 +35,8 @@ nensemble = 100
 m_scale = 1E4
 
 # windowing properties
-window_width = 50 * nsteps_per_period
-window_stride = 1 * nsteps_per_period
+window_width = 25 * nsteps_per_period
+window_stride = 0.5 * nsteps_per_period
 
 def worker(task):
     dt = task['dt']
