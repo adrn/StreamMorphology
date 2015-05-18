@@ -122,13 +122,18 @@ def worker(task):
         return result
 
     # threshold defined as 1/10 initial mean density
-    thresh = ball_dens0.mean() / 10.
+    thresh10 = ball_dens0.mean() / 10.
+    thresh100 = ball_dens0.mean() / 100.
 
     # time at which mean density falls below threshold
-    ix = metric_d['mean'] < thresh
-    thresh_t = t[ix][0]
+    ix = metric_d['mean'] < thresh10
+    thresh_t_10 = t[ix][0]
 
-    result['thresh_t'] = thresh_t
+    ix = metric_d['mean'] < thresh100
+    thresh_t_100 = t[ix][0]
+
+    result['thresh_t_10'] = thresh_t_10
+    result['thresh_t_100'] = thresh_t_100
     result['dt'] = dt
     result['nsteps'] = nsteps
     result['dE_max'] = dE_end.max()

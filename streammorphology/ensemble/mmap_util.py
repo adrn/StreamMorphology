@@ -16,7 +16,7 @@ from .core import default_metrics
 __all__ = ['read', 'dtype', 'error_codes']
 
 # define indices of columns -- need this for the memmap'd file
-dtype = [('thresh_t','f8'), ('dt','f8'), ('nsteps','i8'),
+dtype = [('thresh_t_10','f8'), ('thresh_t_100','f8'), ('dt','f8'), ('nsteps','i8'),
          ('dE_max','f8'), ('error_code','i8'), ('success','b1'),
          ('metrics_end','f8',len(default_metrics))]
 
