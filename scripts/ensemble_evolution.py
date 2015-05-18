@@ -8,12 +8,8 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Standard library
 import os
-import sys
 
 # Third-party
-from astropy import log as logger
-import astropy.units as u
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import gary.dynamics as gd
@@ -54,7 +50,7 @@ def worker(task):
             break
 
         fs = [(ww[:,0,i]+1j*ww[:,0,i+3]) for i in range(3)]
-        naff = gd.NAFF(t[i1:i2], p=4)
+        naff = gd.NAFF(t[int(i1):int(i2)], p=4)
         try:
             f,d,ixes = naff.find_fundamental_frequencies(fs, nintvec=5)
         except:
