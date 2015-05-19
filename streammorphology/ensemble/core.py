@@ -162,13 +162,13 @@ def prepare_parent_orbit(w0, potential, nperiods, nsteps_per_period):
 #     ix = argrelmax(r)[0]
     new_w0 = w[ix[0],0]
 
-    t,w = potential.integrate_orbit(new_w0, dt=dt, nsteps=nsteps + nsteps_per_period//2,
+    t,w = potential.integrate_orbit(new_w0, dt=dt, nsteps=nsteps + int(0.75*nsteps_per_period),
                                     Integrator=gi.DOPRI853Integrator)
     r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
     ix = argrelmax(r)[0]
 
-    if len(ix) < nperiods-1:
-        raise ValueError("Dooooooood...")
+    # if len(ix) < nperiods-1:
+    #     raise ValueError("Dooooooood...")
 
     nsteps = ix[-1]
 
