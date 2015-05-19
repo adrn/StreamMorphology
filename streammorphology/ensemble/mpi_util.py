@@ -127,7 +127,10 @@ def worker(task):
 
     # time at which mean density falls below threshold
     ix = metric_d['mean'] < thresh10
-    thresh_t_10 = t[ix][0]
+    try:
+        thresh_t_10 = t[ix][0]
+    except:
+        thresh_t_10 = np.nan
 
     ix = metric_d['mean'] < thresh100
     try:
