@@ -95,7 +95,8 @@ default_metrics = dict(mean=np.mean,
                        kurtosis_log=lambda x: kurtosis(np.log10(x)),
                        nabove_mean=lambda dens: (dens >= np.mean(dens)).sum(),
                        nbelow_mean=lambda dens: (dens <= np.mean(dens)).sum())
-def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth, metrics=default_metrics):
+def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth,
+               metrics=default_metrics, return_all_density=False):
     ww = np.ascontiguousarray(ball_w0.copy())
     nensemble = ww.shape[0]
 
@@ -105,6 +106,10 @@ def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth, metrics=defa
 
     # sort so I preserve some order around here
     metric_names = sorted(metrics.keys())
+
+    # if set, store and return all of the density values
+    if return_all_density:
+        all_density = np.zeros((nkld, nensemble))
 
     # container to store fraction of stars with density above each threshold
     dtype = []
@@ -141,6 +146,9 @@ def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth, metrics=defa
         ln_densy = kde.score_samples(www[:,:3])
         density = np.exp(ln_densy)
 
+        if return_all_density:
+            all_density[i] = density
+
         # evaluate the metrics and save
         for name in metric_names:
             metric_data[name][i] = metrics[name](density)
@@ -148,7 +156,10 @@ def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth, metrics=defa
         # reset initial conditions
         ww = www.copy()
 
-    return t, metric_data, Es
+    if return_all_density:
+        return t, metric_data, Es, all_density
+    else:
+        return t, metric_data, Es
 
 def prepare_parent_orbit(w0, potential, nperiods, nsteps_per_period):
     t,w = potential.integrate_orbit(w0, dt=0.5, nsteps=10000)
