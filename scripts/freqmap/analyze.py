@@ -10,6 +10,7 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 import os
 
 # Third-party
+import astropy.units as u
 from astropy import log as logger
 import matplotlib.pyplot as plt
 import numpy as np
@@ -36,22 +37,20 @@ def main(path, bounds=None, vbounds=None):
     logger.info("\t{} tube orbits".format(ntube))
     logger.info("\t{} box orbits".format(nbox))
 
-    periods = np.abs(2*np.pi / d['freqs'][:,0])
-    nperiods = d['dt']*d['nsteps'] / periods.max(axis=1)
-    freq_diff_per_orbit = np.abs((np.abs(d['freqs'][:,1]) - np.abs(d['freqs'][:,0])) / d['freqs'][:,0] / (nperiods[:,None]/2.))
-    ix = d['max_amp_freq_ix']
-    max_freq_diff_per_orbit = np.array([freq_diff_per_orbit[j,i] for j,i in enumerate(ix)])
-    # max_freq_diff_per_orbit = freq_diff_per_orbit.max(axis=1)
-    # print(max_freq_diff_per_orbit.shape, ix.shape, freq_diff_per_orbit.shape)
+    frac_freq_diff = np.abs((np.abs(d['freqs'][:,1]) - np.abs(d['freqs'][:,0])) / d['freqs'][:,0])
+    diffusion_time = ((d['dt']*d['nsteps'])[:,None] / frac_freq_diff * u.Myr).to(u.Gyr).value
+    diffusion_time = diffusion_time.mean(axis=1)
+    # diffusion_time = diffusion_time.max(axis=1)
+    # diffusion_time = diffusion_time.min(axis=1)
 
-    good_ix = np.isfinite(max_freq_diff_per_orbit)
-    max_freq_diff_per_orbit = np.log10(max_freq_diff_per_orbit[good_ix])
+    good_ix = np.isfinite(diffusion_time)
+    c = np.log10(diffusion_time[good_ix])
 
     # color scaling
     if vbounds is None:
-        delta = np.abs(max_freq_diff_per_orbit.max() - max_freq_diff_per_orbit.min())
-        vmin = max_freq_diff_per_orbit.min() + delta/10.
-        vmax = max_freq_diff_per_orbit.max() - delta/10.
+        delta = np.abs(c.max() - c.min())
+        vmin = c.min() + delta/10.
+        vmax = c.max() - delta/10.
 
     else:
         vmin,vmax = vbounds
@@ -85,14 +84,14 @@ def main(path, bounds=None, vbounds=None):
         ax.scatter(w0[~good_ix,0], w0[~good_ix,2], c='r', s=sz, marker='s')
 
         # plot good points, colored
-        c = ax.scatter(w0[good_ix,0], w0[good_ix,2], c=max_freq_diff_per_orbit,
-                       vmin=vmin, vmax=vmax, cmap='Greys', s=sz, marker='s')
+        sc = ax.scatter(w0[good_ix,0], w0[good_ix,2], c=c,
+                        vmin=vmin, vmax=vmax, cmap='Greys', s=sz, marker='s')
 
         ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
         ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
-        fig.colorbar(c)
+        fig.colorbar(sc)
         fig.tight_layout()
-        fig.savefig(os.path.join(path,"diffusion_map.pdf"))
+        fig.savefig(os.path.join(path,"diffusion_time_map.pdf"))
 
         # frequency map
         fig,ax = plt.subplots(1,1,figsize=(8,8))
@@ -102,8 +101,8 @@ def main(path, bounds=None, vbounds=None):
                 linestyle='none', marker='.', alpha=0.4)
         ax.set_xlabel(r'$\Omega_\phi/\Omega_R$')
         ax.set_ylabel(r'$\Omega_z/\Omega_R$')
-        ax.set_xlim(0.45,0.8)
-        ax.set_ylim(0.45,0.8)
+        # ax.set_xlim(0.45,0.8)
+        # ax.set_ylim(0.45,0.8)
         fig.savefig(os.path.join(path,"freqmap.pdf"))
 
     # initial conditions on equipotential surface
@@ -117,13 +116,13 @@ def main(path, bounds=None, vbounds=None):
         ax.scatter(w0[~good_ix,0], w0[~good_ix,1], w0[~good_ix,2], c='r', s=8, marker='o')
 
         # plot good points
-        c = ax.scatter(w0[good_ix,0], w0[good_ix,1], w0[good_ix,2], c=max_freq_diff_per_orbit,
-                       vmin=vmin, vmax=vmax, cmap='Greys_r', s=18, marker='o')
+        sc = ax.scatter(w0[good_ix,0], w0[good_ix,1], w0[good_ix,2], c=c,
+                        vmin=vmin, vmax=vmax, cmap='Greys_r', s=18, marker='o')
 
         ax.elev = 45
         ax.azim = 45
 
-        fig.colorbar(c)
+        fig.colorbar(sc)
         fig.tight_layout()
         fig.savefig(os.path.join(path,"diffusion_map.pdf"))
 
@@ -141,8 +140,8 @@ def main(path, bounds=None, vbounds=None):
 
     # plot histograms of diffusion rates
     fig,ax = plt.subplots(1,1,figsize=(8,6))
-    bins = np.linspace(max_freq_diff_per_orbit.min(), max_freq_diff_per_orbit.max(), 25)
-    n,bins,pa = ax.hist(max_freq_diff_per_orbit, alpha=0.4, normed=True, bins=bins)
+    bins = np.linspace(c.min(), c.max(), 25)
+    n,bins,pa = ax.hist(c, alpha=0.4, normed=True, bins=bins)
     ax.set_xlabel("log fractional freq. diffusion rate per orbit")
     fig.savefig(os.path.join(path,"diffusion_rate_hist.pdf"))
 
