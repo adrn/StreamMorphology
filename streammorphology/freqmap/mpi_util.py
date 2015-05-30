@@ -142,6 +142,8 @@ def worker(task):
         result['error_code'] = 3
         return result
 
+    print((freqs2 - freqs1) / freqs1)
+
     result['freqs'] = np.vstack((freqs1, freqs2))
     result['dE_max'] = dEmax
     result['is_tube'] = float(is_tube)
