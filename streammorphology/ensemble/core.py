@@ -26,7 +26,7 @@ __all__ = ['create_ensemble', 'nearest_pericenter',
 def _validate_1d_array(x):
     # ensure we have a 1D array of initial conditions
     x = np.array(x)
-    if x.ndim == 1:
+    if x.ndim != 1:
         raise ValueError("Input array (or iterable) must be 1D, not {0}D".format(x.ndim))
     return x
 
@@ -190,7 +190,7 @@ default_metrics = dict(mean=np.mean,
                        kurtosis_log=lambda x: kurtosis(np.log10(x)),
                        nabove_mean=lambda dens: (dens >= np.mean(dens)).sum(),
                        nbelow_mean=lambda dens: (dens <= np.mean(dens)).sum())
-def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth,
+def do_the_kld(ensemble_w0, potential, dt, nsteps, nkld, kde_bandwidth,
                metrics=default_metrics, return_all_density=False):
     """
 
@@ -200,8 +200,8 @@ def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth,
     kde_bandwidth : float, None
         If None, use an adaptive bandwidth, or a float for a fixed bandwidth.
     """
-
-    ww = np.ascontiguousarray(ball_w0.copy())
+    # make sure initial conditions are a contiguous C array
+    ww = np.ascontiguousarray(ensemble_w0.copy())
     nensemble = ww.shape[0]
 
 #     kld_idx = np.append(np.linspace(0, nsteps//4, nkld//2+1),
@@ -231,7 +231,7 @@ def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth,
 
     # store energies
     Es = np.empty((nkld+1,nensemble))
-    Es[0] = potential.total_energy(ball_w0[:,:3], ball_w0[:,3:])
+    Es[0] = potential.total_energy(ensemble_w0[:,:3], ensemble_w0[:,3:])
 
     # time container
     t = np.empty(nkld)
