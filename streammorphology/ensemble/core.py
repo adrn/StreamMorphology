@@ -13,27 +13,52 @@ import gary.dynamics as gd
 import numpy as np
 from scipy.signal import argrelmin, argrelmax
 from scipy.stats import kurtosis, skew
+
+from sklearn.grid_search import GridSearchCV
 from sklearn.neighbors import KernelDensity
 
 from .fast_ensemble import ensemble_integrate
 
-__all__ = ['create_ball', 'nearest_pericenter', 'align_ensemble', 'do_the_kld',
-           'prepare_parent_orbit']
+__all__ = ['create_ensemble', 'nearest_pericenter',
+           'align_ensemble', 'do_the_kld', 'prepare_parent_orbit']
 
-def create_ball(w0, potential, N=1000, m_scale=1E4):
+def create_ensemble(w0, potential, n=1000, m_scale=1E4):
+    """
+    Generate an ensemble of test-particle orbits around the specified initial
+    conditions in the specified potential. The position and velocity scales of
+    the ensemble are set by the mass scale (`m_scale`).
+
+    Parameters
+    ----------
+    w0 : array_like
+    potential :
+    n : int (optional)
+        Number of orbits in the ensemble.
+    m_scale : numeric (optional)
+        Mass scale of the ensemble.
+
+    Returns
+    -------
+    ensemble_w0 : :class:`numpy.ndarray`
+        The initial conditions for the ensemble. Will have shape (n+1,6),
+        where the first (index 0) initial conditions are the parent orbit
+        (e.g., specified when calling the function).
+    """
+
+    # compute enclosed mass and position, velocity scales
     menc = potential.mass_enclosed(w0)
     rscale = (m_scale / menc)**(1/3.) * np.sqrt(np.sum(w0[:3]**2))
     vscale = (m_scale / menc)**(1/3.) * np.sqrt(np.sum(w0[3:]**2))
 
-    ball_w0 = np.zeros((N,6))
-    ball_w0[:,:3] = np.random.normal(w0[:3], rscale, size=(N,3))
-    ball_w0[:,3:] = np.random.normal(w0[3:], vscale, size=(N,3))
+    ensemble_w0 = np.zeros((n,6))
+    ensemble_w0[:,:3] = np.random.normal(w0[:3], rscale, size=(n,3))
+    ensemble_w0[:,3:] = np.random.normal(w0[3:], vscale, size=(n,3))
 
-    return np.vstack((w0,ball_w0))
+    return np.vstack((w0,ensemble_w0))
 
-def nearest_pericenter(w0, potential, dt, T):
+def nearest_pericenter(w0, potential, dt, T, forward=True):
     """
-    Find the nearest pericenter to w0
+    Find the nearest pericenter to the initial conditions
     """
 
     t,w = potential.integrate_orbit(w0, dt=dt, nsteps=int(T*10),
@@ -97,6 +122,15 @@ default_metrics = dict(mean=np.mean,
                        nbelow_mean=lambda dens: (dens <= np.mean(dens)).sum())
 def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth,
                metrics=default_metrics, return_all_density=False):
+    """
+
+    Parameters
+    ----------
+    ...
+    kde_bandwidth : float, None
+        If None, use an adaptive bandwidth, or a float for a fixed bandwidth.
+    """
+
     ww = np.ascontiguousarray(ball_w0.copy())
     nensemble = ww.shape[0]
 
@@ -110,6 +144,14 @@ def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth,
     # if set, store and return all of the density values
     if return_all_density:
         all_density = np.zeros((nkld, nensemble))
+
+    # if None, adaptive
+    if kde_bandwidth is None:
+        adaptive_bandwidth = True
+    else:
+        adaptive_bandwidth = False
+        kde = KernelDensity(kernel='epanechnikov',
+                            bandwidth=kde_bandwidth)
 
     # container to store fraction of stars with density above each threshold
     dtype = []
@@ -139,7 +181,13 @@ def do_the_kld(ball_w0, potential, dt, nsteps, nkld, kde_bandwidth,
             t[i] = t[i-1] + dt*dstep
 
         # build an estimate of the configuration space density of the ensemble
-        kde = KernelDensity(kernel='epanechnikov', bandwidth=kde_bandwidth)
+        if adaptive_bandwidth:
+            grid = GridSearchCV(KernelDensity(),
+                                {'bandwidth': np.logspace(-1.5, 1.5, 30)},
+                                cv=20) # 20-fold cross-validation
+            grid.fit(www[:,:3])
+            kde = grid.best_estimator_
+
         kde.fit(www[:,:3])
 
         # evaluate density at the position of the particles
