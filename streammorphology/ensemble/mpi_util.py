@@ -16,7 +16,7 @@ from sklearn.neighbors import KernelDensity
 # Project
 from .. import ETOL
 from .mmap_util import dtype
-from .core import create_ball, prepare_parent_orbit, do_the_kld, default_metrics
+from .core import create_ensemble, prepare_parent_orbit, do_the_kld, default_metrics
 
 __all__ = ['worker', 'parser_arguments']
 
@@ -96,7 +96,7 @@ def worker(task):
     logger.info("Orbit {}: initial dt={}, nsteps={}".format(index, dt, nsteps))
 
     # create an ensemble of particles around this initial condition
-    ball_w0 = create_ball(new_w0, potential, N=nensemble, m_scale=mscale)
+    ball_w0 = create_ensemble(new_w0, potential, N=nensemble, m_scale=mscale)
     logger.debug("Generated ensemble of {0} particles".format(nensemble))
 
     # get the initial density
