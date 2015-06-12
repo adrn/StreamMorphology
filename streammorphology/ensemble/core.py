@@ -20,7 +20,7 @@ from sklearn.neighbors import KernelDensity
 from ..freqmap import estimate_periods
 from .fast_ensemble import ensemble_integrate
 
-__all__ = ['create_ensemble', 'nearest_pericenter',
+__all__ = ['create_ensemble', 'nearest_pericenter', 'nearest_apocenter',
            'align_ensemble', 'do_the_kld', 'prepare_parent_orbit']
 
 def _validate_1d_array(x):
@@ -117,6 +117,57 @@ def nearest_pericenter(w0, potential, forward=True, period=None):
     # nearest peri:
     peri_idx = peris[0]
     return w[peri_idx, 0]
+
+def nearest_apocenter(w0, potential, forward=True, period=None):
+    """
+    Find the nearest apocenter to the initial conditions.
+
+    By default, this looks for the nearest apocenter *forward* in time,
+    but this can be changed by setting the `forward` argument to `False`.
+
+    Parameters
+    ----------
+    w0 : array_like
+        The parent orbit initial conditions as a 1D numpy array.
+    potential : `gary.potential.PotentialBase`
+        The gravitational potential.
+    forward : bool (optional)
+        Find the nearest apocenter either forward (True) in time
+        or backward (False) in time.
+    period : numeric (optional)
+        The period of the orbit. If not specified, will estimate
+        it internally. Used to figured out how long to integrate
+        for when searching for the nearest apocenter.
+
+    Returns
+    -------
+    apo_w0 : :class:`numpy.ndarray`
+        The 6D phase-space position of the nearest apocenter.
+
+    """
+    w0 = _validate_1d_array(w0)
+
+    if period is None:
+        # TODO: better way to estimate period?
+        t,w = potential.integrate_orbit(w0, dt=1., nsteps=5000,
+                                        Integrator=gi.DOPRI853Integrator)
+        periods = estimate_periods(t, w)
+        period = periods[0] # R or x period
+
+    dt = period / 256. # 512 steps per orbital period
+    if not forward:
+        dt *= -1
+
+    nsteps = int(10.*period / dt)
+    t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps,
+                                    Integrator=gi.DOPRI853Integrator)
+
+    r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
+    apos, = argrelmax(r)
+
+    # nearest peri:
+    apo_idx = apos[0]
+    return w[apo_idx, 0]
 
 def compute_align_matrix(w):
     """
@@ -278,27 +329,3 @@ def do_the_kld(ensemble_w0, potential, dt, nsteps, nkld, kde_bandwidth,
         return t, metric_data, Es, all_density
     else:
         return t, metric_data, Es
-
-def prepare_parent_orbit(w0, potential, nperiods, nsteps_per_period):
-    t,w = potential.integrate_orbit(w0, dt=0.5, nsteps=10000)
-    r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
-    T = gd.peak_to_peak_period(t, r)
-
-    dt = T / nsteps_per_period
-    nsteps = int(round(nperiods * T / dt))
-
-    ix = argrelmin(r)[0]
-#     ix = argrelmax(r)[0]
-    new_w0 = w[ix[0],0]
-
-    t,w = potential.integrate_orbit(new_w0, dt=dt, nsteps=nsteps + int(0.75*nsteps_per_period),
-                                    Integrator=gi.DOPRI853Integrator)
-    r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
-    ix = argrelmax(r)[0]
-
-    # if len(ix) < nperiods-1:
-    #     raise ValueError("Dooooooood...")
-
-    nsteps = ix[-1]
-
-    return new_w0,dt,nsteps
