@@ -17,10 +17,18 @@ from scipy.stats import kurtosis, skew
 from sklearn.grid_search import GridSearchCV
 from sklearn.neighbors import KernelDensity
 
+from ..freqmap import estimate_periods
 from .fast_ensemble import ensemble_integrate
 
 __all__ = ['create_ensemble', 'nearest_pericenter',
            'align_ensemble', 'do_the_kld', 'prepare_parent_orbit']
+
+def _validate_1d_array(x):
+    # ensure we have a 1D array of initial conditions
+    x = np.array(x)
+    if x.ndim == 1:
+        raise ValueError("Input array (or iterable) must be 1D, not {0}D".format(x.ndim))
+    return x
 
 def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     """
@@ -31,7 +39,9 @@ def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     Parameters
     ----------
     w0 : array_like
-    potential :
+        The parent orbit initial conditions as a 1D numpy array.
+    potential : `gary.potential.PotentialBase`
+        The gravitational potential.
     n : int (optional)
         Number of orbits in the ensemble.
     m_scale : numeric (optional)
@@ -44,6 +54,7 @@ def create_ensemble(w0, potential, n=1000, m_scale=1E4):
         where the first (index 0) initial conditions are the parent orbit
         (e.g., specified when calling the function).
     """
+    w0 = _validate_1d_array(w0)
 
     # compute enclosed mass and position, velocity scales
     menc = potential.mass_enclosed(w0)
@@ -56,18 +67,56 @@ def create_ensemble(w0, potential, n=1000, m_scale=1E4):
 
     return np.vstack((w0,ensemble_w0))
 
-def nearest_pericenter(w0, potential, dt, T, forward=True):
+def nearest_pericenter(w0, potential, forward=True, period=None):
     """
-    Find the nearest pericenter to the initial conditions
-    """
+    Find the nearest pericenter to the initial conditions.
 
-    t,w = potential.integrate_orbit(w0, dt=dt, nsteps=int(T*10),
+    By default, this looks for the nearest pericenter *forward* in time,
+    but this can be changed by setting the `forward` argument to `False`.
+
+    Parameters
+    ----------
+    w0 : array_like
+        The parent orbit initial conditions as a 1D numpy array.
+    potential : `gary.potential.PotentialBase`
+        The gravitational potential.
+    forward : bool (optional)
+        Find the nearest pericenter either forward (True) in time
+        or backward (False) in time.
+    period : numeric (optional)
+        The period of the orbit. If not specified, will estimate
+        it internally. Used to figured out how long to integrate
+        for when searching for the nearest pericenter.
+
+    Returns
+    -------
+    peri_w0 : :class:`numpy.ndarray`
+        The 6D phase-space position of the nearest pericenter.
+
+    """
+    w0 = _validate_1d_array(w0)
+
+    if period is None:
+        # TODO: better way to estimate period?
+        t,w = potential.integrate_orbit(w0, dt=1., nsteps=5000,
+                                        Integrator=gi.DOPRI853Integrator)
+        periods = estimate_periods(t, w)
+        period = periods[0] # R or x period
+
+    dt = period / 256. # 512 steps per orbital period
+    if not forward:
+        dt *= -1
+
+    nsteps = int(10.*period / dt)
+    t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps,
                                     Integrator=gi.DOPRI853Integrator)
 
     r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
-    peris = argrelmin(r)[0]
+    peris, = argrelmin(r)
 
-    return w[peris[0], 0]
+    # nearest peri:
+    peri_idx = peris[0]
+    return w[peri_idx, 0]
 
 def compute_align_matrix(w):
     """
@@ -78,10 +127,15 @@ def compute_align_matrix(w):
     Parameters
     ----------
     w : array_like
-    """
+        The point to transform.
 
-    if w.ndim > 1:
-        raise ValueError("Input phase-space position should be 1D.")
+    Returns
+    -------
+    R : :class:`numpy.ndarray`
+        A 2D numpy array (rotation matrix).
+
+    """
+    w = _validate_1d_array(w)
 
     x = w[:3].copy()
     v = w[3:].copy()
@@ -109,10 +163,26 @@ def compute_align_matrix(w):
     return R3*R2*R1
 
 def align_ensemble(ws):
+    """
+    Given a collection of orbits (e.g., ensemble orbits), rotate the
+    ensemble so that the 0th orbit is along the x-axis with angular
+    momentum vector aligned with the z-axis.
+
+    Parameters
+    ----------
+    ws : array_like
+        A 3D array of orbits with shape (ntimes, norbits, 6).
+
+    Returns
+    -------
+    new_ws : :class:`numpy.ndarray`
+        The transformed orbits.
+    """
     R = compute_align_matrix(ws[-1,0])
     new_x = np.array(R.dot(ws[-1,:,:3].T).T)
     new_v = np.array(R.dot(ws[-1,:,3:].T).T)
-    return new_x, new_v
+    new_w = np.vstack((new_x.T, new_v.T)).T
+    return new_w
 
 default_metrics = dict(mean=np.mean,
                        median=np.median,
