@@ -13,7 +13,6 @@ scf
 old
 output
 misc
-simulations/pal5
-simulations/old
+simulations/
 *.c
 *.ipynb
