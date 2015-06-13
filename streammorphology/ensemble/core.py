@@ -17,18 +17,12 @@ from scipy.stats import kurtosis, skew
 from sklearn.grid_search import GridSearchCV
 from sklearn.neighbors import KernelDensity
 
+from ..util import _validate_nd_array
 from ..freqmap import estimate_periods
 from .fast_ensemble import ensemble_integrate
 
 __all__ = ['create_ensemble', 'nearest_pericenter', 'nearest_apocenter',
-           'align_ensemble', 'do_the_kld', 'prepare_parent_orbit']
-
-def _validate_1d_array(x):
-    # ensure we have a 1D array of initial conditions
-    x = np.array(x)
-    if x.ndim != 1:
-        raise ValueError("Input array (or iterable) must be 1D, not {0}D".format(x.ndim))
-    return x
+           'align_ensemble', 'do_the_kld']
 
 def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     """
@@ -54,7 +48,7 @@ def create_ensemble(w0, potential, n=1000, m_scale=1E4):
         where the first (index 0) initial conditions are the parent orbit
         (e.g., specified when calling the function).
     """
-    w0 = _validate_1d_array(w0)
+    w0 = _validate_nd_array(w0, expected_ndim=1)
 
     # compute enclosed mass and position, velocity scales
     menc = potential.mass_enclosed(w0)
@@ -94,13 +88,10 @@ def nearest_pericenter(w0, potential, forward=True, period=None):
         The 6D phase-space position of the nearest pericenter.
 
     """
-    w0 = _validate_1d_array(w0)
+    w0 = _validate_nd_array(w0, expected_ndim=1)
 
     if period is None:
-        # TODO: better way to estimate period?
-        t,w = potential.integrate_orbit(w0, dt=1., nsteps=5000,
-                                        Integrator=gi.DOPRI853Integrator)
-        periods = estimate_periods(t, w)
+        periods = estimate_periods(w0, potential)
         period = periods[0] # R or x period
 
     dt = period / 256. # 512 steps per orbital period
@@ -145,7 +136,7 @@ def nearest_apocenter(w0, potential, forward=True, period=None):
         The 6D phase-space position of the nearest apocenter.
 
     """
-    w0 = _validate_1d_array(w0)
+    w0 = _validate_nd_array(w0, expected_ndim=1)
 
     if period is None:
         # TODO: better way to estimate period?

@@ -1,5 +1,7 @@
 # coding: utf-8
 
+#TODO: Modify ensemble mapping to use adaptive bandwidth, only compute at end of integration
+
 from __future__ import division, print_function
 
 __author__ = "adrn <adrn@astro.columbia.edu>"
@@ -16,7 +18,9 @@ from sklearn.neighbors import KernelDensity
 # Project
 from .. import ETOL
 from .mmap_util import dtype
-from .core import create_ensemble, prepare_parent_orbit, do_the_kld, default_metrics
+from .core import create_ensemble, do_the_kld, default_metrics
+
+# TODO: replace prepare_parent_orbit
 
 __all__ = ['worker', 'parser_arguments']
 
