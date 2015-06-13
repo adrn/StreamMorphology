@@ -7,14 +7,15 @@ from __future__ import division, print_function
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Third-party
-import numpy as np
 from astropy import log as logger
-
-# Project
+import numpy as np
 import gary.coordinates as gc
 import gary.dynamics as gd
 import gary.integrate as gi
 import gary.potential as gp
+from superfreq import SuperFreq
+
+# Project
 from .mmap_util import dtype
 from .core import estimate_dt_nsteps
 from .. import ETOL
@@ -28,7 +29,7 @@ parser_arguments.append([('--nperiods',), dict(dest='nperiods', default=250, typ
                                                help='Number of periods to integrate for.')])
 parser_arguments.append([('--nsteps_per_period',), dict(dest='nsteps_per_period', default=250, type=int,
                                                         help='Number of steps to take per min. period.')])
-parser_arguments.append([('--hammingp',), dict(dest='hammingp', default=4, type=int,
+parser_arguments.append([('--hammingp',), dict(dest='hammingp', default=2, type=int,
                                                help='Power of Hamming filter.')])
 
 def worker(task):
@@ -108,8 +109,8 @@ def worker(task):
         return result
 
     # start finding the frequencies -- do first half then second half
-    naff1 = gd.NAFF(t[:nsteps//2+1], p=p)
-    naff2 = gd.NAFF(t[nsteps//2:], p=p)
+    sf1 = SuperFreq(t[:nsteps//2+1], p=p)
+    sf2 = SuperFreq(t[nsteps//2:], p=p)
 
     # classify orbit full orbit
     circ = gd.classify_orbit(ws)
@@ -120,22 +121,20 @@ def worker(task):
     sl2 = slice(nsteps//2,None)
 
     if is_tube:
-        # need to flip coordinates until circulation is around z axis
+        # first need to flip coordinates so that circulation is around z axis
         new_ws = gd.align_circulation_with_z(ws, circ)
         new_ws = gc.cartesian_to_poincare_polar(new_ws)
         fs1 = [(new_ws[sl1,j] + 1j*new_ws[sl1,j+3]) for j in range(3)]
         fs2 = [(new_ws[sl2,j] + 1j*new_ws[sl2,j+3]) for j in range(3)]
+
     else:  # box
         fs1 = [(ws[sl1,0,j] + 1j*ws[sl1,0,j+3]) for j in range(3)]
         fs2 = [(ws[sl2,0,j] + 1j*ws[sl2,0,j+3]) for j in range(3)]
 
-    logger.debug("NAFFing the orbits")
-
-    # freqs1,d1,ixs1,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[:nsteps//2+1])
-    # freqs2,d2,ixs2,is_tube = gd.orbit_to_freqs(t[:nsteps//2+1], ws[nsteps//2:])
+    logger.debug("Running SuperFreq on the orbits")
     try:
-        freqs1,d1,ixs1 = naff1.find_fundamental_frequencies(fs1, nintvec=8)
-        freqs2,d2,ixs2 = naff2.find_fundamental_frequencies(fs2, nintvec=8)
+        freqs1,d1,ixs1 = sf1.find_fundamental_frequencies(fs1, nintvec=8)
+        freqs2,d2,ixs2 = sf2.find_fundamental_frequencies(fs2, nintvec=8)
     except:
         result['freqs'] = np.nan*allfreqs['freqs'][index]
         result['success'] = False
