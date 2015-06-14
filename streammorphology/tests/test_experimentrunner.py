@@ -65,5 +65,6 @@ class TestOrbitGridExperiment(object):
         shutil.rmtree(test_path)
 
 class TestExperimentRunner(object):
+    # TODO: no tests right now cause I *suck*!
     pass
 
