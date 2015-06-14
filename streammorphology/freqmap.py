@@ -30,9 +30,9 @@ __all__ = ['Freqmap']
 
 class OrbitGridExperiment(object):
 
-    def __init__(self, cache_path, config_filename, config_defaults, **kwargs):
+    def __init__(self, cache_path, config_filename, config_defaults, overwrite=False, **kwargs):
         # validate cache path
-        self.cache_path = os.abspath(cache_path)
+        self.cache_path = os.path.abspath(cache_path)
         if not os.path.exists(self.cache_path):
             os.mkdir(self.cache_path)
 
@@ -56,13 +56,25 @@ class OrbitGridExperiment(object):
                         setattr(ns, k, v)
 
         self.cache_file = os.path.join(self.cache_path, ns.cache_filename)
+        if os.path.exists(self.cache_file) and overwrite:
+            os.remove(self.cache_file)
+
         self.config = ns
 
         # load initial conditions
-        self.w0 = np.load(self.config.w0_filename)
+        self.w0 = np.load(os.path.join(self.cache_path, self.config.w0_filename))
+        norbits = len(self.w0)
+        logger.info("Number of orbits: {0}".format(norbits))
 
-        # set to None by default
-        self._tmpdir = None
+        # make sure memmap file exists
+        if not os.path.exists(self.cache_file):
+            # make sure memmap file exists
+            d = np.memmap(self.cache_file, mode='w+',
+                          dtype=self.cache_dtype, shape=(norbits,))
+            d[:] = np.zeros(shape=(norbits,), dtype=self.cache_dtype)
+
+        self.memmap = np.memmap(self.cache_file, mode='w+',
+                                dtype=self.cache_dtype, shape=(norbits,))
 
     def read_cache(self):
         """
@@ -73,23 +85,42 @@ class OrbitGridExperiment(object):
 
         # first get the memmap array
         return np.memmap(self.cache_file, mode='r', shape=(len(self.w0),),
-                         dtype=_cache_dtype)
+                         dtype=self.cache_dtype)
 
-    def teardown(self):
-        if self._tmpdir is not None:
+    def __enter__(self):
+        logger.debug("Creating temp. directory {0}".format(self._tmpdir))
+        self._tmpdir = os.path.join(self.cache_path, "_tmp")
+        os.mkdir(self._tmpdir)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if os.path.exists(self._tmpdir):
+            logger.debug("Removing temp. directory {0}".format(self._tmpdir))
             import shutil
             shutil.rmtree(self._tmpdir)
 
-_cache_dtype = [
-    ('freqs','f8',(2,3)), # three fundamental frequencies computed in 2 windows
-    ('amps','f8',(2,3)), # amplitudes of frequencies in time series
-    ('dE_max','f8'), # maximum energy difference (compared to initial) during integration
-    ('success','b1'), # whether computing the frequencies succeeded or not
-    ('is_tube','b1'), # the orbit is a tube orbit
-    ('dt','f8'), # timestep used for integration
-    ('nsteps','i8'), # number of steps integrated
-    ('error_code','i8') # if not successful, why did it fail? see below
-]
+    def callback(self, tmpfile):
+        if tmpfile is None:
+            return
+
+        with open(tmpfile) as f:
+            result = pickle.load(f)
+
+        logger.debug("Flushing {0} to output array...".format(result['index']))
+        if result['error_code'] != 0.:
+            # error happened
+            for key in self.memmap.dtype.names:
+                if key in result:
+                    self.memmap[key][result['index']] = result[key]
+
+        else:
+            # all is well
+            for key in self.memmap.dtype.names:
+                self.memmap[key][result['index']] = result[key]
+
+        # flush to output array
+        self.memmap.flush()
+        logger.debug("...flushed, washing hands.")
 
 config_defaults = dict(
     energy_tolerance=1E-7, # Maximum allowed fractional energy difference
@@ -109,15 +140,25 @@ class Freqmap(OrbitGridExperiment):
         3: "SuperFreq failed on find_fundamental_frequencies()."
     }
 
-    def __init__(self, cache_path, config_filename='freqmap.cfg', **kwargs):
+    cache_dtype = [
+        ('freqs','f8',(2,3)), # three fundamental frequencies computed in 2 windows
+        ('amps','f8',(2,3)), # amplitudes of frequencies in time series
+        ('dE_max','f8'), # maximum energy difference (compared to initial) during integration
+        ('success','b1'), # whether computing the frequencies succeeded or not
+        ('is_tube','b1'), # the orbit is a tube orbit
+        ('dt','f8'), # timestep used for integration
+        ('nsteps','i8'), # number of steps integrated
+        ('error_code','i8') # if not successful, why did it fail? see below
+    ]
+
+    def __init__(self, cache_path, config_filename=None, overwrite=False, **kwargs):
+        if config_filename is None:
+            config_filename = 'freqmap.cfg'
         cache_path = os.path.abspath(cache_path)
         super(Freqmap, self).__init__(cache_path=cache_path,
                                       config_filename=config_filename,
                                       config_defaults=config_defaults,
                                       **kwargs)
-
-        self._tmpdir = os.path.join(self.cache_path, "_tmp")
-        os.mkdir(self._tmpdir)
 
     @classmethod
     def run(cls, w0, potential,
@@ -203,7 +244,7 @@ class Freqmap(OrbitGridExperiment):
         result['is_tube'] = float(is_tube)
         result['dt'] = float(dt)
         result['nsteps'] = nsteps
-        result['max_amp_freq_ix'] = d1['|A|'][ixs1].argmax()
+        result['amps'] = np.vstack((d1['|A|'][ixs1], d2['|A|'][ixs2]))
         result['success'] = True
         result['error_code'] = 0
         return result
@@ -212,26 +253,27 @@ class Freqmap(OrbitGridExperiment):
         logger.info("Orbit {0}".format(index))
 
         # unpack input argument dictionary
-        potential = gp.load(self.config.potential_filename)
+        potential = gp.load(os.path.join(self.cache_path, self.config.potential_filename))
 
         # read out just this initial condition
         norbits = len(self.w0)
         allfreqs = np.memmap(self.cache_file, mode='r',
-                             shape=(norbits,), dtype=_cache_dtype)
+                             shape=(norbits,), dtype=self.cache_dtype)
 
         # short-circuit if this orbit is already done
         if allfreqs['success'][index]:
             logger.debug("Orbit {0} already successfully completed.".format(index))
             return None
 
-        res = self.do_the_thing(w0=self.w0[index], potential=potential,
-                                nperiods=self.config.nperiods,
-                                nsteps_per_period=self.config.nsteps_per_period,
-                                hamming_p=self.config.hamming_p,
-                                energy_tolerance=self.config.energy_tolerance)
+        res = self.run(w0=self.w0[index], potential=potential,
+                       nperiods=self.config.nperiods,
+                       nsteps_per_period=self.config.nsteps_per_period,
+                       hamming_p=self.config.hamming_p,
+                       energy_tolerance=self.config.energy_tolerance)
+        res['index'] = index
 
         # cache res into a tempfile, return name of tempfile
-        tmpfile = os.path.join(os._tmpdir, "{0}-{1}.pickle".format(self.__class__.__name__, index))
+        tmpfile = os.path.join(self._tmpdir, "{0}-{1}.pickle".format(self.__class__.__name__, index))
         with open(tmpfile, 'w') as f:
             pickle.dump(res, f)
         return tmpfile
