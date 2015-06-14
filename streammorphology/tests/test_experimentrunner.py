@@ -43,7 +43,8 @@ class TestOrbitGridExperiment(object):
         )
 
         # create a dummy initial conditions file...
-        os.mkdir(test_path)
+        if not os.path.exists(test_path):
+            os.mkdir(test_path)
         np.save(os.path.join(test_path, test_defaults['w0_filename']),
                 np.array([[1.,2,3,4,5,6]]))
 
@@ -51,13 +52,13 @@ class TestOrbitGridExperiment(object):
             _run_kwargs = []
             error_codes = dict()
             cache_dtype = [('test', 'f8')]
+            config_defaults = test_defaults
 
             @classmethod
             def run(cls, w0, potential):
                 pass
 
-        with StupidExperiment(test_path, 'test.cfg',
-                              config_defaults=test_defaults) as exp:
+        with StupidExperiment(test_path, 'test.cfg') as exp:
             tmpdir = exp._tmpdir
             assert os.path.exists(tmpdir)
 

@@ -40,7 +40,11 @@ class OrbitGridExperiment(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, cache_path, config_filename, config_defaults, overwrite=False, **kwargs):
+    def __init__(self, cache_path, config_filename=None, overwrite=False, **kwargs):
+        if config_filename is None:
+            config_filename = '{0}.cfg'.format(self.__class__.__name__)
+            logger.debug("Config filename not specified - using default ({0})".format(config_filename))
+
         # validate cache path
         self.cache_path = os.path.abspath(cache_path)
         if not os.path.exists(self.cache_path):
@@ -51,14 +55,14 @@ class OrbitGridExperiment(object):
         # if config file doesn't exist, create one with defaults
         if not os.path.exists(config_path):
             ns = ConfigNamespace()
-            for k,v in config_defaults.items():
+            for k,v in self.config_defaults.items():
                 setattr(ns, k, v)
             save(ns, config_path)
 
         # if config file exists, read in value from their or defaults
         else:
             ns = load(config_path)
-            for k,v in config_defaults.items():
+            for k,v in self.config_defaults.items():
                 if not hasattr(ns, k):
                     if k in kwargs: # config default overridden by class kwarg
                         setattr(ns, k, kwargs[k])
@@ -226,6 +230,10 @@ class OrbitGridExperiment(object):
     @abstractproperty
     def _run_kwargs(self):
         """ A list of the names of the keyword arguments used in `run()` (below) """
+
+    @abstractproperty
+    def config_defaults(self):
+        """ A dict of configuration defaults """
 
     @abstractclassmethod
     def run(cls, w0, potential, **kwargs):

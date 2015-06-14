@@ -20,16 +20,6 @@ from .experimentrunner import OrbitGridExperiment
 
 __all__ = ['Freqmap']
 
-config_defaults = dict(
-    energy_tolerance=1E-7, # Maximum allowed fractional energy difference
-    nperiods=100, # Total number of orbital periods to integrate for
-    nsteps_per_period=512, # Number of steps per integration period for integration stepsize
-    hamming_p=2, # Exponent to use for Hamming filter
-    w0_filename='w0.npy', # Name of the initial conditions file
-    cache_filename='freqmap.npy', # Name of the cache file
-    potential_filename='potential.yml' # Name of cached potential file
-)
-
 class Freqmap(OrbitGridExperiment):
     # failure error codes
     error_codes = {
@@ -50,15 +40,15 @@ class Freqmap(OrbitGridExperiment):
     ]
 
     _run_kwargs = ['nperiods', 'nsteps_per_period', 'hamming_p', 'energy_tolerance']
-
-    def __init__(self, cache_path, config_filename=None, overwrite=False, **kwargs):
-        if config_filename is None:
-            config_filename = 'freqmap.cfg'
-        super(Freqmap, self).__init__(cache_path=cache_path,
-                                      config_filename=config_filename,
-                                      config_defaults=config_defaults,
-                                      overwrite=overwrite,
-                                      **kwargs)
+    config_defaults = dict(
+        energy_tolerance=1E-7, # Maximum allowed fractional energy difference
+        nperiods=100, # Total number of orbital periods to integrate for
+        nsteps_per_period=512, # Number of steps per integration period for integration stepsize
+        hamming_p=2, # Exponent to use for Hamming filter
+        w0_filename='w0.npy', # Name of the initial conditions file
+        cache_filename='freqmap.npy', # Name of the cache file
+        potential_filename='potential.yml' # Name of cached potential file
+    )
 
     @classmethod
     def run(cls, w0, potential,
