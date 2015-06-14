@@ -104,6 +104,9 @@ class OrbitGridExperiment(object):
     def __enter__(self):
         self._tmpdir = os.path.join(self.cache_path, "_tmp")
         logger.debug("Creating temp. directory {0}".format(self._tmpdir))
+        if os.path.exists(self._tmpdir):
+            import shutil
+            shutil.rmtree(self._tmpdir)
         os.mkdir(self._tmpdir)
         return self
 
@@ -320,5 +323,7 @@ class ExperimentRunner(object):
                 pool.close()
                 logger.error("Unexpected error!")
                 raise
+            else:
+                pool.close()
 
         sys.exit(0)
