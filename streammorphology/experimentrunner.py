@@ -270,6 +270,9 @@ class ExperimentRunner(object):
         return self.parser.parse_args()
 
     def __init__(self, ExperimentClass):
+        self.ExperimentClass = ExperimentClass
+
+    def run(self):
         args = self._parse_args()
 
         np.random.seed(args.seed)
@@ -301,9 +304,9 @@ class ExperimentRunner(object):
                     index = None
 
         # Instantiate the experiment class
-        with ExperimentClass(cache_path=args.path,
-                             config_filename=args.config_filename,
-                             overwrite=args.overwrite) as experiment:
+        with self.ExperimentClass(cache_path=args.path,
+                                  config_filename=args.config_filename,
+                                  overwrite=args.overwrite) as experiment:
             norbits = len(experiment.w0)
 
             if index is None:

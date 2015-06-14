@@ -30,5 +30,6 @@ from streammorphology import ExperimentRunner
 from streammorphology.freqmap import Freqmap
 
 runner = ExperimentRunner(ExperimentClass=Freqmap)
+runner.run()
 
 sys.exit(0)

@@ -17,4 +17,4 @@ three_orbits = {'mildly_chaotic':np.array([27.9,0.,20.7,0.,0.1180944,0.]),
 
 from experimentrunner import *
 from freqmap import Freqmap
-# from lyapunov import Lyapmap
+from lyapunov import Lyapmap
