@@ -182,8 +182,28 @@ class OrbitGridExperiment(object):
             pickle.dump(res, f)
         return tmpfile
 
+    def status(self):
+        """
+        Prints out (to the logger) the status of the current run of the experiment.
+        """
+
+        d = self.read_cache()
+
+        # numbers
+        nsuccess = d['success'].sum()
+        nfail = ((d['success'] is False) & (d['error_code'] > 0)).sum()
+
+        logger.info("------------- {0} Status -------------".format(self.__class__.__name__))
+        logger.info("Total number of orbits: {0}".format(len(d)))
+        logger.info("Successful: {0}".format(nsuccess))
+        logger.info("Failures: {0}".format(nfail))
+
+        for ecode in sorted(self.error_codes.keys()):
+            nfail = (d['error_code'] == ecode).sum()
+            logger.info("\t({0}) {1}: {2}".format(ecode, self.error_codes[ecode], nfail))
+
     # ------------------------------------------------------------------------
-    # Subclasses must implement
+    # Subclasses must implement:
 
     @abstractproperty
     def error_codes(self):
