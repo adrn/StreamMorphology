@@ -5,7 +5,7 @@ from __future__ import division, print_function
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Standard library
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractproperty
 try:
     from abc import abstractclassmethod
 except ImportError: # only works in Python 3
@@ -193,14 +193,24 @@ class OrbitGridExperiment(object):
         nsuccess = d['success'].sum()
         nfail = ((d['success'] is False) & (d['error_code'] > 0)).sum()
 
-        logger.info("------------- {0} Status -------------".format(self.__class__.__name__))
-        logger.info("Total number of orbits: {0}".format(len(d)))
-        logger.info("Successful: {0}".format(nsuccess))
-        logger.info("Failures: {0}".format(nfail))
+        # TODO: why don't logger.info() calls work here??
+        # logger.info("------------- {0} Status -------------".format(self.__class__.__name__))
+        # logger.info("Total number of orbits: {0}".format(len(d)))
+        # logger.info("Successful: {0}".format(nsuccess))
+        # logger.info("Failures: {0}".format(nfail))
+
+        # for ecode in sorted(self.error_codes.keys()):
+        #     nfail = (d['error_code'] == ecode).sum()
+        #     logger.info("\t({0}) {1}: {2}".format(ecode, self.error_codes[ecode], nfail))
+
+        print("------------- {0} Status -------------".format(self.__class__.__name__))
+        print("Total number of orbits: {0}".format(len(d)))
+        print("Successful: {0}".format(nsuccess))
+        print("Failures: {0}".format(nfail))
 
         for ecode in sorted(self.error_codes.keys()):
             nfail = (d['error_code'] == ecode).sum()
-            logger.info("\t({0}) {1}: {2}".format(ecode, self.error_codes[ecode], nfail))
+            print("\t({0}) {1}: {2}".format(ecode, self.error_codes[ecode], nfail))
 
     # ------------------------------------------------------------------------
     # Subclasses must implement:
