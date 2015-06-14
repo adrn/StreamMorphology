@@ -165,13 +165,20 @@ class OrbitGridExperiment(object):
     # Subclasses must implement
 
     @abstractproperty
+    def error_codes(self):
+        """ A dict mapping from integer error code to string describing the error """
+
+    @abstractproperty
+    def cache_dtype(self):
+        """ The (numpy) dtype of the memmap'd cache file """
+
+    @abstractproperty
     def _run_kwargs(self):
         """ A list of the names of the keyword arguments used in `run()` (below) """
 
     @abstractmethod
-    def run(self, w0, potential, **kwargs):
-        """ Run the experiment on a single orbit """
-
+    def run(cls, w0, potential, **kwargs):
+        """ (classmethod) Run the experiment on a single orbit """
 
 # ----------------------------------------------------------------------------
 
