@@ -8,15 +8,10 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Standard library
 import os
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 # Third-party
 import numpy as np
 from astropy import log as logger
-import gary.potential as gp
 import gary.integrate as gi
 import gary.coordinates as gc
 import gary.dynamics as gd
