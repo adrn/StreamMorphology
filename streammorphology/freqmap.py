@@ -57,6 +57,8 @@ class Freqmap(OrbitGridExperiment):
         ('error_code','i8') # if not successful, why did it fail? see below
     ]
 
+    _run_kwargs = ['nperiods', 'nsteps_per_period', 'hamming_p', 'energy_tolerance']
+
     def __init__(self, cache_path, config_filename=None, overwrite=False, **kwargs):
         if config_filename is None:
             config_filename = 'freqmap.cfg'
@@ -155,35 +157,3 @@ class Freqmap(OrbitGridExperiment):
         result['success'] = True
         result['error_code'] = 0
         return result
-
-    def _run_wrapper(self, index):
-        logger.info("Orbit {0}".format(index))
-
-        # unpack input argument dictionary
-        potential = gp.load(os.path.join(self.cache_path, self.config.potential_filename))
-
-        # read out just this initial condition
-        norbits = len(self.w0)
-        allfreqs = np.memmap(self.cache_file, mode='r',
-                             shape=(norbits,), dtype=self.cache_dtype)
-
-        # short-circuit if this orbit is already done
-        if allfreqs['success'][index]:
-            logger.debug("Orbit {0} already successfully completed.".format(index))
-            return None
-
-        res = self.run(w0=self.w0[index], potential=potential,
-                       nperiods=self.config.nperiods,
-                       nsteps_per_period=self.config.nsteps_per_period,
-                       hamming_p=self.config.hamming_p,
-                       energy_tolerance=self.config.energy_tolerance)
-        res['index'] = index
-
-        # cache res into a tempfile, return name of tempfile
-        tmpfile = os.path.join(self._tmpdir, "{0}-{1}.pickle".format(self.__class__.__name__, index))
-        with open(tmpfile, 'w') as f:
-            pickle.dump(res, f)
-        return tmpfile
-
-    def __call__(self, index):
-        return self._run_wrapper(index)
