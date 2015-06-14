@@ -57,7 +57,6 @@ class Freqmap(OrbitGridExperiment):
     def __init__(self, cache_path, config_filename=None, overwrite=False, **kwargs):
         if config_filename is None:
             config_filename = 'freqmap.cfg'
-        cache_path = os.path.abspath(cache_path)
         super(Freqmap, self).__init__(cache_path=cache_path,
                                       config_filename=config_filename,
                                       config_defaults=config_defaults,
