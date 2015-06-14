@@ -5,6 +5,7 @@ from __future__ import division, print_function
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Standard library
+from abc import ABCMeta, abstractmethod, abstractproperty
 from argparse import ArgumentParser
 import logging
 import os
@@ -25,6 +26,8 @@ from .config import ConfigNamespace, save, load
 __all__ = ['ExperimentRunner', 'OrbitGridExperiment']
 
 class OrbitGridExperiment(object):
+
+    __metaclass__ = ABCMeta
 
     def __init__(self, cache_path, config_filename, config_defaults, overwrite=False, **kwargs):
         # validate cache path
@@ -72,17 +75,7 @@ class OrbitGridExperiment(object):
         self.memmap = np.memmap(self.cache_file, mode='r+',
                                 dtype=self.cache_dtype, shape=(norbits,))
 
-    def read_cache(self):
-        """
-        Read the numpy memmap'd file containing cached results from running
-        this experiment. This function returns a numpy structured array
-        with named columns and proper data types.
-        """
-
-        # first get the memmap array
-        return np.memmap(self.cache_file, mode='r', shape=(len(self.w0),),
-                         dtype=self.cache_dtype)
-
+    # Context management
     def __enter__(self):
         self._tmpdir = os.path.join(self.cache_path, "_tmp")
         logger.debug("Creating temp. directory {0}".format(self._tmpdir))
@@ -97,7 +90,22 @@ class OrbitGridExperiment(object):
 
         del self.memmap
 
+    def read_cache(self):
+        """
+        Read the numpy memmap'd file containing cached results from running
+        this experiment. This function returns a numpy structured array
+        with named columns and proper data types.
+        """
+
+        # first get the memmap array
+        return np.memmap(self.cache_file, mode='r', shape=(len(self.w0),),
+                         dtype=self.cache_dtype)
+
     def callback(self, tmpfile):
+        """
+        TODO:
+        """
+
         if tmpfile is None:
             logger.debug("Tempfile is None")
             return
@@ -121,6 +129,51 @@ class OrbitGridExperiment(object):
         # flush to output array
         self.memmap.flush()
         logger.debug("...flushed, washing hands.")
+
+    def __call__(self, index):
+        return self._run_wrapper(index)
+
+    def _run_wrapper(self, index):
+        logger.info("Orbit {0}".format(index))
+
+        # unpack input argument dictionary
+        import gary.potential as gp
+        potential = gp.load(os.path.join(self.cache_path, self.config.potential_filename))
+
+        # read out just this initial condition
+        norbits = len(self.w0)
+        allfreqs = np.memmap(self.cache_file, mode='r',
+                             shape=(norbits,), dtype=self.cache_dtype)
+
+        # short-circuit if this orbit is already done
+        if allfreqs['success'][index]:
+            logger.debug("Orbit {0} already successfully completed.".format(index))
+            return None
+
+        # Only pass in things specified in _run_kwargs (w0 and potential required)
+        kwargs = dict([(k,self.config[k]) for k in self.config.keys() if k in self._run_kwargs])
+        res = self.run(w0=self.w0[index], potential=potential, **kwargs)
+        res['index'] = index
+
+        # cache res into a tempfile, return name of tempfile
+        tmpfile = os.path.join(self._tmpdir, "{0}-{1}.pickle".format(self.__class__.__name__, index))
+        with open(tmpfile, 'w') as f:
+            pickle.dump(res, f)
+        return tmpfile
+
+    # ------------------------------------------------------------------------
+    # Subclasses must implement
+
+    @abstractproperty
+    def _run_kwargs(self):
+        """ A list of the names of the keyword arguments used in `run()` (below) """
+
+    @abstractmethod
+    def run(self, w0, potential, **kwargs):
+        """ Run the experiment on a single orbit """
+
+
+# ----------------------------------------------------------------------------
 
 class ExperimentRunner(object):
 
@@ -195,8 +248,8 @@ class ExperimentRunner(object):
             try:
                 pool.map(experiment, indices, callback=experiment.callback)
             except:
-                logger.error("Unexpected error: {0}".format(sys.exc_info()[0]))
-            finally:
                 pool.close()
+                logger.error("Unexpected error!")
+                raise
 
         sys.exit(0)
