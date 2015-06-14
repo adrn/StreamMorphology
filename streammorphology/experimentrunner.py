@@ -6,13 +6,24 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Standard library
 from abc import ABCMeta, abstractmethod, abstractproperty
+try:
+    from abc import abstractclassmethod
+except ImportError: # only works in Python 3
+    class abstractclassmethod(classmethod):
+
+        __isabstractmethod__ = True
+
+        def __init__(self, callable):
+            callable.__isabstractmethod__ = True
+            super(abstractclassmethod, self).__init__(callable)
+
 from argparse import ArgumentParser
 import logging
 import os
 import sys
 try:
     import cPickle as pickle
-except ImportError:
+except ImportError: # only works in Python 3
     import pickle
 
 # Third-party
@@ -186,7 +197,7 @@ class OrbitGridExperiment(object):
     def _run_kwargs(self):
         """ A list of the names of the keyword arguments used in `run()` (below) """
 
-    @abstractmethod
+    @abstractclassmethod
     def run(cls, w0, potential, **kwargs):
         """ (classmethod) Run the experiment on a single orbit """
 

@@ -52,7 +52,8 @@ class TestOrbitGridExperiment(object):
             error_codes = dict()
             cache_dtype = [('test', 'f8')]
 
-            def run(self, w0, potential):
+            @classmethod
+            def run(cls, w0, potential):
                 pass
 
         with StupidExperiment(test_path, 'test.cfg',
@@ -63,5 +64,6 @@ class TestOrbitGridExperiment(object):
         assert not os.path.exists(tmpdir)
         shutil.rmtree(test_path)
 
-    def test_context(self):
-        pass
+class TestExperimentRunner(object):
+    pass
+
