@@ -23,7 +23,7 @@ from gary.util import get_pool
 # Project
 from .config import ConfigNamespace, save, load
 
-__all__ = ['ExperimentRunner', 'OrbitGridExperiment']
+__all__ = ['OrbitGridExperiment', 'ExperimentRunner']
 
 class OrbitGridExperiment(object):
 
@@ -54,6 +54,12 @@ class OrbitGridExperiment(object):
                     else: # set config item with default
                         setattr(ns, k, v)
 
+        # make sure required stuff is in there:
+        _required = ['cache_filename', 'w0_filename', 'potential_filename']
+        for _req in _required:
+            if not hasattr(ns, _req):
+                raise ValueError("Config specification missing value for '{0}'".format(_req))
+
         self.cache_file = os.path.join(self.cache_path, ns.cache_filename)
         if os.path.exists(self.cache_file) and overwrite:
             os.remove(self.cache_file)
@@ -61,7 +67,11 @@ class OrbitGridExperiment(object):
         self.config = ns
 
         # load initial conditions
-        self.w0 = np.load(os.path.join(self.cache_path, self.config.w0_filename))
+        w0_path = os.path.join(self.cache_path, self.config.w0_filename)
+        if not os.path.exists(w0_path):
+            raise IOError("Initial conditions file '{0}' doesn't exist! You need"
+                          "to generate this file first using make_grid.py".format(w0_path))
+        self.w0 = np.load(w0_path)
         norbits = len(self.w0)
         logger.info("Number of orbits: {0}".format(norbits))
 
