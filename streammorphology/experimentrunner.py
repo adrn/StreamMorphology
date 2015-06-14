@@ -1,22 +1,126 @@
 # coding: utf-8
 
-""" ...explain... """
-
 from __future__ import division, print_function
 
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Standard library
 from argparse import ArgumentParser
-import sys
 import logging
+import os
+import sys
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 # Third-party
 import numpy as np
 from astropy import log as logger
 from gary.util import get_pool
 
-__all__ = ['ExperimentRunner']
+# Project
+from .config import ConfigNamespace, save, load
+
+__all__ = ['ExperimentRunner', 'OrbitGridExperiment']
+
+class OrbitGridExperiment(object):
+
+    def __init__(self, cache_path, config_filename, config_defaults, overwrite=False, **kwargs):
+        # validate cache path
+        self.cache_path = os.path.abspath(cache_path)
+        if not os.path.exists(self.cache_path):
+            os.mkdir(self.cache_path)
+
+        config_path = os.path.join(cache_path, config_filename)
+
+        # if config file doesn't exist, create one with defaults
+        if not os.path.exists(config_path):
+            ns = ConfigNamespace()
+            for k,v in config_defaults.items():
+                setattr(ns, k, v)
+            save(ns, config_path)
+
+        # if config file exists, read in value from their or defaults
+        else:
+            ns = load(config_path)
+            for k,v in config_defaults.items():
+                if not hasattr(ns, k):
+                    if k in kwargs: # config default overridden by class kwarg
+                        setattr(ns, k, kwargs[k])
+                    else: # set config item with default
+                        setattr(ns, k, v)
+
+        self.cache_file = os.path.join(self.cache_path, ns.cache_filename)
+        if os.path.exists(self.cache_file) and overwrite:
+            os.remove(self.cache_file)
+
+        self.config = ns
+
+        # load initial conditions
+        self.w0 = np.load(os.path.join(self.cache_path, self.config.w0_filename))
+        norbits = len(self.w0)
+        logger.info("Number of orbits: {0}".format(norbits))
+
+        # make sure memmap file exists
+        if not os.path.exists(self.cache_file):
+            # make sure memmap file exists
+            d = np.memmap(self.cache_file, mode='w+',
+                          dtype=self.cache_dtype, shape=(norbits,))
+            d[:] = np.zeros(shape=(norbits,), dtype=self.cache_dtype)
+
+        self.memmap = np.memmap(self.cache_file, mode='r+',
+                                dtype=self.cache_dtype, shape=(norbits,))
+
+    def read_cache(self):
+        """
+        Read the numpy memmap'd file containing cached results from running
+        this experiment. This function returns a numpy structured array
+        with named columns and proper data types.
+        """
+
+        # first get the memmap array
+        return np.memmap(self.cache_file, mode='r', shape=(len(self.w0),),
+                         dtype=self.cache_dtype)
+
+    def __enter__(self):
+        self._tmpdir = os.path.join(self.cache_path, "_tmp")
+        logger.debug("Creating temp. directory {0}".format(self._tmpdir))
+        os.mkdir(self._tmpdir)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if os.path.exists(self._tmpdir):
+            logger.debug("Removing temp. directory {0}".format(self._tmpdir))
+            import shutil
+            shutil.rmtree(self._tmpdir)
+
+        del self.memmap
+
+    def callback(self, tmpfile):
+        if tmpfile is None:
+            logger.debug("Tempfile is None")
+            return
+
+        with open(tmpfile) as f:
+            result = pickle.load(f)
+        os.remove(tmpfile)
+
+        logger.debug("Flushing {0} to output array...".format(result['index']))
+        if result['error_code'] != 0.:
+            # error happened
+            for key in self.memmap.dtype.names:
+                if key in result:
+                    self.memmap[key][result['index']] = result[key]
+
+        else:
+            # all is well
+            for key in self.memmap.dtype.names:
+                self.memmap[key][result['index']] = result[key]
+
+        # flush to output array
+        self.memmap.flush()
+        logger.debug("...flushed, washing hands.")
 
 class ExperimentRunner(object):
 
