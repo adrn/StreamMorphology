@@ -73,7 +73,7 @@ class OrbitGridExperiment(object):
                           dtype=self.cache_dtype, shape=(norbits,))
             d[:] = np.zeros(shape=(norbits,), dtype=self.cache_dtype)
 
-        self.memmap = np.memmap(self.cache_file, mode='w+',
+        self.memmap = np.memmap(self.cache_file, mode='r+',
                                 dtype=self.cache_dtype, shape=(norbits,))
 
     def read_cache(self):
@@ -88,8 +88,8 @@ class OrbitGridExperiment(object):
                          dtype=self.cache_dtype)
 
     def __enter__(self):
-        logger.debug("Creating temp. directory {0}".format(self._tmpdir))
         self._tmpdir = os.path.join(self.cache_path, "_tmp")
+        logger.debug("Creating temp. directory {0}".format(self._tmpdir))
         os.mkdir(self._tmpdir)
         return self
 
@@ -99,12 +99,16 @@ class OrbitGridExperiment(object):
             import shutil
             shutil.rmtree(self._tmpdir)
 
+        del self.memmap
+
     def callback(self, tmpfile):
         if tmpfile is None:
+            logger.debug("Tempfile is None")
             return
 
         with open(tmpfile) as f:
             result = pickle.load(f)
+        os.remove(tmpfile)
 
         logger.debug("Flushing {0} to output array...".format(result['index']))
         if result['error_code'] != 0.:
@@ -158,6 +162,7 @@ class Freqmap(OrbitGridExperiment):
         super(Freqmap, self).__init__(cache_path=cache_path,
                                       config_filename=config_filename,
                                       config_defaults=config_defaults,
+                                      overwrite=overwrite,
                                       **kwargs)
 
     @classmethod
