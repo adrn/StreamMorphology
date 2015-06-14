@@ -9,9 +9,9 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 # Third-party
 import numpy as np
 from astropy import log as logger
-import gary.dynamics as gd
 
 # Project
+from .extern.fast_mle import mle
 from .util import estimate_dt_nsteps
 from .experimentrunner import OrbitGridExperiment
 
@@ -28,7 +28,7 @@ class Lyapmap(OrbitGridExperiment):
         ('lyap_exp','f8'), # MLE estimate
         ('success','b1'), # whether computing the frequencies succeeded or not
         ('error_code','i8'), # if not successful, why did it fail? see below
-        ('lyap_exp_end','f8',(1024,)), # last 1024 timesteps of FTMLE estimate
+        # ('lyap_exp_end','f8',(1024,)), # last 1024 timesteps of FTMLE estimate
         ('dE_max','f8'), # maximum energy difference (compared to initial) during integration
     ]
 
@@ -67,21 +67,18 @@ class Lyapmap(OrbitGridExperiment):
         # integrate orbit
         logger.debug("Integrating orbit with dt={0}, nsteps={1}".format(dt, nsteps))
         try:
-            lyap = gd.fast_lyapunov_max(w0.copy(), potential, dt=dt, nsteps=nsteps,
-                                        noffset_orbits=noffset_orbits)
+            LEs,t,w = mle(w0.copy(), potential, dt=dt, nsteps=nsteps,
+                          noffset_orbits=noffset_orbits)
         except RuntimeError: # ODE integration failed
             logger.warning("Orbit integration failed.")
             dEmax = 1E10
         else:
             logger.debug('Orbit integrated successfully, checking energy conservation...')
 
-            # unpack lyap returns
-            LEs,ts,ws = lyap
-
             # check energy conservation for the orbit
-            E = potential.total_energy(ws[:,0,:3].copy(), ws[:,0,3:].copy())
-            dE = np.abs(E[1:] - E[0])
-            dEmax = dE.max() / np.abs(E[0])
+            E0 = potential.total_energy(w0[:3].copy(), w0[3:].copy())[0]
+            E1 = potential.total_energy(w[0,:3].copy(), w[0,3:].copy())[0]
+            dEmax = np.abs((E1-E0)/E0)
             logger.debug('max(∆E) = {0:.2e}'.format(dEmax))
 
         if dEmax > energy_tolerance:
@@ -90,10 +87,10 @@ class Lyapmap(OrbitGridExperiment):
             result['error_code'] = 2
             return result
 
-        le_end = np.mean(LEs[-16384::16], axis=1)
-        le_end.resize(1024)
-        result['lyap_exp'] = np.mean(LEs[-1])
-        result['lyap_exp_end'] = le_end
+        # le_end = np.mean(LEs[-16384::16], axis=1)
+        # le_end.resize(1024)
+        result['lyap_exp'] = np.mean(LEs)
+        # result['lyap_exp_end'] = le_end
         result['success'] = True
         result['error_code'] = 0
         result['dE_max'] = dEmax
