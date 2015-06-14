@@ -2,9 +2,6 @@
 
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
-# Standard library
-import os
-
 # Project
 from ..config import ConfigNamespace, save, load
 
@@ -14,8 +11,6 @@ def test_create():
     ns.derp1 = "Cat"
     ns.derp2 = None
     ns.derp3 = ['one', 'two', 'three']
-
-    print(dict(**ns))
 
 def test_attribute_access():
     ns = ConfigNamespace()
@@ -27,6 +22,24 @@ def test_attribute_access():
     assert ns.derp == 15.
     assert ns.derp1 == "Cat"
     assert ns.derp2 is None
+
+def test_dict_access():
+    ns = ConfigNamespace()
+    ns.derp = 15.
+    ns.derp1 = "Cat"
+    ns.derp2 = None
+    ns.derp3 = ['one', 'two', 'three']
+
+    assert ns['derp'] == 15.
+    assert ns['derp1'] == "Cat"
+    assert ns['derp2'] is None
+
+    ns_dict = dict(ns)
+    assert ns_dict['derp'] == 15.
+    assert ns_dict['derp1'] == "Cat"
+    assert ns_dict['derp2'] is None
+
+    ns_dict = dict(**ns)
 
 def test_save_load():
     filename = "/tmp/test_config.yml"
