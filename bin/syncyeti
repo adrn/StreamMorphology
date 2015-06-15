@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo `rsync -zvr --exclude 'bkup_*' --exclude '*old*' --exclude '*.pickle' yeti:/vega/astro/users/amp2217/projects/morphology/output/ ~/projects/morphology/output/`
