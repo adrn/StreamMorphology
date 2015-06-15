@@ -34,9 +34,11 @@ def main(potential_name, E, ic_func, run_name=None, output_path=None, overwrite=
     if output_path is None:
         output_path = os.path.join(project_path, "output")
 
-    if run_name is None:
-        run_name = 'E{:.3f}_{}'.format(E, ic_func.func_name)
-    path = os.path.join(output_path, 'freqmap', potential_name, run_name)
+        if run_name is None:
+            run_name = 'E{:.3f}_{}'.format(E, ic_func.func_name)
+        path = os.path.join(output_path, 'freqmap', potential_name, run_name)
+    else:
+        path = output_path
 
     logger.info("Caching to: {}".format(path))
     if not os.path.exists(path):
