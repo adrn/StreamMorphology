@@ -226,12 +226,8 @@ def align_ensemble(ws):
     new_w = np.vstack((new_x.T, new_v.T)).T
     return new_w
 
-default_metrics = dict(mean=np.mean,
-                       median=np.median,
-                       skewness_log=lambda x: skew(np.log10(x)),
-                       kurtosis_log=lambda x: kurtosis(np.log10(x)),
-                       nabove_mean=lambda dens: (dens >= np.mean(dens)).sum(),
-                       nbelow_mean=lambda dens: (dens <= np.mean(dens)).sum())
+
+# TODO: needs overhaul
 def do_the_kld(ensemble_w0, potential, dt, nsteps, nkld, kde_bandwidth,
                metrics=default_metrics, return_all_density=False):
     """
