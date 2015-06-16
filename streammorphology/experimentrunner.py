@@ -97,9 +97,6 @@ class OrbitGridExperiment(object):
                           dtype=self.cache_dtype, shape=(norbits,))
             d[:] = np.zeros(shape=(norbits,), dtype=self.cache_dtype)
 
-        self.memmap = np.memmap(self.cache_file, mode='r+',
-                                dtype=self.cache_dtype, shape=(norbits,))
-
     # Context management
     def __enter__(self):
         self._tmpdir = os.path.join(self.cache_path, "_tmp")
@@ -115,8 +112,6 @@ class OrbitGridExperiment(object):
             logger.debug("Removing temp. directory {0}".format(self._tmpdir))
             import shutil
             shutil.rmtree(self._tmpdir)
-
-        del self.memmap
 
     def read_cache(self):
         """
@@ -143,20 +138,25 @@ class OrbitGridExperiment(object):
         os.remove(tmpfile)
 
         logger.debug("Flushing {0} to output array...".format(result['index']))
+        memmap = np.memmap(self.cache_file, mode='r+',
+                           dtype=self.cache_dtype, shape=(len(self.w0),))
         if result['error_code'] != 0.:
             # error happened
-            for key in self.memmap.dtype.names:
+            for key in memmap.dtype.names:
                 if key in result:
-                    self.memmap[key][result['index']] = result[key]
+                    memmap[key][result['index']] = result[key]
 
         else:
             # all is well
-            for key in self.memmap.dtype.names:
-                self.memmap[key][result['index']] = result[key]
+            for key in memmap.dtype.names:
+                memmap[key][result['index']] = result[key]
 
         # flush to output array
-        self.memmap.flush()
+        memmap.flush()
         logger.debug("...flushed, washing hands.")
+
+        del result
+        del memmap
 
     def __call__(self, index):
         return self._run_wrapper(index)
