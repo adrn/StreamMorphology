@@ -1,0 +1,3 @@
+echo `rsync -zvr yeti:/vega/astro/users/amp2217/projects/scf/simulations/runs/regular ~/projects/scf/simulations/runs/`
+echo `rsync -zvr yeti:/vega/astro/users/amp2217/projects/scf/simulations/runs/chaotic ~/projects/scf/simulations/runs/`
+echo `rsync -zvr yeti:/vega/astro/users/amp2217/projects/scf/simulations/runs/mildly_chaotic ~/projects/scf/simulations/runs/`
