@@ -27,7 +27,7 @@ def main():
     potential = gp.LM10Potential()
 
     dt,nsteps = estimate_dt_nsteps(potential, w0, nperiods=10000,
-                                   nsteps_per_period=512)
+                                   nsteps_per_period=1024)
 
     print("estimated dt, nsteps: {0:2f}, {1:d}".format(dt,nsteps))
 
@@ -42,6 +42,11 @@ def main():
     plt.figure(figsize=(10,8))
     plt.loglog(t[1:-10:10], le, marker=None)
     plt.savefig(os.path.join(outpath, "le.pdf"))
+
+    plt.figure(figsize=(8,6))
+    E = potential.total_energy(w[:,0,:3], w[:,0,3:])
+    plt.loglog(np.abs((E[1:]-E[0])/E[0]), marker=None, drawstyle='steps')
+    plt.savefig(os.path.join(outpath, "energy.pdf"))
 
 if __name__ == "__main__":
     main()
