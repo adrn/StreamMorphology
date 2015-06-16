@@ -4,11 +4,6 @@ from __future__ import division, print_function
 
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
-# Standard library
-import os
-import sys
-import logging
-
 # Third-party
 import numpy as np
 import gary.potential as gp
