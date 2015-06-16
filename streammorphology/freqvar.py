@@ -1,7 +1,5 @@
 # coding: utf-8
 
-""" Class for running frequency mapping """
-
 from __future__ import division, print_function
 
 __author__ = "adrn <adrn@astro.columbia.edu>"
