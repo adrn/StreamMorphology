@@ -11,9 +11,11 @@ import numpy as np
 #                 'chaotic':np.array([24.9,0.,26.1,0.,0.09521978,0.]),
 #                 'regular':np.array([24.9,0.,6.9,0.,0.19509396,0.])}
 
-three_orbits = {'mildly_chaotic':np.array([27.9,0.,20.7,0.,0.1180944,0.]),
-                'chaotic':np.array([27.9,0.,21.9,0.,0.11030966,0.]),
-                'regular':np.array([27.9,0.,14.9,0.,0.1490257,0.])}
+three_orbits = {
+    'mildly_chaotic':np.array([27.9,0.,20.1,0.,0.1217824,0.]),
+    'chaotic':np.array([27.9,0.,23.3,0.,0.10043208,0.]),
+    'regular':np.array([27.9,0.,16.9,0.,0.13947743,0.])
+}
 
 from experimentrunner import *
 from freqmap import Freqmap

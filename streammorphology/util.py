@@ -20,15 +20,15 @@ def _validate_nd_array(x, expected_ndim):
                          .format(expected_ndim, x.ndim))
     return x
 
-def estimate_dt_nsteps(potential, w0, nperiods, nsteps_per_period, return_periods=False):
+def estimate_dt_nsteps(w0, potential, nperiods, nsteps_per_period, return_periods=False):
     """
     Estimate the timestep and number of steps to integrate for given a potential
     and set of initial conditions.
 
     Parameters
     ----------
-    potential : :class:`~gary.potential.Potential`
     w0 : array_like
+    potential : :class:`~gary.potential.Potential`
     nperiods : int
         Number of (max) periods to integrate.
     nsteps_per_period : int

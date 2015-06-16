@@ -54,7 +54,7 @@ class Lyapmap(OrbitGridExperiment):
 
         # get timestep and nsteps for integration
         try:
-            dt, nsteps = estimate_dt_nsteps(potential, w0.copy(),
+            dt, nsteps = estimate_dt_nsteps(w0.copy(), potential,
                                             nperiods,
                                             nsteps_per_period)
         except RuntimeError:

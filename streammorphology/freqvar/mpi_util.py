@@ -77,7 +77,7 @@ def worker(task):
     # automatically estimate dt, nsteps
     if dt is None or nsteps is None:
         try:
-            dt, nsteps = estimate_dt_nsteps(potential, w0[index].copy(),
+            dt, nsteps = estimate_dt_nsteps(w0[index].copy(), potential,
                                             nperiods, nsteps_per_period)
         except RuntimeError:
             logger.warning("Failed to integrate orbit when estimating dt,nsteps")
