@@ -153,7 +153,6 @@ class FreqVariance(OrbitGridExperiment):
         result['dE_max'] = dEmax
         result['dt'] = float(dt)
         result['nsteps'] = nsteps
-        result['max_amp_freq_ix'] = d['|A|'][ixs].argmax()
         result['success'] = True
         result['error_code'] = 0
         return result
