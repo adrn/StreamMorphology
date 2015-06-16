@@ -5,22 +5,15 @@ from __future__ import division, print_function
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Third-party
-from astropy import log as logger
 import astropy.units as u
 from astropy.coordinates.angles import rotation_matrix
 import gary.integrate as gi
 import numpy as np
 from scipy.signal import argrelmin, argrelmax
 
-from sklearn.grid_search import GridSearchCV
-from sklearn.neighbors import KernelDensity
+from ..util import _validate_nd_array, estimate_dt_nsteps
 
-from ..util import _validate_nd_array
-from ..freqmap import estimate_periods
-from .fast_ensemble import ensemble_integrate
-
-__all__ = ['create_ensemble', 'nearest_pericenter', 'nearest_apocenter',
-           'align_ensemble', 'do_the_kld']
+__all__ = ['create_ensemble', 'nearest_pericenter', 'nearest_apocenter', 'align_ensemble']
 
 def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     """
@@ -89,14 +82,16 @@ def nearest_pericenter(w0, potential, forward=True, period=None):
     w0 = _validate_nd_array(w0, expected_ndim=1)
 
     if period is None:
-        periods = estimate_periods(w0, potential)
-        period = periods[0] # R or x period
+        dt,nsteps = estimate_dt_nsteps(w0, potential,
+                                       nperiods=10, nsteps_per_period=256)
 
-    dt = period / 256. # 512 steps per orbital period
+    else:
+        dt = period / 256. # 512 steps per orbital period
+        nsteps = int(10.*period / dt)
+
     if not forward:
         dt *= -1
 
-    nsteps = int(10.*period / dt)
     t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps,
                                     Integrator=gi.DOPRI853Integrator)
 
@@ -137,17 +132,16 @@ def nearest_apocenter(w0, potential, forward=True, period=None):
     w0 = _validate_nd_array(w0, expected_ndim=1)
 
     if period is None:
-        # TODO: better way to estimate period?
-        t,w = potential.integrate_orbit(w0, dt=1., nsteps=5000,
-                                        Integrator=gi.DOPRI853Integrator)
-        periods = estimate_periods(t, w)
-        period = periods[0] # R or x period
+        dt,nsteps = estimate_dt_nsteps(w0, potential,
+                                       nperiods=10, nsteps_per_period=256)
 
-    dt = period / 256. # 512 steps per orbital period
+    else:
+        dt = period / 256. # 512 steps per orbital period
+        nsteps = int(10.*period / dt)
+
     if not forward:
         dt *= -1
 
-    nsteps = int(10.*period / dt)
     t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps,
                                     Integrator=gi.DOPRI853Integrator)
 
@@ -175,7 +169,7 @@ def compute_align_matrix(w):
         A 2D numpy array (rotation matrix).
 
     """
-    w = _validate_1d_array(w)
+    w = _validate_nd_array(w, expected_ndim=1)
 
     x = w[:3].copy()
     v = w[3:].copy()

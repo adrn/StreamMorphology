@@ -12,8 +12,7 @@ from astropy import log as logger
 from sklearn.neighbors import KernelDensity
 
 # Project
-from .core import create_ensemble, do_the_kld
-from ..util import estimate_dt_nsteps
+from .core import create_ensemble# , do_the_kld
 from ..experimentrunner import OrbitGridExperiment
 
 __all__ = ['Ensemble']
@@ -39,7 +38,7 @@ class Ensemble(OrbitGridExperiment):
     ]
 
     _run_kwargs = ['energy_tolerance', 'nperiods', 'nsteps_per_period',
-                   'nensemble', 'mscale', 'kde_bandwidth', 'nkld']
+                   'nensemble', 'mscale', 'kde_bandwidth', 'neval']
     config_defaults = dict(
         energy_tolerance=1E-8, # Maximum allowed fractional energy difference
         nperiods=100, # Total number of orbital periods to integrate for
@@ -47,7 +46,7 @@ class Ensemble(OrbitGridExperiment):
         nensemble=1000, # How many orbits per ensemble
         mscale=1E4, # mass scale of the ensemble
         kde_bandwidth=None, # KDE bandwidth (default=None, uses adaptive)
-        nkld=128, # Number of times during integration to compute metrics
+        neval=128, # Number of times during integration to build KDE
         w0_filename='w0.npy', # Name of the initial conditions file
         cache_filename='ensemble.npy', # Name of the cache file
         potential_filename='potential.yml' # Name of cached potential file
