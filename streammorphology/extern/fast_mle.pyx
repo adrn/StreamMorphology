@@ -46,10 +46,6 @@ cdef extern from "stdio.h":
     ctypedef struct FILE
     FILE *stdout
 
-cdef void solout(long nr, double xold, double x, double* y, unsigned n, int* irtrn):
-    # Dummy function -- ignoring dense output
-    pass
-
 cpdef max_lyapunov_exp(_CPotential cpotential, double[:,::1] w0,
                        double dt, int nsteps, double t0,
                        double atol, double rtol, int nmax,
@@ -78,7 +74,7 @@ cpdef max_lyapunov_exp(_CPotential cpotential, double[:,::1] w0,
         t = t0 + dt
         res = dop853(ndim*norbits, <FcnEqDiff> Fwrapper,
                      <GradFn>cpotential.c_gradient, &(cpotential._parameters[0]), norbits,
-                     t0, &w[0], t, &rtol, &atol, 0, solout, 0,
+                     t0, &w[0], t, &rtol, &atol, 0, NULL, 0,
                      NULL, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, dt, nmax, 0, 1, 0, NULL, 0);
 
         if res == -1:
