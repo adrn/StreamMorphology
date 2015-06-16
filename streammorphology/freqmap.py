@@ -51,19 +51,22 @@ class Freqmap(OrbitGridExperiment):
     )
 
     @classmethod
-    def run(cls, w0, potential,
-            nperiods=config_defaults['nperiods'],
-            nsteps_per_period=config_defaults['nsteps_per_period'],
-            hamming_p=config_defaults['hamming_p'],
-            energy_tolerance=config_defaults['energy_tolerance']):
+    def run(cls, w0, potential, **kwargs):
+        c = dict()
+        for k in cls.config_defaults.keys():
+            if k not in kwargs:
+                c[k] = cls.config_defaults[k]
+            else:
+                c[k] = kwargs[k]
+
         # return dict
         result = dict()
 
         # get timestep and nsteps for integration
         try:
             dt, nsteps = estimate_dt_nsteps(w0.copy(), potential,
-                                            nperiods,
-                                            nsteps_per_period)
+                                            c['nperiods'],
+                                            c['nsteps_per_period'])
         except RuntimeError:
             logger.warning("Failed to integrate orbit when estimating dt,nsteps")
             result['freqs'] = np.ones((2,3))*np.nan
@@ -89,7 +92,7 @@ class Freqmap(OrbitGridExperiment):
             dEmax = dE.max() / np.abs(E[0])
             logger.debug('max(∆E) = {0:.2e}'.format(dEmax))
 
-        if dEmax > energy_tolerance:
+        if dEmax > c['energy_tolerance']:
             logger.warning("Failed due to energy conservation check.")
             result['freqs'] = np.ones((2,3))*np.nan
             result['success'] = False
@@ -97,8 +100,8 @@ class Freqmap(OrbitGridExperiment):
             return result
 
         # start finding the frequencies -- do first half then second half
-        sf1 = SuperFreq(t[:nsteps//2+1], p=hamming_p)
-        sf2 = SuperFreq(t[nsteps//2:], p=hamming_p)
+        sf1 = SuperFreq(t[:nsteps//2+1], p=c['hamming_p'])
+        sf2 = SuperFreq(t[nsteps//2:], p=c['hamming_p'])
 
         # classify orbit full orbit
         circ = gd.classify_orbit(ws)

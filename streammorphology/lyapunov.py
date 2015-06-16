@@ -44,19 +44,22 @@ class Lyapmap(OrbitGridExperiment):
     )
 
     @classmethod
-    def run(cls, w0, potential,
-            nperiods=config_defaults['nperiods'],
-            nsteps_per_period=config_defaults['nsteps_per_period'],
-            noffset_orbits=config_defaults['noffset_orbits'],
-            energy_tolerance=config_defaults['energy_tolerance']):
+    def run(cls, w0, potential, **kwargs):
+        c = dict()
+        for k in cls.config_defaults.keys():
+            if k not in kwargs:
+                c[k] = cls.config_defaults[k]
+            else:
+                c[k] = kwargs[k]
+
         # return dict
         result = dict()
 
         # get timestep and nsteps for integration
         try:
             dt, nsteps = estimate_dt_nsteps(w0.copy(), potential,
-                                            nperiods,
-                                            nsteps_per_period)
+                                            c['nperiods'],
+                                            c['nsteps_per_period'])
         except RuntimeError:
             logger.warning("Failed to integrate orbit when estimating dt,nsteps")
             result['lyap_exp'] = np.nan
@@ -68,7 +71,7 @@ class Lyapmap(OrbitGridExperiment):
         logger.debug("Integrating orbit with dt={0}, nsteps={1}".format(dt, nsteps))
         try:
             LEs,t,w = mle(w0.copy(), potential, dt=dt, nsteps=nsteps,
-                          noffset_orbits=noffset_orbits)
+                          noffset_orbits=c['noffset_orbits'])
         except RuntimeError: # ODE integration failed
             logger.warning("Orbit integration failed.")
             dEmax = 1E10
@@ -81,7 +84,7 @@ class Lyapmap(OrbitGridExperiment):
             dEmax = np.abs((E1-E0)/E0)
             logger.debug('max(∆E) = {0:.2e}'.format(dEmax))
 
-        if dEmax > energy_tolerance:
+        if dEmax > c['energy_tolerance']:
             result['lyap_exp'] = np.nan
             result['success'] = False
             result['error_code'] = 2
