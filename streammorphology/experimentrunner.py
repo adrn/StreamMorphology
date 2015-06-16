@@ -133,7 +133,7 @@ class OrbitGridExperiment(object):
         """
         TODO:
         """
-
+    
         if tmpfile is None:
             logger.debug("Tempfile is None")
             return
@@ -288,8 +288,14 @@ class ExperimentRunner(object):
         else:
             logger.setLevel(logging.INFO)
 
+        # if MPI, use load balancing
+        if args.mpi:
+            kwargs = dict(loadbalance=True)
+        else:
+            kwargs = dict()
+
         # get a pool object for multiprocessing / MPI
-        pool = get_pool(mpi=args.mpi)
+        pool = get_pool(mpi=args.mpi, **kwargs)
         if args.mpi:
             logger.info("|----------- Using MPI -----------|")
         else:
