@@ -27,7 +27,8 @@ class FreqVariance(OrbitGridExperiment):
         3: "SuperFreq failed on find_fundamental_frequencies()."
     }
 
-    _run_kwargs = ['nperiods', 'nsteps_per_period', 'hamming_p', 'energy_tolerance']
+    _run_kwargs = ['total_nperiods', 'window_width', 'window_stride',
+                   'energy_tolerance', 'nsteps_per_period', 'hamming_p']
     config_defaults = dict(
         total_nperiods=100, # total number of periods to integrate for
         window_width=50, # width of the window (in orbital periods) to compute freqs in
@@ -41,9 +42,13 @@ class FreqVariance(OrbitGridExperiment):
     )
 
     def __init__(self, cache_path, config_filename=None, overwrite=False, **kwargs):
-        super(FreqVariance, self).__init__(self, cache_path, config_filename=config_filename,
+        total_nperiods = kwargs.get('total_nperiods', self.config_defaults['total_nperiods'])
+        window_width = kwargs.get('window_width', self.config_defaults['window_width'])
+        window_stride = kwargs.get('window_stride', self.config_defaults['window_stride'])
+        self._nwindows = int((total_nperiods - window_width) / window_stride)
+
+        super(FreqVariance, self).__init__(cache_path, config_filename=config_filename,
                                            overwrite=overwrite, **kwargs)
-        self._nwindows = int((self.config.total_nperiods - self.config.window_width) / self.config.window_stride) + 1
 
     @property
     def cache_dtype(self):
@@ -74,7 +79,7 @@ class FreqVariance(OrbitGridExperiment):
         # automatically estimate dt, nsteps
         try:
             dt, nsteps = estimate_dt_nsteps(w0.copy(), potential,
-                                            c['nperiods'], c['nsteps_per_period'])
+                                            c['total_nperiods'], c['nsteps_per_period'])
         except RuntimeError:
             logger.warning("Failed to integrate orbit when estimating dt,nsteps")
             result['freqs'][:,:] = np.nan
@@ -151,6 +156,7 @@ class FreqVariance(OrbitGridExperiment):
         result['dE_max'] = dEmax
         result['dt'] = float(dt)
         result['nsteps'] = nsteps
+        result['is_tube'] = is_tube
         result['success'] = True
         result['error_code'] = 0
         return result

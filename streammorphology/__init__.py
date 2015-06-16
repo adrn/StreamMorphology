@@ -20,3 +20,4 @@ three_orbits = {
 from experimentrunner import *
 from freqmap import Freqmap
 from lyapunov import Lyapmap
+from freqvar import FreqVariance
