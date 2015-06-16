@@ -9,8 +9,92 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 # Third-party
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 
-__all__ = ['panel_plot']
+__all__ = ['autosize_scatter', 'panel_plot']
+
+def autosize_scatter(x, y, color_array=None, mask=None, mask_color='w',
+                     subplots_kwargs=None, **kwargs):
+    """
+    Make a scatter plot of the input and automatically figure out the
+    size of the marker so there is no whitespace between the markers.
+
+    To switch to a log colorbar, for example, use the kwarg
+    `norm=matplotlib.colors.LogNorm()`.
+
+    Parameters
+    ----------
+    x : array_like
+        x positions.
+    y : array_like
+        y positions.
+    color_array : array_like (optional)
+        Color the markers by values in this array.
+    mask : array_like (optional)
+        Boolean array masking out certain values from the input
+        coordinates as 'bad'.
+    mask_color : str, numeric (optional)
+        Color for 'bad' values.
+    subplots_kwargs : dict (optional)
+        Keyword arguments passed through to the `plt.subplots()` call.
+    kwargs : (optional)
+        All other keyword arguments are passed through to
+        the `plt.scatter()` call.
+
+    Returns
+    -------
+    fig : matplotlib.Figure
+        The matplotlib figure object drawn to.
+    """
+
+    if subplots_kwargs is None:
+        subplots_kwargs = dict(figsize=(7.3,6))
+
+    if 'cmap' not in kwargs:
+        kwargs['cmap'] = 'Greys'
+
+    if color_array is None:
+        c = 'k'
+    else:
+        c = color_array
+
+    if mask is None:
+        mask = np.ones_like(x).astype(bool)
+
+    # plot initial condition grid, colored by fractional diffusion rate
+    fig,ax = plt.subplots(1,1,**subplots_kwargs)
+    ax.set_xlim(0, max([x[mask].max(),y[mask].max()]))
+    ax.set_ylim(*ax.get_xlim())
+
+    # automatically determine symbol size
+    xy_pixels = ax.transData.transform(np.vstack([x[mask], y[mask]]).T)
+    xpix, ypix = xy_pixels.T
+
+    # In matplotlib, 0,0 is the lower left corner, whereas it's usually the upper
+    # right for most image software, so we'll flip the y-coords
+    width, height = fig.canvas.get_width_height()
+    ypix = height - ypix
+
+    # this assumes that your data-points are equally spaced
+    sz = max((xpix[1]-xpix[0])**2, (ypix[1]-ypix[0])**2)
+
+    # plot bad points
+    ax.scatter(x[~mask], y[~mask], c=mask_color, s=sz, marker='s')
+
+    # plot good points, colored
+    sc = ax.scatter(x[mask], y[mask],
+                    c=c, s=sz, marker='s', **kwargs)
+
+    ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
+    ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
+
+    if color_array is not None:
+        cb = fig.colorbar(sc)
+
+    fig.tight_layout()
+    ax.set_aspect('equal')
+
+    return fig
 
 def panel_plot(x, symbol, lim=None, relative=True):
     """ Make a 3-panel plot of projections of actions, angles, or frequency """

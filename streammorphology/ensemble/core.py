@@ -5,24 +5,15 @@ from __future__ import division, print_function
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Third-party
-from astropy import log as logger
 import astropy.units as u
 from astropy.coordinates.angles import rotation_matrix
 import gary.integrate as gi
-import gary.dynamics as gd
 import numpy as np
 from scipy.signal import argrelmin, argrelmax
-from scipy.stats import kurtosis, skew
 
-from sklearn.grid_search import GridSearchCV
-from sklearn.neighbors import KernelDensity
+from ..util import _validate_nd_array, estimate_dt_nsteps
 
-from ..util import _validate_nd_array
-from ..freqmap import estimate_periods
-from .fast_ensemble import ensemble_integrate
-
-__all__ = ['create_ensemble', 'nearest_pericenter', 'nearest_apocenter',
-           'align_ensemble', 'do_the_kld']
+__all__ = ['create_ensemble', 'nearest_pericenter', 'nearest_apocenter', 'align_ensemble']
 
 def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     """
@@ -91,14 +82,16 @@ def nearest_pericenter(w0, potential, forward=True, period=None):
     w0 = _validate_nd_array(w0, expected_ndim=1)
 
     if period is None:
-        periods = estimate_periods(w0, potential)
-        period = periods[0] # R or x period
+        dt,nsteps = estimate_dt_nsteps(w0, potential,
+                                       nperiods=10, nsteps_per_period=256)
 
-    dt = period / 256. # 512 steps per orbital period
+    else:
+        dt = period / 256. # 512 steps per orbital period
+        nsteps = int(10.*period / dt)
+
     if not forward:
         dt *= -1
 
-    nsteps = int(10.*period / dt)
     t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps,
                                     Integrator=gi.DOPRI853Integrator)
 
@@ -139,17 +132,16 @@ def nearest_apocenter(w0, potential, forward=True, period=None):
     w0 = _validate_nd_array(w0, expected_ndim=1)
 
     if period is None:
-        # TODO: better way to estimate period?
-        t,w = potential.integrate_orbit(w0, dt=1., nsteps=5000,
-                                        Integrator=gi.DOPRI853Integrator)
-        periods = estimate_periods(t, w)
-        period = periods[0] # R or x period
+        dt,nsteps = estimate_dt_nsteps(w0, potential,
+                                       nperiods=10, nsteps_per_period=256)
 
-    dt = period / 256. # 512 steps per orbital period
+    else:
+        dt = period / 256. # 512 steps per orbital period
+        nsteps = int(10.*period / dt)
+
     if not forward:
         dt *= -1
 
-    nsteps = int(10.*period / dt)
     t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps,
                                     Integrator=gi.DOPRI853Integrator)
 
@@ -177,7 +169,7 @@ def compute_align_matrix(w):
         A 2D numpy array (rotation matrix).
 
     """
-    w = _validate_1d_array(w)
+    w = _validate_nd_array(w, expected_ndim=1)
 
     x = w[:3].copy()
     v = w[3:].copy()
@@ -225,98 +217,3 @@ def align_ensemble(ws):
     new_v = np.array(R.dot(ws[-1,:,3:].T).T)
     new_w = np.vstack((new_x.T, new_v.T)).T
     return new_w
-
-default_metrics = dict(mean=np.mean,
-                       median=np.median,
-                       skewness_log=lambda x: skew(np.log10(x)),
-                       kurtosis_log=lambda x: kurtosis(np.log10(x)),
-                       nabove_mean=lambda dens: (dens >= np.mean(dens)).sum(),
-                       nbelow_mean=lambda dens: (dens <= np.mean(dens)).sum())
-def do_the_kld(ensemble_w0, potential, dt, nsteps, nkld, kde_bandwidth,
-               metrics=default_metrics, return_all_density=False):
-    """
-
-    Parameters
-    ----------
-    ...
-    kde_bandwidth : float, None
-        If None, use an adaptive bandwidth, or a float for a fixed bandwidth.
-    """
-    # make sure initial conditions are a contiguous C array
-    ww = np.ascontiguousarray(ensemble_w0.copy())
-    nensemble = ww.shape[0]
-
-#     kld_idx = np.append(np.linspace(0, nsteps//4, nkld//2+1),
-#                         np.linspace(nsteps//4, nsteps, nkld//2+1)[1:]).astype(int)
-    kld_idx = np.linspace(0, nsteps, nkld+1).astype(int)
-
-    # sort so I preserve some order around here
-    metric_names = sorted(metrics.keys())
-
-    # if set, store and return all of the density values
-    if return_all_density:
-        all_density = np.zeros((nkld, nensemble))
-
-    # if None, adaptive
-    if kde_bandwidth is None:
-        adaptive_bandwidth = True
-    else:
-        adaptive_bandwidth = False
-        kde = KernelDensity(kernel='epanechnikov',
-                            bandwidth=kde_bandwidth)
-
-    # container to store fraction of stars with density above each threshold
-    dtype = []
-    for name in metric_names:
-        dtype.append((name,'f8'))
-    metric_data = np.zeros(nkld, dtype=dtype)
-
-    # store energies
-    Es = np.empty((nkld+1,nensemble))
-    Es[0] = potential.total_energy(ensemble_w0[:,:3], ensemble_w0[:,3:])
-
-    # time container
-    t = np.empty(nkld)
-    for i in range(nkld):
-        logger.debug("KLD step: {0}/{1}".format(i+1, nkld))
-
-        # number of steps to advance the ensemble -- not necessarily constant
-        dstep = kld_idx[i+1] - kld_idx[i]
-        www = ensemble_integrate(potential.c_instance, ww, dt, dstep, 0.)
-
-        Es[i+1] = potential.total_energy(www[:,:3], www[:,3:])
-
-        # store the time
-        if i == 0:
-            t[i] = dt*dstep
-        else:
-            t[i] = t[i-1] + dt*dstep
-
-        # build an estimate of the configuration space density of the ensemble
-        if adaptive_bandwidth:
-            grid = GridSearchCV(KernelDensity(),
-                                {'bandwidth': np.logspace(-1.5, 1.5, 30)},
-                                cv=20) # 20-fold cross-validation
-            grid.fit(www[:,:3])
-            kde = grid.best_estimator_
-
-        kde.fit(www[:,:3])
-
-        # evaluate density at the position of the particles
-        ln_densy = kde.score_samples(www[:,:3])
-        density = np.exp(ln_densy)
-
-        if return_all_density:
-            all_density[i] = density
-
-        # evaluate the metrics and save
-        for name in metric_names:
-            metric_data[name][i] = metrics[name](density)
-
-        # reset initial conditions
-        ww = www.copy()
-
-    if return_all_density:
-        return t, metric_data, Es, all_density
-    else:
-        return t, metric_data, Es

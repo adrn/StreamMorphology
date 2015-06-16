@@ -26,20 +26,10 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 import sys
 
 # project
-from streammorphology.util import main, get_parser, callback
-from streammorphology.freqmap import worker, parser_arguments, dtype
+from streammorphology import ExperimentRunner
+from streammorphology.freqmap import Freqmap
 
-parser = get_parser()
-for args,kwargs in parser_arguments:
-    parser.add_argument(*args, **kwargs)
-
-args = parser.parse_args()
-
-dargs = dict(args._get_kwargs())
-main(worker=worker, callback=callback, path=dargs.pop('path'),
-     cache_filename='allfreqs.dat', cache_dtype=dtype, str_index=dargs.pop('index'),
-     mpi=dargs.pop('mpi'), overwrite=dargs.pop('overwrite'), seed=dargs.pop('seed'),
-     verbose=dargs.pop('verbose'), quiet=dargs.pop('quiet'),
-     **dargs)
+runner = ExperimentRunner(ExperimentClass=Freqmap)
+runner.run()
 
 sys.exit(0)
