@@ -2,9 +2,6 @@ import os
 project_path = os.path.split(os.path.split(__file__)[0])[0]
 del os
 
-# Global parameters
-ETOL = 1E-7
-
 # Three orbits:
 import numpy as np
 # three_orbits = {'mildly_chaotic':np.array([24.9,0.,19.7,0.,0.1403069,0.]),
@@ -12,9 +9,9 @@ import numpy as np
 #                 'regular':np.array([24.9,0.,6.9,0.,0.19509396,0.])}
 
 three_orbits = {
-    'mildly_chaotic':np.array([27.9,0.,20.1,0.,0.1217824,0.]),
-    'chaotic':np.array([27.9,0.,23.3,0.,0.10043208,0.]),
-    'regular':np.array([27.9,0.,16.9,0.,0.13947743,0.])
+    'mildly_chaotic': np.array([28.,0.,16.1,0.,0.1428514,0.]),
+    'chaotic': np.array([28.,0.,22.,0.,0.10905014,0.]),
+    'regular': np.array([28.,0.,8.1,0.,0.17264411,0.])
 }
 
 from experimentrunner import *
