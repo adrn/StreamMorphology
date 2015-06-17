@@ -82,7 +82,7 @@ class FreqVariance(OrbitGridExperiment):
                                             c['total_nperiods'], c['nsteps_per_period'])
         except RuntimeError:
             logger.warning("Failed to integrate orbit when estimating dt,nsteps")
-            result['freqs'][:,:] = np.nan
+            result['freqs'] = np.nan
             result['success'] = False
             result['error_code'] = 1
             return result
@@ -106,7 +106,7 @@ class FreqVariance(OrbitGridExperiment):
 
         if dEmax > c['energy_tolerance']:
             logger.warning("Failed due to energy conservation check.")
-            result['freqs'][:,:] = np.nan
+            result['freqs'] = np.nan
             result['success'] = False
             result['error_code'] = 2
             return result
@@ -141,7 +141,7 @@ class FreqVariance(OrbitGridExperiment):
             try:
                 freqs,d,ixs = naff.find_fundamental_frequencies(fs, nintvec=5)
             except:
-                result['freqs'][:,:] = np.nan
+                result['freqs'] = np.nan
                 result['success'] = False
                 result['error_code'] = 3
                 return result
