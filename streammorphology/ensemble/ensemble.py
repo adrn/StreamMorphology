@@ -12,7 +12,6 @@ import sys
 # Third-party
 import numpy as np
 from astropy import log as logger
-from sklearn.neighbors import KernelDensity
 
 # Project
 from .core import create_ensemble, prepare_parent_orbit
