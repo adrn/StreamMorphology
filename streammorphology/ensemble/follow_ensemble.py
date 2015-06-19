@@ -11,7 +11,7 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.neighbors import KernelDensity
 
 # Project
-from .fast_ensemble import ensemble_integrate
+from ..cextern.fast_ensemble import ensemble_integrate
 
 def follow_ensemble(ensemble_w0, potential, dt, nsteps, neval,
                     kde_bandwidth=None, return_all_density=False):
