@@ -9,11 +9,12 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 # Third-party
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 import numpy as np
 
 __all__ = ['autosize_scatter', 'panel_plot']
 
-def autosize_scatter(x, y, color_array=None, mask=None, mask_color='w',
+def autosize_scatter(x, y, color_array=None, mask=None, mask_color='k',
                      subplots_kwargs=None, **kwargs):
     """
     Make a scatter plot of the input and automatically figure out the
@@ -48,7 +49,7 @@ def autosize_scatter(x, y, color_array=None, mask=None, mask_color='w',
     """
 
     if subplots_kwargs is None:
-        subplots_kwargs = dict(figsize=(7.3,6))
+        subplots_kwargs = dict(figsize=(6,7.3))
 
     if 'cmap' not in kwargs:
         kwargs['cmap'] = 'Greys'
@@ -62,7 +63,13 @@ def autosize_scatter(x, y, color_array=None, mask=None, mask_color='w',
         mask = np.ones_like(x).astype(bool)
 
     # plot initial condition grid, colored by fractional diffusion rate
-    fig,ax = plt.subplots(1,1,**subplots_kwargs)
+#     fig,ax = plt.subplots(1,1,**subplots_kwargs)
+    fig = plt.figure(**subplots_kwargs)
+    gs = GridSpec(100,100,bottom=0.12,left=0.15,right=0.95)
+
+    ax = fig.add_subplot(gs[5:,:])
+    cbaxes = fig.add_subplot(gs[:5,:])
+
     ax.set_xlim(0, max([x[mask].max(),y[mask].max()]))
     ax.set_ylim(*ax.get_xlim())
 
@@ -88,10 +95,18 @@ def autosize_scatter(x, y, color_array=None, mask=None, mask_color='w',
     ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
     ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
 
-    if color_array is not None:
-        cb = fig.colorbar(sc)
+    ax.set_xlim(0, max(x.max(), y.max()))
+    ax.set_ylim(0, max(x.max(), y.max()))
 
-    fig.tight_layout()
+    if color_array is not None:
+        cb = fig.colorbar(sc, cax=cbaxes, orientation='horizontal')
+        cb_ax = fig.axes[1]
+        cb_ax.xaxis.set_ticks_position('top')
+        cb_ax.xaxis.set_label_position('top')
+        cb_ax.xaxis.set_label_coords(0.5,2.85)
+        cb_ax.cb = cb
+
+#     fig.tight_layout()
     ax.set_aspect('equal')
 
     return fig
