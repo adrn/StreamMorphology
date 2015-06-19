@@ -251,6 +251,9 @@ def prepare_parent_orbit(w0, potential, nperiods, nsteps_per_period):
                                     Integrator=gi.DOPRI853Integrator)
     r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
     apo_ix, = argrelmax(r)
-    final_apo_ix = apo_ix[nperiods-1]
+    try:
+        final_apo_ix = apo_ix[nperiods-1]
+    except:
+        final_apo_ix = apo_ix[nperiods-2]
 
     return peri_w0, dt, final_apo_ix
