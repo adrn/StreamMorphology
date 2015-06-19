@@ -8,12 +8,14 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 import astropy.units as u
 from astropy.coordinates.angles import rotation_matrix
 import gary.integrate as gi
+import gary.dynamics as gd
 import numpy as np
 from scipy.signal import argrelmin, argrelmax
 
 from ..util import _validate_nd_array, estimate_dt_nsteps
 
-__all__ = ['create_ensemble', 'nearest_pericenter', 'nearest_apocenter', 'align_ensemble']
+__all__ = ['create_ensemble', 'nearest_pericenter', 'nearest_apocenter',
+           'align_ensemble', 'prepare_parent_orbit']
 
 def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     """
@@ -217,3 +219,38 @@ def align_ensemble(ws):
     new_v = np.array(R.dot(ws[-1,:,3:].T).T)
     new_w = np.vstack((new_x.T, new_v.T)).T
     return new_w
+
+def prepare_parent_orbit(w0, potential, nperiods, nsteps_per_period):
+    """
+
+    Parameters
+    ----------
+    w0 : array_like
+        The parent orbit initial conditions as a 1D numpy array.
+    potential : `gary.potential.PotentialBase`
+        The gravitational potential.
+    nperiods : int
+        Number of (max) periods to integrate.
+    nsteps_per_period : int
+        Number of steps to take per (max) orbital period.
+
+    """
+
+    # first estimate (radial) period:
+    t,w = potential.integrate_orbit(w0, dt=0.5, nsteps=10000)
+    r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
+    T = gd.peak_to_peak_period(t, r)
+
+    # get position of nearest pericenter
+    peri_w0 = nearest_pericenter(w0, potential, period=T)
+
+    # integration parameters set by input
+    dt = T / nsteps_per_period
+    nsteps = int((nperiods+1) * nsteps_per_period)
+    t,w = potential.integrate_orbit(peri_w0, dt=dt, nsteps=nsteps,
+                                    Integrator=gi.DOPRI853Integrator)
+    r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
+    apo_ix, = argrelmax(r)
+    final_apo_ix = apo_ix[nperiods-1]
+
+    return peri_w0, dt, final_apo_ix
