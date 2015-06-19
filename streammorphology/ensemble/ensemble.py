@@ -12,7 +12,8 @@ from astropy import log as logger
 from sklearn.neighbors import KernelDensity
 
 # Project
-from .core import create_ensemble# , do_the_kld
+from .core import create_ensemble
+from .follow_ensemble import follow_ensemble
 from ..experimentrunner import OrbitGridExperiment
 
 __all__ = ['Ensemble']
@@ -25,17 +26,6 @@ class Ensemble(OrbitGridExperiment):
         3: "Energy conservation criteria not met.",
         4: "Catastrophic, unexpected, OMG failure."
     }
-
-    cache_dtype = [
-        ('thresh_t_10','f8'),
-        ('thresh_t_100','f8'),
-        ('dt','f8'), # timestep used for integration
-        ('nsteps','i8'), # number of steps integrated
-        ('dE_max','f8'), # maximum energy difference (compared to initial) during integration
-        ('error_code','i8'), # if not successful, why did it fail? see above
-        ('success','b1'), # whether computing the frequencies succeeded or not
-        ('metrics_end','f8') # TODO
-    ]
 
     _run_kwargs = ['energy_tolerance', 'nperiods', 'nsteps_per_period',
                    'nensemble', 'mscale', 'kde_bandwidth', 'neval']
@@ -51,6 +41,18 @@ class Ensemble(OrbitGridExperiment):
         cache_filename='ensemble.npy', # Name of the cache file
         potential_filename='potential.yml' # Name of cached potential file
     )
+
+    @property
+    def cache_dtype(self):
+        dt = [
+            ('dt','f8'), # timestep used for integration
+            ('nsteps','i8'), # number of steps integrated
+            ('dE_max','f8'), # maximum energy difference (compared to initial) during integration
+            ('error_code','i8'), # if not successful, why did it fail? see above
+            ('success','b1'), # whether computing the frequencies succeeded or not
+            ('mean_dens','f8',self.config.neval) # mean density at the end of integration
+        ]
+        return dt
 
     @classmethod
     def run(cls, w0, potential, **kwargs):
@@ -86,9 +88,8 @@ class Ensemble(OrbitGridExperiment):
         ball_dens0 = np.exp(kde.score_samples(ball_w0[:,:3]))
 
         try:
-            t, metric_d, ball_E = do_the_kld(ball_w0, potential, dt, nsteps,
-                                             nkld=nkld, kde_bandwidth=bw,
-                                             metrics=default_metrics)
+            t, metric_d, ball_E = follow_ensemble(ball_w0, potential, dt, nsteps,
+                                                  nkld=nkld, kde_bandwidth=kd)
         except:
             logger.warning("Unexpected failure: {0}".format(sys.exc_info()))
             result['success'] = False
