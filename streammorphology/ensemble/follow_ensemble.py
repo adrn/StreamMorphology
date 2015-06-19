@@ -5,39 +5,47 @@ from __future__ import division, print_function
 __author__ = "adrn <adrn@astro.columbia.edu>"
 
 # Third-party
-from astropy import log as logger
 import numpy as np
+from scipy.stats import skew, kurtosis
 from sklearn.grid_search import GridSearchCV
 from sklearn.neighbors import KernelDensity
 
 # Project
 from .fast_ensemble import ensemble_integrate
 
-# TODO: needs overhaul
-def do_the_kld(ensemble_w0, potential, dt, nsteps, nkld, kde_bandwidth,
-               metrics=default_metrics, return_all_density=False):
+def follow_ensemble(ensemble_w0, potential, dt, nsteps, neval,
+                    kde_bandwidth=None, return_all_density=False):
     """
+    Compute diagnostics / metrics at ``neval`` times over the integration
+    of the input orbit ensemble. Use this to follow the, e.g., mean density
+    of the ensemble.
 
     Parameters
     ----------
-    ...
-    kde_bandwidth : float, None
+    ensemble_w0 : array_like
+        Array of initial conditions for the orbit ensemble.
+    potential : :class:`~gary.potential.Potential`
+        An instance of a potential class.
+    dt : numeric
+        Timestep for integration.
+    nsteps : int
+        Number of steps to integrate for.
+    neval : int
+        Number of times during integration to evaluate the KDE and density
+        distribution.
+    kde_bandwidth : float, None (optional)
         If None, use an adaptive bandwidth, or a float for a fixed bandwidth.
+    return_all_density : bool (optional)
+        Return the full density distributions along with metrics.
     """
     # make sure initial conditions are a contiguous C array
     ww = np.ascontiguousarray(ensemble_w0.copy())
     nensemble = ww.shape[0]
 
-#     kld_idx = np.append(np.linspace(0, nsteps//4, nkld//2+1),
+    # spacing of when to compute properties of density distribution
+#     idx = np.append(np.linspace(0, nsteps//4, nkld//2+1),
 #                         np.linspace(nsteps//4, nsteps, nkld//2+1)[1:]).astype(int)
-    kld_idx = np.linspace(0, nsteps, nkld+1).astype(int)
-
-    # sort so I preserve some order around here
-    metric_names = sorted(metrics.keys())
-
-    # if set, store and return all of the density values
-    if return_all_density:
-        all_density = np.zeros((nkld, nensemble))
+    idx = np.linspace(0, nsteps, neval+1).astype(int)
 
     # if None, adaptive
     if kde_bandwidth is None:
@@ -47,23 +55,27 @@ def do_the_kld(ensemble_w0, potential, dt, nsteps, nkld, kde_bandwidth,
         kde = KernelDensity(kernel='epanechnikov',
                             bandwidth=kde_bandwidth)
 
+    # if set, store and return all of the density values
+    if return_all_density:
+        all_density = np.zeros((neval, nensemble))
+
     # container to store fraction of stars with density above each threshold
+    _moments = dict(mean=np.mean, median=np.median, skew=skew, kurtosis=kurtosis)
     dtype = []
-    for name in metric_names:
-        dtype.append((name,'f8'))
-    metric_data = np.zeros(nkld, dtype=dtype)
+    for k,v in _moments.items():
+        dtype.append((k,'f8'))
+        dtype.append(("{0}_log".format(k),'f8'))
+    data = np.zeros(neval, dtype=dtype)
 
     # store energies
-    Es = np.empty((nkld+1,nensemble))
+    Es = np.empty((neval+1,nensemble))
     Es[0] = potential.total_energy(ensemble_w0[:,:3], ensemble_w0[:,3:])
 
     # time container
-    t = np.empty(nkld)
-    for i in range(nkld):
-        logger.debug("KLD step: {0}/{1}".format(i+1, nkld))
-
+    t = np.empty(neval)
+    for i in range(neval):
         # number of steps to advance the ensemble -- not necessarily constant
-        dstep = kld_idx[i+1] - kld_idx[i]
+        dstep = idx[i+1] - idx[i]
         www = ensemble_integrate(potential.c_instance, ww, dt, dstep, 0.)
 
         Es[i+1] = potential.total_energy(www[:,:3], www[:,3:])
@@ -78,27 +90,29 @@ def do_the_kld(ensemble_w0, potential, dt, nsteps, nkld, kde_bandwidth,
         if adaptive_bandwidth:
             grid = GridSearchCV(KernelDensity(),
                                 {'bandwidth': np.logspace(-1.5, 1.5, 30)},
-                                cv=20) # 20-fold cross-validation
+                                cv=5) # 5-fold cross-validation
             grid.fit(www[:,:3])
             kde = grid.best_estimator_
 
         kde.fit(www[:,:3])
 
         # evaluate density at the position of the particles
-        ln_densy = kde.score_samples(www[:,:3])
-        density = np.exp(ln_densy)
+        ln_density = kde.score_samples(www[:,:3])
+        density = np.exp(ln_density)
 
+        # store
         if return_all_density:
             all_density[i] = density
 
         # evaluate the metrics and save
-        for name in metric_names:
-            metric_data[name][i] = metrics[name](density)
+        for k,v in _moments.items():
+            data[k][i] = v(density)
+            data["{0}_log".format(k)][i] = v(ln_density)
 
         # reset initial conditions
         ww = www.copy()
 
     if return_all_density:
-        return t, metric_data, Es, all_density
+        return t, data, Es, all_density
     else:
-        return t, metric_data, Es
+        return t, data, Es
