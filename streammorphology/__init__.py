@@ -9,9 +9,9 @@ import numpy as np
 #                 'regular':np.array([24.9,0.,6.9,0.,0.19509396,0.])}
 
 three_orbits = {
-    'mildly_chaotic': np.array([28.,0.,16.1,0.,0.1428514,0.]),
-    'chaotic': np.array([28.,0.,22.,0.,0.10905014,0.]),
-    'regular': np.array([28.,0.,8.1,0.,0.17264411,0.])
+    'mildly_chaotic': np.array([29.1,0.,17.7,0.,0.12833595,0.]),
+    'chaotic': np.array([29.1,0.,22.1,0.,0.10171223,0.]),
+    'regular': np.array([29.1,0.,5.1,0.,0.1718898,0.])
 }
 
 from experimentrunner import *

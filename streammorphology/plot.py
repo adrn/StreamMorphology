@@ -63,7 +63,6 @@ def autosize_scatter(x, y, color_array=None, mask=None, mask_color='k',
         mask = np.ones_like(x).astype(bool)
 
     # plot initial condition grid, colored by fractional diffusion rate
-#     fig,ax = plt.subplots(1,1,**subplots_kwargs)
     fig = plt.figure(**subplots_kwargs)
     gs = GridSpec(100,100,bottom=0.12,left=0.15,right=0.95)
 
