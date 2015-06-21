@@ -336,5 +336,3 @@ class ExperimentRunner(object):
                 raise
             else:
                 pool.close()
-
-        sys.exit(0)
