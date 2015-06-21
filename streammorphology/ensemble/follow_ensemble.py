@@ -45,7 +45,7 @@ def follow_ensemble(ensemble_w0, potential, dt, nsteps, neval,
     # spacing of when to compute properties of density distribution
 #     idx = np.append(np.linspace(0, nsteps//4, nkld//2+1),
 #                         np.linspace(nsteps//4, nsteps, nkld//2+1)[1:]).astype(int)
-    idx = np.linspace(0, nsteps, neval+1).astype(int)
+    idx = np.linspace(0, nsteps, neval).astype(int)
 
     # if None, adaptive
     if kde_bandwidth is None:
@@ -68,22 +68,23 @@ def follow_ensemble(ensemble_w0, potential, dt, nsteps, neval,
     data = np.zeros(neval, dtype=dtype)
 
     # store energies
-    Es = np.empty((neval+1,nensemble))
+    Es = np.empty((neval,nensemble))
     Es[0] = potential.total_energy(ensemble_w0[:,:3], ensemble_w0[:,3:])
 
     # time container
-    t = np.empty(neval)
+    t = np.zeros(neval)
     for i in range(neval):
-        # number of steps to advance the ensemble -- not necessarily constant
-        dstep = idx[i+1] - idx[i]
-        www = ensemble_integrate(potential.c_instance, ww, dt, dstep, 0.)
-
-        Es[i+1] = potential.total_energy(www[:,:3], www[:,3:])
-
-        # store the time
         if i == 0:
-            t[i] = dt*dstep
+            www = ww
+
         else:
+            # number of steps to advance the ensemble -- not necessarily constant
+            dstep = idx[i] - idx[i-1]
+            www = ensemble_integrate(potential.c_instance, ww, dt, dstep, 0.)
+
+            Es[i] = potential.total_energy(www[:,:3], www[:,3:])
+
+            # store the time
             t[i] = t[i-1] + dt*dstep
 
         # build an estimate of the configuration space density of the ensemble

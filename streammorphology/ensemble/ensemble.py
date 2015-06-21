@@ -30,7 +30,7 @@ class Ensemble(OrbitGridExperiment):
     }
 
     _run_kwargs = ['energy_tolerance', 'nperiods', 'nsteps_per_period',
-                   'nensemble', 'mscale', 'kde_bandwidth', 'neval']
+                   'nensemble', 'mscale', 'kde_bandwidth', 'neval', 'store_all_dens']
     config_defaults = dict(
         energy_tolerance=1E-7, # Maximum allowed fractional energy difference
         nperiods=16, # Total number of orbital periods to integrate for
@@ -39,6 +39,7 @@ class Ensemble(OrbitGridExperiment):
         mscale=1E4, # mass scale of the ensemble
         kde_bandwidth=None, # KDE bandwidth (default=None, uses adaptive)
         neval=128, # Number of times during integration to build KDE
+        store_all_dens=False, # Store full distribution of density values for each particle at each eval
         w0_filename='w0.npy', # Name of the initial conditions file
         cache_filename='ensemble.npy', # Name of the cache file
         potential_filename='potential.yml' # Name of cached potential file
@@ -52,8 +53,11 @@ class Ensemble(OrbitGridExperiment):
             ('dE_max','f8'), # maximum energy difference (compared to initial) during integration
             ('error_code','i8'), # if not successful, why did it fail? see above
             ('success','b1'), # whether computing the frequencies succeeded or not
-            ('mean_dens','f8',self.config.neval) # mean density at the end of integration
+            ('mean_dens','f8',self.config.neval), # mean density at the end of integration
+            ('t','f8',self.config.neval) # times of each evaluation
         ]
+        if self.config.store_all_dens:
+            dt.append(('all_dens','f8',(self.config.neval,self.config.nensemble)))
         return dt
 
     @classmethod
@@ -84,14 +88,20 @@ class Ensemble(OrbitGridExperiment):
         logger.debug("Generated ensemble of {0} particles".format(c['nensemble']))
 
         try:
-            t, data, ball_E = follow_ensemble(ensemble_w0, potential, dt, nsteps,
-                                              neval=c['neval'],
-                                              kde_bandwidth=c['kde_bandwidth'])
+            ret = follow_ensemble(ensemble_w0, potential, dt, nsteps,
+                                  neval=c['neval'],
+                                  kde_bandwidth=c['kde_bandwidth'],
+                                  return_all_density=c['store_all_dens'])
         except:
             logger.warning("Unexpected failure: {0}".format(sys.exc_info()))
             result['success'] = False
             result['error_code'] = 4
             return result
+
+        if c['store_all_dens']:
+            t, data, ball_E, all_dens = ret
+        else:
+            t, data, ball_E = ret
 
         dE_end = np.abs(ball_E[-1] - ball_E[0])
         if (dE_end > c['energy_tolerance']).sum() > c['nensemble']*0.1: # more than 10% don't meet criteria
@@ -106,5 +116,8 @@ class Ensemble(OrbitGridExperiment):
         result['success'] = True
         result['error_code'] = 0
         result['mean_dens'] = data['mean']
+        result['t'] = t
+        if c['store_all_dens']:
+            result['all_dens'] = all_dens
 
         return result
