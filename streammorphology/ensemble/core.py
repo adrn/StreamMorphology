@@ -236,10 +236,9 @@ def prepare_parent_orbit(w0, potential, nperiods, nsteps_per_period):
 
     """
 
-    # first estimate (radial) period:
-    t,w = potential.integrate_orbit(w0, dt=0.5, nsteps=10000)
-    r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
-    T = gd.peak_to_peak_period(t, r)
+    dt,nsteps,T = estimate_dt_nsteps(w0, potential, nperiods, nsteps_per_period,
+                                     return_periods=True)
+    T = T.max()
 
     # get position of nearest pericenter
     peri_w0 = nearest_pericenter(w0, potential, period=T)
