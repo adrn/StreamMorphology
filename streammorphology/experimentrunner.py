@@ -128,7 +128,7 @@ class OrbitGridExperiment(object):
         """
         TODO:
         """
-    
+
         if tmpfile is None:
             logger.debug("Tempfile is None")
             return
@@ -275,8 +275,13 @@ class ExperimentRunner(object):
     def __init__(self, ExperimentClass):
         self.ExperimentClass = ExperimentClass
 
-    def run(self):
+    def run(self, **kwargs):
         args = self._parse_args()
+
+        for k,v in kwargs.items():
+            if hasattr(args, k):
+                # overwrite with kwarg value
+                setattr(args, k, v)
 
         np.random.seed(args.seed)
 
