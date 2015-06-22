@@ -257,7 +257,7 @@ class ExperimentRunner(object):
     parser.add_argument("-p", "--path", dest="path", type=str, required=True,
                         help="Path to cache everything to (e.g., where to save the "
                              "initial conditions grid).")
-    parser.add_argument("-c", "--config-filename", dest="config_filename", type=str, required=True,
+    parser.add_argument("-c", "--config-filename", dest="config_filename", type=str, default=None,
                         help="Name of the config file (relative to the path).")
 
     parser.add_argument("--index", dest="index", type=str, default=None,
@@ -280,6 +280,9 @@ class ExperimentRunner(object):
                 setattr(args, k, v)
 
         np.random.seed(args.seed)
+
+        if args.config_filename is None:
+            raise ValueError("You must define 'config_filename.'")
 
         # Set logger level based on verbose flags
         if args.verbose:
