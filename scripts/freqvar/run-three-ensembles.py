@@ -12,12 +12,6 @@ from streammorphology import ExperimentRunner
 from streammorphology.freqvar import FreqVariance
 
 runner = ExperimentRunner(ExperimentClass=FreqVariance)
-runner.run(config_filename='FreqVariance-regular.cfg')
-
-runner = ExperimentRunner(ExperimentClass=FreqVariance)
-runner.run(config_filename='FreqVariance-mildly_chaotic.cfg')
-
-runner = ExperimentRunner(ExperimentClass=FreqVariance)
-runner.run(config_filename='FreqVariance-chaotic.cfg')
+runner.run()
 
 sys.exit(0)
