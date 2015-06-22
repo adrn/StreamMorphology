@@ -20,7 +20,6 @@ except ImportError: # only works in Python 3
 from argparse import ArgumentParser
 import logging
 import os
-import sys
 try:
     import cPickle as pickle
 except ImportError: # only works in Python 3
