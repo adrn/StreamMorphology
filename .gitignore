@@ -5,3 +5,4 @@ misc
 simulations
 *.c
 *.ipynb
+mpi-submit
