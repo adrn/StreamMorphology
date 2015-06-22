@@ -41,6 +41,8 @@ class FreqVariance(OrbitGridExperiment):
         potential_filename='potential.yml' # Name of cached potential file
     )
 
+    # TODO: config file should never be passed to init -- should just take kwargs
+
     def __init__(self, cache_path, config_filename=None, overwrite=False, **kwargs):
         total_nperiods = kwargs.get('total_nperiods', self.config_defaults['total_nperiods'])
         window_width = kwargs.get('window_width', self.config_defaults['window_width'])
