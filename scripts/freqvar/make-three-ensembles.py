@@ -21,7 +21,9 @@ def main(path, n=None, m_scale=None, overwrite=False, seed=None):
     for name in sorted(three_orbits.keys()): # enforce same order
         w0 = three_orbits[name]
         ew0 = create_ensemble(w0, potential, n=n, m_scale=m_scale)
-        np.save(os.path.join(path, "w0-{0}.npy".format(name)), ew0)
+        fn = os.path.join(path, "w0-{0}.npy".format(name))
+        if not os.path.exists(fn) or (os.path.exists(fn) and overwrite):
+            np.save(fn, ew0)
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
