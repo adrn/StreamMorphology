@@ -50,17 +50,6 @@ class OrbitGridExperiment(object):
         # create empty config namespace
         ns = ConfigNamespace()
 
-        # make sure required stuff is in there:
-        _required = ['cache_filename', 'w0_filename', 'potential_filename']
-        for _req in _required:
-            if _req not in kwargs:
-                raise ValueError("Config specification missing value for '{0}'".format(_req))
-            setattr(ns, _req, kwargs[_req])
-
-        self.cache_file = os.path.join(self.cache_path, kwargs['cache_filename'])
-        if os.path.exists(self.cache_file) and overwrite:
-            os.remove(self.cache_file)
-
         for k,v in self.config_defaults.items():
             if k not in kwargs:
                 setattr(ns, k, v)
@@ -68,6 +57,10 @@ class OrbitGridExperiment(object):
                 setattr(ns, k, kwargs[k])
 
         self.config = ns
+
+        self.cache_file = os.path.join(self.cache_path, self.config.cache_filename)
+        if os.path.exists(self.cache_file) and overwrite:
+            os.remove(self.cache_file)
 
         # load initial conditions
         w0_path = os.path.join(self.cache_path, self.config.w0_filename)
@@ -262,10 +255,10 @@ class ExperimentRunner(object):
 
     parser.add_argument("--mpi", dest="mpi", default=False, action="store_true",
                         help="Use an MPI pool.")
-    parser.add_argument("--path", dest="path", type=str, required=True,
+    parser.add_argument("-p", "--path", dest="path", type=str, required=True,
                         help="Path to cache everything to (e.g., where to save the "
                              "initial conditions grid).")
-    parser.add_argument("--config-filename", dest="config_filename", type=str, default=None,
+    parser.add_argument("-c", "--config-filename", dest="config_filename", type=str, required=True,
                         help="Name of the config file (relative to the path).")
 
     parser.add_argument("--index", dest="index", type=str, default=None,
