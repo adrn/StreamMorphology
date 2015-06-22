@@ -40,44 +40,32 @@ class OrbitGridExperiment(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, cache_path, config_filename=None, overwrite=False, **kwargs):
-        if config_filename is None:
-            config_filename = '{0}.cfg'.format(self.__class__.__name__)
-            logger.debug("Config filename not specified - using default ({0})".format(config_filename))
+    def __init__(self, cache_path, overwrite=False, **kwargs):
 
         # validate cache path
         self.cache_path = os.path.abspath(cache_path)
         if not os.path.exists(self.cache_path):
             os.mkdir(self.cache_path)
 
-        config_path = os.path.join(cache_path, config_filename)
-
-        # if config file doesn't exist, create one with defaults
-        if not os.path.exists(config_path):
-            ns = ConfigNamespace()
-            for k,v in self.config_defaults.items():
-                setattr(ns, k, v)
-            save(ns, config_path)
-
-        # if config file exists, read in value from their or defaults
-        else:
-            ns = load(config_path)
-            for k,v in self.config_defaults.items():
-                if not hasattr(ns, k):
-                    if k in kwargs: # config default overridden by class kwarg
-                        setattr(ns, k, kwargs[k])
-                    else: # set config item with default
-                        setattr(ns, k, v)
+        # create empty config namespace
+        ns = ConfigNamespace()
 
         # make sure required stuff is in there:
         _required = ['cache_filename', 'w0_filename', 'potential_filename']
         for _req in _required:
-            if not hasattr(ns, _req):
+            if _req not in kwargs:
                 raise ValueError("Config specification missing value for '{0}'".format(_req))
+            setattr(ns, _req, kwargs[_req])
 
-        self.cache_file = os.path.join(self.cache_path, ns.cache_filename)
+        self.cache_file = os.path.join(self.cache_path, kwargs['cache_filename'])
         if os.path.exists(self.cache_file) and overwrite:
             os.remove(self.cache_file)
+
+        for k,v in self.config_defaults.items():
+            if k not in kwargs:
+                setattr(ns, k, v)
+            else:
+                setattr(ns, k, kwargs[k])
 
         self.config = ns
 
@@ -87,15 +75,8 @@ class OrbitGridExperiment(object):
             raise IOError("Initial conditions file '{0}' doesn't exist! You need"
                           "to generate this file first using make_grid.py".format(w0_path))
         self.w0 = np.load(w0_path)
-        norbits = len(self.w0)
-        logger.info("Number of orbits: {0}".format(norbits))
-
-        # make sure memmap file exists
-        if not os.path.exists(self.cache_file):
-            # make sure memmap file exists
-            d = np.memmap(self.cache_file, mode='w+',
-                          dtype=self.cache_dtype, shape=(norbits,))
-            d[:] = np.zeros(shape=(norbits,), dtype=self.cache_dtype)
+        self.norbits = len(self.w0)
+        logger.info("Number of orbits: {0}".format(self.norbits))
 
     # Context management
     def __enter__(self):
@@ -113,6 +94,14 @@ class OrbitGridExperiment(object):
             import shutil
             shutil.rmtree(self._tmpdir)
 
+    def _ensure_cache_exists(self):
+        # make sure memmap file exists
+        if not os.path.exists(self.cache_file):
+            # make sure memmap file exists
+            d = np.memmap(self.cache_file, mode='w+',
+                          dtype=self.cache_dtype, shape=(self.norbits,))
+            d[:] = np.zeros(shape=(self.norbits,), dtype=self.cache_dtype)
+
     def read_cache(self):
         """
         Read the numpy memmap'd file containing cached results from running
@@ -123,6 +112,21 @@ class OrbitGridExperiment(object):
         # first get the memmap array
         return np.memmap(self.cache_file, mode='r', shape=(len(self.w0),),
                          dtype=self.cache_dtype)
+
+    def dump_config(self, config_filename):
+        """
+        Write the current configuration out to the specified filename.
+        """
+        save(self.config, config_filename)
+
+    @classmethod
+    def from_config(cls, cache_path, config_filename, overwrite=False):
+        """
+        Read the state from a configuration file.
+        """
+        if not os.path.exists(config_filename):
+            config_path = os.path.join(cache_path, config_filename)
+        return cls(cache_path=cache_path, overwrite=overwrite, **load(config_path))
 
     def callback(self, tmpfile):
         """
@@ -318,15 +322,15 @@ class ExperimentRunner(object):
                     index = None
 
         # Instantiate the experiment class
-        with self.ExperimentClass(cache_path=args.path,
-                                  config_filename=args.config_filename,
-                                  overwrite=args.overwrite) as experiment:
-            norbits = len(experiment.w0)
+        with self.ExperimentClass.from_config(cache_path=args.path,
+                                              config_filename=args.config_filename,
+                                              overwrite=args.overwrite) as experiment:
+            experiment._ensure_cache_exists()
 
             if index is None:
-                indices = np.arange(norbits,dtype=int)
+                indices = np.arange(experiment.norbits, dtype=int)
             else:
-                indices = np.arange(norbits,dtype=int)[index]
+                indices = np.arange(experiment.norbits, dtype=int)[index]
 
             try:
                 pool.map(experiment, indices, callback=experiment.callback)
