@@ -58,11 +58,11 @@ def load(f):
         Returns a ConfigNamespace object with the loaded configuration
         parameters.
     """
-    try:
+    if hasattr(f, 'read'):
+        p_dict = yaml.load(f.read())
+    else:
         with open(os.path.abspath(f)) as fil:
             p_dict = yaml.load(fil.read())
-    except:
-        p_dict = yaml.load(f)
 
     ns = ConfigNamespace()
     for k,v in p_dict.items():
