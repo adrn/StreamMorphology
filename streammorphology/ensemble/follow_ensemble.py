@@ -90,8 +90,8 @@ def follow_ensemble(ensemble_w0, potential, dt, nsteps, neval,
         # build an estimate of the configuration space density of the ensemble
         if adaptive_bandwidth:
             grid = GridSearchCV(KernelDensity(),
-                                {'bandwidth': np.logspace(-1.5, 1.5, 30)},
-                                cv=5) # 5-fold cross-validation
+                                {'bandwidth': np.logspace(-2, 1., 16)},
+                                cv=10) # 10-fold cross-validation
             grid.fit(www[:,:3])
             kde = grid.best_estimator_
 
