@@ -182,11 +182,11 @@ def box_grid(E, potential, approx_num=1000, x0=1.):
         which the initial conditions are sampled.
     potential : :class:`~gary.potential.Potential`
         A :class:`~gary.potential.Potential` subclass instance.
-    approx_num : int (optional)
+    approx_num : int
         Approximate total number of grid points to generate. Final grid
         of initial conditions might have slightly less than this number
         of points.
-    x0 : numeric (optional)
+    x0 : numeric
         Initial guess for optimization.
 
     """
