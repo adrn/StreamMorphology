@@ -163,7 +163,7 @@ def tube_grid_xz_zoom(E, potential, nx=0, nz=0, bounds=[]):
 
     return np.hstack((xyz, vxyz))
 
-def box_grid(E, potential, approx_num=1000):
+def box_grid(E, potential, approx_num=1000, x0=1.):
     r"""
     Generate a grid of points on an equipotential surface starting with
     zero initial velocity. The angular positions :math:`(\phi,\theta)` are
@@ -186,6 +186,8 @@ def box_grid(E, potential, approx_num=1000):
         Approximate total number of grid points to generate. Final grid
         of initial conditions might have slightly less than this number
         of points.
+    x0 : numeric
+        Initial guess for optimization.
 
     """
 
@@ -207,7 +209,7 @@ def box_grid(E, potential, approx_num=1000):
     theta = np.arccos(z)
 
     # only take one octant
-    ix = (phi > 0) & (phi < np.pi/2.) & (theta < np.pi/2.)
+    ix = (phi > 0) & (phi < np.pi/2.) & (theta < np.pi/2.) & (theta > 0)
     phi = phi[ix]
     theta = theta[ix]
     # phi,theta = map(np.ravel, np.meshgrid(phi,theta))
@@ -220,7 +222,7 @@ def box_grid(E, potential, approx_num=1000):
 
     r = np.zeros_like(phi)
     for i,p,t in zip(np.arange(len(phi)),phi,theta):
-        res = minimize(func, x0=[25.], method='powell', args=(p,t))
+        res = minimize(func, x0=[x0], method='powell', args=(p,t))
         r[i] = res.x
 
     x = r*np.cos(phi)*np.sin(theta)
