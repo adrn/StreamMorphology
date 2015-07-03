@@ -9,6 +9,7 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 # Third-party
 import numpy as np
 import gary.dynamics as gd
+import gary.integrate as gi
 
 __all__ = ['_validate_nd_array', 'estimate_dt_nsteps']
 
@@ -19,6 +20,25 @@ def _validate_nd_array(x, expected_ndim):
         raise ValueError("Input array (or iterable) must be {0}D, not {1}D"
                          .format(expected_ndim, x.ndim))
     return x
+
+def _autodetermine_initial_dt(w0, potential, dE_threshold=1E-9):
+    if w0.ndim > 1:
+        raise ValueError("Only one set of initial conditions may be passed in at a time. (w0.ndim == 1)")
+
+    dts = np.logspace(-3, 1, 8)[::-1]
+    _base_nsteps = 1000
+
+    for dt in dts:
+        nsteps = int(round(_base_nsteps / dt))
+        t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps, Integrator=gi.DOPRI853Integrator)
+        Ei = potential.total_energy(w[0,0,:3], w[0,0,3:])
+        Ef = potential.total_energy(w[-1,0,:3], w[-1,0,3:])
+        dE = np.abs((Ef - Ei) / Ei)
+
+        if dE < dE_threshold:
+            break
+
+    return dt
 
 def estimate_dt_nsteps(w0, potential, nperiods, nsteps_per_period, return_periods=False):
     """
@@ -39,7 +59,9 @@ def estimate_dt_nsteps(w0, potential, nperiods, nsteps_per_period, return_period
     """
 
     # integrate orbit
-    t,w = potential.integrate_orbit(w0, dt=0.2, nsteps=50000)
+    dt = _autodetermine_initial_dt(w0, potential, dE_threshold=1E-9)
+    nsteps = int(round(10000 / dt))
+    t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps)
 
     # if loop, align circulation with Z and take R period
     loop = gd.classify_orbit(w[:,0])
