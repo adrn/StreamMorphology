@@ -97,6 +97,7 @@ class Freqmap(OrbitGridExperiment):
             result['freqs'] = np.ones((2,3))*np.nan
             result['success'] = False
             result['error_code'] = 2
+            result['dE_max'] = dEmax
             return result
 
         # start finding the frequencies -- do first half then second half
