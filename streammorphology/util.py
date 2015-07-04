@@ -79,8 +79,13 @@ def estimate_dt_nsteps(w0, potential, nperiods, nsteps_per_period, return_period
         T = np.array([gd.peak_to_peak_period(t, f) for f in w.T[:3,0]])
 
     # timestep from number of steps per period
-    dt = float(T.max()) / float(nsteps_per_period)
-    nsteps = int(round(nperiods * T.max() / dt))
+    Tmax = T.max()
+    if np.isnan(Tmax):
+        T = T[np.isfinite(T)]
+        Tmax = T.max()
+
+    dt = float(Tmax) / float(nsteps_per_period)
+    nsteps = int(round(nperiods * Tmax / dt))
 
     if dt == 0.:
         raise ValueError("Timestep is zero!")
