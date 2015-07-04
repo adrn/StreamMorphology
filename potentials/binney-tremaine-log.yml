@@ -13,7 +13,7 @@ parameters:
   q1: 1.0
   q2: 0.9
   q3: 0.7
-  r_h: 0.1
+  r_h: 0.31622776601683794
   v_c: 1.
 units:
   angle: rad
