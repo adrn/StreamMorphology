@@ -25,7 +25,8 @@ class Freqmap(OrbitGridExperiment):
     error_codes = {
         1: "Failed to integrate orbit or estimate dt, nsteps.",
         2: "Energy conservation criteria not met.",
-        3: "SuperFreq failed on find_fundamental_frequencies()."
+        3: "SuperFreq failed on find_fundamental_frequencies().",
+        4: "Unexpected failure."
     }
 
     cache_dtype = [
@@ -72,6 +73,12 @@ class Freqmap(OrbitGridExperiment):
             result['freqs'] = np.ones((2,3))*np.nan
             result['success'] = False
             result['error_code'] = 1
+            return result
+        except:
+            logger.warning("Unexpected failure!")
+            result['freqs'] = np.ones((2,3))*np.nan
+            result['success'] = False
+            result['error_code'] = 4
             return result
 
         # integrate orbit
