@@ -84,6 +84,9 @@ def estimate_dt_nsteps(w0, potential, nperiods, nsteps_per_period, return_period
         T = T[np.isfinite(T)]
         Tmax = T.max()
 
+    if np.isnan(Tmax):
+        raise RuntimeError("Failed to find period.")
+
     dt = float(Tmax) / float(nsteps_per_period)
     nsteps = int(round(nperiods * Tmax / dt))
 
