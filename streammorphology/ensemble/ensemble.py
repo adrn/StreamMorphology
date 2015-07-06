@@ -83,8 +83,13 @@ class Ensemble(OrbitGridExperiment):
 
         logger.debug("Integrating orbit with dt={0}, nsteps={1}".format(dt, nsteps))
 
+        # HACK
+        R0 = np.sqrt(np.sum(new_w0[:3]**2))
+        mscale = (0.1 / R0)**3 * potential.mass_enclosed(new_w0[:3])
+
         # create an ensemble of particles around this initial condition
-        ensemble_w0 = create_ensemble(new_w0, potential, n=c['nensemble'], m_scale=c['mscale'])
+        # ensemble_w0 = create_ensemble(new_w0, potential, n=c['nensemble'], m_scale=c['mscale'])
+        ensemble_w0 = create_ensemble(new_w0, potential, n=c['nensemble'], m_scale=mscale)
         logger.debug("Generated ensemble of {0} particles".format(c['nensemble']))
 
         try:
