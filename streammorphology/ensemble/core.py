@@ -46,11 +46,19 @@ def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     # compute enclosed mass and position, velocity scales
     menc = potential.mass_enclosed(w0)
     rscale = (m_scale / menc)**(1/3.) * np.sqrt(np.sum(w0[:3]**2))
-    vscale = (m_scale / menc)**(1/3.) * np.sqrt(np.sum(w0[3:]**2))
+    # vscale = (m_scale / menc)**(1/3.) * np.sqrt(np.sum(w0[3:]**2))
 
     ensemble_w0 = np.zeros((n,6))
-    ensemble_w0[:,:3] = np.random.normal(w0[:3], rscale, size=(n,3))
-    ensemble_w0[:,3:] = np.random.normal(w0[3:], vscale, size=(n,3))
+    # ensemble_w0[:,:3] = np.random.normal(w0[:3], rscale, size=(n,3))
+    # ensemble_w0[:,3:] = np.random.normal(w0[3:], vscale, size=(n,3))
+
+    _r = np.random.normal(0, rscale, size=n)
+    _phi = np.random.uniform(0, 2*np.pi, size=n)
+    _theta = np.cos(2*np.random.uniform(0, np.pi, size=n) - 1)
+    ensemble_w0[:,:3] = np.array([_r*np.cos(_phi)*np.sin(_theta),
+                                  _r*np.sin(_phi)*np.sin(_theta),
+                                  _r*np.cos(_theta)]).T + w0[None,:3]
+    ensemble_w0[:,3:] = w0[None, 3:]
 
     return np.vstack((w0,ensemble_w0))
 
