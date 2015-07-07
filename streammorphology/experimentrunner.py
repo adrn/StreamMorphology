@@ -72,7 +72,7 @@ class OrbitGridExperiment(object):
 
     # Context management
     def __enter__(self):
-        self._tmpdir = os.path.join(self.cache_path, "_tmp")
+        self._tmpdir = os.path.join(self.cache_path, "_tmp_{0}".format(self.__class__.__name__))
         logger.debug("Creating temp. directory {0}".format(self._tmpdir))
         if os.path.exists(self._tmpdir):
             import shutil
