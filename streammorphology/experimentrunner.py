@@ -137,6 +137,7 @@ class OrbitGridExperiment(object):
         memmap = np.memmap(self.cache_file, mode='r+',
                            dtype=self.cache_dtype, shape=(len(self.w0),))
         if result['error_code'] != 0.:
+            logger.error("Error code = {0}".format(result['error_code']))
             # error happened
             for key in memmap.dtype.names:
                 if key in result:
