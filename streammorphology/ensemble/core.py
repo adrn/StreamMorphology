@@ -7,6 +7,7 @@ __author__ = "adrn <adrn@astro.columbia.edu>"
 # Third-party
 import astropy.units as u
 from astropy.coordinates.angles import rotation_matrix
+import gary.coordinates as gc
 import gary.integrate as gi
 import gary.dynamics as gd
 import numpy as np
@@ -46,7 +47,7 @@ def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     # compute enclosed mass and position, velocity scales
     menc = potential.mass_enclosed(w0)
     rscale = (m_scale / menc)**(1/3.) * np.sqrt(np.sum(w0[:3]**2))
-    # vscale = (m_scale / menc)**(1/3.) * np.sqrt(np.sum(w0[3:]**2))
+    vscale = (m_scale / menc)**(1/3.) * np.sqrt(np.sum(w0[3:]**2))
 
     ensemble_w0 = np.zeros((n,6))
     # ensemble_w0[:,:3] = np.random.normal(w0[:3], rscale, size=(n,3))
@@ -58,7 +59,14 @@ def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     ensemble_w0[:,:3] = np.array([_r*np.cos(_phi)*np.sin(_theta),
                                   _r*np.sin(_phi)*np.sin(_theta),
                                   _r*np.cos(_theta)]).T + w0[None,:3]
-    ensemble_w0[:,3:] = w0[None, 3:]
+    # ensemble_w0[:,3:] = w0[None, 3:]
+
+    vsph = gc.cartesian_to_spherical(w0[:3]*u.kpc, w0[3:]*u.kpc/u.Myr).value
+    n_vsph = np.zeros((n,3))
+    n_vsph[:,0] = np.random.normal(vsph[0], vscale, size=n)
+    n_vsph[:,1] = np.zeros(n) + vsph[1]
+    n_vsph[:,2] = np.zeros(n) + vsph[2]
+    ensemble_w0[:,3:] = gc.spherical_to_cartesian(ensemble_w0[:,:3].T*u.kpc, n_vsph.T*u.kpc/u.Myr).value.T
 
     return np.vstack((w0,ensemble_w0))
 
