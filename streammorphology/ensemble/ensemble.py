@@ -54,6 +54,11 @@ class Ensemble(OrbitGridExperiment):
             ('error_code','i8'), # if not successful, why did it fail? see above
             ('success','b1'), # whether computing the frequencies succeeded or not
             ('mean_dens','f8',self.config.neval), # mean density at the end of integration
+            ('mean_log_dens','f8',self.config.neval), # mean density at the end of integration
+            ('median_dens','f8',self.config.neval), # mean density at the end of integration
+            ('median_log_dens','f8',self.config.neval), # mean density at the end of integration
+            ('skew_dens','f8',self.config.neval), # mean density at the end of integration
+            ('skew_log_dens','f8',self.config.neval), # mean density at the end of integration
             ('t','f8',self.config.neval) # times of each evaluation
         ]
         if self.config.store_all_dens:
@@ -120,7 +125,15 @@ class Ensemble(OrbitGridExperiment):
         result['dE_max'] = dE_end.max()
         result['success'] = True
         result['error_code'] = 0
+
+        # moments
         result['mean_dens'] = data['mean']
+        result['mean_log_dens'] = data['mean_log']
+        result['median_dens'] = data['median']
+        result['median_log_dens'] = data['median_log']
+        result['skew_dens'] = data['skew']
+        result['skew_log_dens'] = data['skew_log']
+
         result['t'] = t
         if c['store_all_dens']:
             result['all_dens'] = all_dens
