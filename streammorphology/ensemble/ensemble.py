@@ -65,7 +65,10 @@ class Ensemble(OrbitGridExperiment):
             ('t','f8',self.config.neval) # times of each evaluation
         ]
         if self.config.store_all_dens:
-            dt.append(('all_dens','f8',(self.config.neval,self.config.nensemble)))
+            dt.append(('all_dens','f8',(self.config.neval,self.config.nensemble+1)))
+
+        if self.config.store_all_w:
+            dt.append(('all_w','f8',(self.config.neval,self.config.nensemble+1)))
         return dt
 
     @classmethod
