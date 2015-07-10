@@ -40,6 +40,7 @@ class Ensemble(OrbitGridExperiment):
         kde_bandwidth=None, # KDE bandwidth (default=None, uses adaptive)
         neval=128, # Number of times during integration to build KDE
         store_all_dens=False, # Store full distribution of density values for each particle at each eval
+        store_all_w=False, # Store all phase-space positions for all ensemble particles at each eval
         w0_filename='w0.npy', # Name of the initial conditions file
         cache_filename='ensemble.npy', # Name of the cache file
         potential_filename='potential.yml' # Name of cached potential file
