@@ -60,6 +60,8 @@ class Ensemble(OrbitGridExperiment):
             ('median_log_dens','f8',self.config.neval), # mean density at the end of integration
             ('skew_dens','f8',self.config.neval), # mean density at the end of integration
             ('skew_log_dens','f8',self.config.neval), # mean density at the end of integration
+            ('kurtosis_dens','f8',self.config.neval), # mean density at the end of integration
+            ('kurtosis_log_dens','f8',self.config.neval), # mean density at the end of integration
             ('t','f8',self.config.neval) # times of each evaluation
         ]
         if self.config.store_all_dens:
@@ -137,6 +139,8 @@ class Ensemble(OrbitGridExperiment):
         result['median_log_dens'] = data['median_log']
         result['skew_dens'] = data['skew']
         result['skew_log_dens'] = data['skew_log']
+        result['kurtosis_dens'] = data['kurtosis']
+        result['kurtosis_log_dens'] = data['kurtosis_log']
 
         result['t'] = t
         if c['store_all_dens']:
