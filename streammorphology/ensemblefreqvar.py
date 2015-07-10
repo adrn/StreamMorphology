@@ -14,7 +14,7 @@ from superfreq import SuperFreq
 
 # Project
 from .util import estimate_dt_nsteps
-from .ensemble import create_ensemble, prepare_parent_orbit
+from .ensemble import create_ensemble
 from .experimentrunner import OrbitGridExperiment
 
 __all__ = ['EnsembleFreqVariance']
@@ -33,6 +33,7 @@ class EnsembleFreqVariance(OrbitGridExperiment):
         nperiods=50, # total number of periods to integrate for
         energy_tolerance=1E-7, # Maximum allowed fractional energy difference
         nsteps_per_period=512, # Number of steps per integration period for integration stepsize
+        mscale=1E4,
         hamming_p=2, # Exponent to use for Hamming filter
         nensemble=100, # How many orbits per ensemble
         w0_filename='w0.npy', # Name of the initial conditions file
@@ -83,13 +84,8 @@ class EnsembleFreqVariance(OrbitGridExperiment):
 
         logger.debug("Integrating orbit with dt={0}, nsteps={1}".format(dt, nsteps))
 
-        # HACK
-        R0 = np.sqrt(np.sum(new_w0[:3]**2))
-        mscale = (0.1 / R0)**3 * potential.mass_enclosed(new_w0[:3])
-
         # create an ensemble of particles around this initial condition
-        # ensemble_w0 = create_ensemble(new_w0, potential, n=c['nensemble'], m_scale=c['mscale'])
-        ensemble_w0 = create_ensemble(new_w0, potential, n=c['nensemble'], m_scale=mscale)
+        ensemble_w0 = create_ensemble(new_w0, potential, n=c['nensemble'], m_scale=c['mscale'])
         logger.debug("Generated ensemble of {0} particles".format(c['nensemble']))
 
         logger.debug("Integrating ensemble with dt={0}, nsteps={1}".format(dt, nsteps))
