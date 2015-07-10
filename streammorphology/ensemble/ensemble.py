@@ -105,7 +105,10 @@ class Ensemble(OrbitGridExperiment):
                                   return_all_density=c['store_all_dens'],
                                   return_all_w=c['store_all_w'])
         except:
-            logger.warning("Unexpected failure: {0}".format(sys.exc_info()))
+            import traceback
+            t,v,tb = sys.exc_info()
+            logger.warning("Unexpected failure: {0}".format(v))
+            logger.debug(traceback.format_tb(tb))
             result['success'] = False
             result['error_code'] = 4
             return result
