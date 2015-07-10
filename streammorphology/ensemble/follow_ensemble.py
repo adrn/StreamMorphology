@@ -14,7 +14,8 @@ from sklearn.neighbors import KernelDensity
 from ..extern.fast_ensemble import ensemble_integrate
 
 def follow_ensemble(ensemble_w0, potential, dt, nsteps, neval,
-                    kde_bandwidth=None, return_all_density=False):
+                    kde_bandwidth=None, return_all_density=False,
+                    return_all_w=False):
     """
     Compute diagnostics / metrics at ``neval`` times over the integration
     of the input orbit ensemble. Use this to follow the, e.g., mean density
@@ -37,6 +38,8 @@ def follow_ensemble(ensemble_w0, potential, dt, nsteps, neval,
         If None, use an adaptive bandwidth, or a float for a fixed bandwidth.
     return_all_density : bool (optional)
         Return the full density distributions along with metrics.
+    return_all_w : bool (optional)
+        Return the phase-space positions of the ensemble at each step.
     """
     # make sure initial conditions are a contiguous C array
     ww = np.ascontiguousarray(ensemble_w0.copy())
@@ -58,6 +61,9 @@ def follow_ensemble(ensemble_w0, potential, dt, nsteps, neval,
     # if set, store and return all of the density values
     if return_all_density:
         all_density = np.zeros((neval, nensemble))
+
+    if return_all_w:
+        all_w = np.zeros((neval, nensemble, 6))
 
     # container to store fraction of stars with density above each threshold
     _moments = dict(mean=np.mean, median=np.median, skew=skew, kurtosis=kurtosis)
@@ -87,6 +93,9 @@ def follow_ensemble(ensemble_w0, potential, dt, nsteps, neval,
             # store the time
             t[i] = t[i-1] + dt*dstep
 
+        if return_all_w:
+            all_w[i] = www
+
         # build an estimate of the configuration space density of the ensemble
         if adaptive_bandwidth:
             grid = GridSearchCV(KernelDensity(),
@@ -113,7 +122,14 @@ def follow_ensemble(ensemble_w0, potential, dt, nsteps, neval,
         # reset initial conditions
         ww = www.copy()
 
+    ret = dict()
+    ret['t'] = t
+    ret['data'] = data
+    ret['energy'] = Es
     if return_all_density:
-        return t, data, Es, all_density
-    else:
-        return t, data, Es
+        ret['all_density'] = all_density
+
+    if return_all_w:
+        ret['all_w'] = all_w
+
+    return ret
