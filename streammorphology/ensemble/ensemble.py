@@ -108,10 +108,9 @@ class Ensemble(OrbitGridExperiment):
             result['error_code'] = 4
             return result
 
-        if c['store_all_dens']:
-            t, data, ball_E, all_dens = ret
-        else:
-            t, data, ball_E = ret
+        t = ret['t']
+        data = ret['data']
+        ball_E = ret['energy']
 
         dE_end = np.abs(ball_E[-1] - ball_E[0])
         if (dE_end > c['energy_tolerance']).sum() > c['nensemble']*0.1: # more than 10% don't meet criteria
@@ -136,6 +135,9 @@ class Ensemble(OrbitGridExperiment):
 
         result['t'] = t
         if c['store_all_dens']:
-            result['all_dens'] = all_dens
+            result['all_dens'] = ret['all_density']
+
+        if c['store_all_w']:
+            result['all_w'] = ret['all_w']
 
         return result
