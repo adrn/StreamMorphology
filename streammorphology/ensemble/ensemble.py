@@ -102,7 +102,8 @@ class Ensemble(OrbitGridExperiment):
             ret = follow_ensemble(ensemble_w0, potential, dt, nsteps,
                                   neval=c['neval'],
                                   kde_bandwidth=c['kde_bandwidth'],
-                                  return_all_density=c['store_all_dens'])
+                                  return_all_density=c['store_all_dens'],
+                                  return_all_w=c['store_all_w'])
         except:
             logger.warning("Unexpected failure: {0}".format(sys.exc_info()))
             result['success'] = False
