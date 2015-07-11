@@ -31,7 +31,7 @@ class Ensemble(OrbitGridExperiment):
 
     _run_kwargs = ['energy_tolerance', 'nperiods', 'nsteps_per_period',
                    'nensemble', 'mscale', 'kde_bandwidth', 'neval',
-                   'store_all_dens', 'store_all_w']
+                   'store_all_dens', 'store_all_w', 'min_pericenter']
     config_defaults = dict(
         energy_tolerance=1E-7, # Maximum allowed fractional energy difference
         nperiods=16, # Total number of orbital periods to integrate for
