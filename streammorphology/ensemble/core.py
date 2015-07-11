@@ -120,6 +120,53 @@ def nearest_pericenter(w0, potential, forward=True, period=None):
     peri_idx = peris[0]
     return w[peri_idx, 0]
 
+def nearest_min_pericenter(w0, potential, forward=True, period=None):
+    """
+    Find the nearest *minimum* pericenter to the initial conditions.
+
+    By default, this looks for the nearest pericenter *forward* in time,
+    but this can be changed by setting the `forward` argument to `False`.
+
+    Parameters
+    ----------
+    w0 : array_like
+        The parent orbit initial conditions as a 1D numpy array.
+    potential : `gary.potential.PotentialBase`
+        The gravitational potential.
+    forward : bool (optional)
+        Find the nearest pericenter either forward (True) in time
+        or backward (False) in time.
+    period : numeric (optional)
+        The period of the orbit. If not specified, will estimate
+        it internally. Used to figured out how long to integrate
+        for when searching for the nearest pericenter.
+
+    Returns
+    -------
+    peri_w0 : :class:`numpy.ndarray`
+        The 6D phase-space position of the nearest pericenter.
+
+    """
+    w0 = _validate_nd_array(w0, expected_ndim=1)
+
+    if period is None:
+        dt,nsteps = estimate_dt_nsteps(w0, potential,
+                                       nperiods=10, nsteps_per_period=256)
+
+    else:
+        dt = period / 256. # 512 steps per orbital period
+        nsteps = int(10.*period / dt)
+
+    if not forward:
+        dt *= -1
+
+    t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps,
+                                    Integrator=gi.DOPRI853Integrator)
+
+    r = np.sqrt(np.sum(w[:,0,:3]**2, axis=-1))
+    peri_idx = r.argmin()
+    return w[peri_idx, 0]
+
 def nearest_apocenter(w0, potential, forward=True, period=None):
     """
     Find the nearest apocenter to the initial conditions.
@@ -236,7 +283,7 @@ def align_ensemble(ws):
     new_w = np.vstack((new_x.T, new_v.T)).T
     return new_w
 
-def prepare_parent_orbit(w0, potential, nperiods, nsteps_per_period):
+def prepare_parent_orbit(w0, potential, nperiods, nsteps_per_period, min_pericenter=True):
     """
 
     Parameters
@@ -249,6 +296,8 @@ def prepare_parent_orbit(w0, potential, nperiods, nsteps_per_period):
         Number of (max) periods to integrate.
     nsteps_per_period : int
         Number of steps to take per (max) orbital period.
+    min_pericenter : bool (optional)
+        Find the nearest *minimum* pericenter.
 
     """
 
@@ -257,7 +306,10 @@ def prepare_parent_orbit(w0, potential, nperiods, nsteps_per_period):
     T = T.max()
 
     # get position of nearest pericenter
-    peri_w0 = nearest_pericenter(w0, potential, period=T)
+    if min_pericenter:
+        peri_w0 = nearest_min_pericenter(w0, potential, period=T)
+    else:
+        peri_w0 = nearest_pericenter(w0, potential, period=T)
 
     # integration parameters set by input
     dt = T / nsteps_per_period
