@@ -51,7 +51,8 @@ def create_ensemble(w0, potential, n=1000, m_scale=1E4):
 
     ensemble_w0 = np.zeros((n,6))
     ensemble_w0[:,:3] = np.random.normal(w0[:3], rscale / np.sqrt(3), size=(n,3))
-    ensemble_w0[:,3:] = np.random.normal(w0[3:], vscale / np.sqrt(3), size=(n,3))
+    # ensemble_w0[:,3:] = np.random.normal(w0[3:], vscale / np.sqrt(3), size=(n,3))
+    ensemble_w0[:,3:] = w0[None, 3:]
 
     # _r = np.random.normal(0, rscale, size=n)
     # _phi = np.random.uniform(0, 2*np.pi, size=n)
@@ -59,7 +60,6 @@ def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     # ensemble_w0[:,:3] = np.array([_r*np.cos(_phi)*np.sin(_theta),
     #                               _r*np.sin(_phi)*np.sin(_theta),
     #                               _r*np.cos(_theta)]).T + w0[None,:3]
-    # # ensemble_w0[:,3:] = w0[None, 3:]
 
     # vsph = gc.cartesian_to_spherical(w0[:3]*u.kpc, w0[3:]*u.kpc/u.Myr).value
     # n_vsph = np.zeros((n,3))
