@@ -41,7 +41,7 @@ class Freqmap(OrbitGridExperiment):
     ]
 
     _run_kwargs = ['nperiods', 'nsteps_per_period', 'hamming_p', 'energy_tolerance',
-                   'force_cartesian']
+                   'force_cartesian', 'nintvec']
     config_defaults = dict(
         energy_tolerance=1E-8, # Maximum allowed fractional energy difference
         nperiods=256, # Total number of orbital periods to integrate for

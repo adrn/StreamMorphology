@@ -28,14 +28,16 @@ class EnsembleFreqVariance(OrbitGridExperiment):
     }
 
     _run_kwargs = ['nperiods', 'energy_tolerance', 'nsteps_per_period',
-                   'hamming_p', 'nensemble']
+                   'hamming_p', 'nensemble', 'nintvec', 'force_cartesian']
     config_defaults = dict(
         nperiods=50, # total number of periods to integrate for
         energy_tolerance=1E-8, # Maximum allowed fractional energy difference
         nsteps_per_period=512, # Number of steps per integration period for integration stepsize
         mscale=1E4,
-        hamming_p=2, # Exponent to use for Hamming filter
-        nensemble=100, # How many orbits per ensemble
+        hamming_p=4, # Exponent to use for Hamming filter
+        nensemble=128, # How many orbits per ensemble
+        nintvec=15, # maximum number of integer vectors to use in SuperFreq
+        force_cartesian=False, # Do frequency analysis on cartesian coordinates
         w0_filename='w0.npy', # Name of the initial conditions file
         cache_filename='ensemblefreqvariance.npy', # Name of the cache file
         potential_filename='potential.yml' # Name of cached potential file
@@ -124,7 +126,7 @@ class EnsembleFreqVariance(OrbitGridExperiment):
 
             logger.debug("Orbit {0}".format(i))
             ww = ws[:,i]
-            if is_tube:
+            if is_tube and not c['force_cartesian']:
                 # need to flip coordinates until circulation is around z axis
                 new_ws = gd.align_circulation_with_z(ww, circ)
                 new_ws = gc.cartesian_to_poincare_polar(new_ws)
