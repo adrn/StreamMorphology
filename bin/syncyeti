@@ -1,3 +1,8 @@
 #!/bin/bash
 
-echo `rsync -zvr --exclude 'bkup_*' --exclude '*old*' --exclude '*.pickle' yeti:/vega/astro/users/amp2217/projects/morphology/output/ ~/projects/morphology/output/`
+if [ -n $1 ]
+then
+    echo `rsync -zvr --exclude 'bkup_*' --exclude '*old*' yeti:/vega/astro/users/amp2217/projects/morphology/output/$1 ~/projects/morphology/output/`
+else
+    echo `rsync -zvr --exclude 'bkup_*' --exclude '*old*' yeti:/vega/astro/users/amp2217/projects/morphology/output/ ~/projects/morphology/output/`
+fi
