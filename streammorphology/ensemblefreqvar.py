@@ -31,7 +31,7 @@ class EnsembleFreqVariance(OrbitGridExperiment):
                    'hamming_p', 'nensemble']
     config_defaults = dict(
         nperiods=50, # total number of periods to integrate for
-        energy_tolerance=1E-7, # Maximum allowed fractional energy difference
+        energy_tolerance=1E-8, # Maximum allowed fractional energy difference
         nsteps_per_period=512, # Number of steps per integration period for integration stepsize
         mscale=1E4,
         hamming_p=2, # Exponent to use for Hamming filter
