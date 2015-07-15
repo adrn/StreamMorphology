@@ -40,12 +40,15 @@ class Freqmap(OrbitGridExperiment):
         ('error_code','i8') # if not successful, why did it fail? see below
     ]
 
-    _run_kwargs = ['nperiods', 'nsteps_per_period', 'hamming_p', 'energy_tolerance']
+    _run_kwargs = ['nperiods', 'nsteps_per_period', 'hamming_p', 'energy_tolerance',
+                   'force_cartesian']
     config_defaults = dict(
-        energy_tolerance=1E-7, # Maximum allowed fractional energy difference
-        nperiods=100, # Total number of orbital periods to integrate for
+        energy_tolerance=1E-8, # Maximum allowed fractional energy difference
+        nperiods=256, # Total number of orbital periods to integrate for
         nsteps_per_period=512, # Number of steps per integration period for integration stepsize
-        hamming_p=2, # Exponent to use for Hamming filter
+        hamming_p=4, # Exponent to use for Hamming filter in SuperFreq
+        nintvec=15, # maximum number of integer vectors to use in SuperFreq
+        force_cartesian=False, # Do frequency analysis on cartesian coordinates
         w0_filename='w0.npy', # Name of the initial conditions file
         cache_filename='freqmap.npy', # Name of the cache file
         potential_filename='potential.yml' # Name of cached potential file
@@ -119,7 +122,7 @@ class Freqmap(OrbitGridExperiment):
         sl1 = slice(None,nsteps//2+1)
         sl2 = slice(nsteps//2,None)
 
-        if is_tube:
+        if is_tube and not c['force_cartesian']:
             # first need to flip coordinates so that circulation is around z axis
             new_ws = gd.align_circulation_with_z(ws, circ)
             new_ws = gc.cartesian_to_poincare_polar(new_ws)
@@ -132,8 +135,8 @@ class Freqmap(OrbitGridExperiment):
 
         logger.debug("Running SuperFreq on the orbits")
         try:
-            freqs1,d1,ixs1 = sf1.find_fundamental_frequencies(fs1, nintvec=8)
-            freqs2,d2,ixs2 = sf2.find_fundamental_frequencies(fs2, nintvec=8)
+            freqs1,d1,ixs1 = sf1.find_fundamental_frequencies(fs1, nintvec=c['nintvec'])
+            freqs2,d2,ixs2 = sf2.find_fundamental_frequencies(fs2, nintvec=c['nintvec'])
         except:
             result['freqs'] = np.ones((2,3))*np.nan
             result['success'] = False
