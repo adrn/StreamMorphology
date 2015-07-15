@@ -29,7 +29,7 @@ class FreqVariance(OrbitGridExperiment):
 
     _run_kwargs = ['total_nperiods', 'window_width', 'window_stride',
                    'energy_tolerance', 'nsteps_per_period', 'hamming_p',
-                   'force_cartesian']
+                   'force_cartesian', 'nintvec']
     config_defaults = dict(
         total_nperiods=128+64, # total number of periods to integrate for
         window_width=128, # width of the window (in orbital periods) to compute freqs in
@@ -37,6 +37,7 @@ class FreqVariance(OrbitGridExperiment):
         energy_tolerance=1E-8, # Maximum allowed fractional energy difference
         nsteps_per_period=512, # Number of steps per integration period for integration stepsize
         hamming_p=1, # Exponent to use for Hamming filter
+        nintvec=10, # maximum number of integer vectors to use in SuperFreq
         force_cartesian=False, # Do frequency analysis on cartesian coordinates
         w0_filename='w0.npy', # Name of the initial conditions file
         cache_filename='freqvariance.npy', # Name of the cache file
@@ -136,7 +137,7 @@ class FreqVariance(OrbitGridExperiment):
             naff = SuperFreq(t[i1:i2], p=c['hamming_p'])
 
             try:
-                freqs,d,ixs = naff.find_fundamental_frequencies(fs, nintvec=5)
+                freqs,d,ixs = naff.find_fundamental_frequencies(fs, nintvec=c['nintvec'])
             except:
                 result['freqs'] = np.nan
                 result['success'] = False
