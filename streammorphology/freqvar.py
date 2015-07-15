@@ -28,14 +28,16 @@ class FreqVariance(OrbitGridExperiment):
     }
 
     _run_kwargs = ['total_nperiods', 'window_width', 'window_stride',
-                   'energy_tolerance', 'nsteps_per_period', 'hamming_p']
+                   'energy_tolerance', 'nsteps_per_period', 'hamming_p',
+                   'force_cartesian']
     config_defaults = dict(
-        total_nperiods=100, # total number of periods to integrate for
-        window_width=50, # width of the window (in orbital periods) to compute freqs in
+        total_nperiods=128+64, # total number of periods to integrate for
+        window_width=128, # width of the window (in orbital periods) to compute freqs in
         window_stride=1, # how much to shift window after each computation
-        energy_tolerance=1E-7, # Maximum allowed fractional energy difference
+        energy_tolerance=1E-8, # Maximum allowed fractional energy difference
         nsteps_per_period=512, # Number of steps per integration period for integration stepsize
-        hamming_p=2, # Exponent to use for Hamming filter
+        hamming_p=1, # Exponent to use for Hamming filter
+        force_cartesian=False, # Do frequency analysis on cartesian coordinates
         w0_filename='w0.npy', # Name of the initial conditions file
         cache_filename='freqvariance.npy', # Name of the cache file
         potential_filename='potential.yml' # Name of cached potential file
@@ -123,7 +125,7 @@ class FreqVariance(OrbitGridExperiment):
                 break
 
             logger.debug("Window: {0}:{1}".format(i1,i2))
-            if is_tube:
+            if is_tube and not c['force_cartesian']:
                 # need to flip coordinates until circulation is around z axis
                 new_ws = gd.align_circulation_with_z(ww, circ)
                 new_ws = gc.cartesian_to_poincare_polar(new_ws)
