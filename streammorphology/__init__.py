@@ -18,3 +18,4 @@ from freqmap import Freqmap
 from lyapunov import Lyapmap
 from freqvar import FreqVariance
 from ensemble import Ensemble
+from ensemblefreqvar import EnsembleFreqVariance
