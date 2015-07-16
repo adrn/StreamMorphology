@@ -4,14 +4,12 @@ del os
 
 # Three orbits:
 import numpy as np
-# three_orbits = {'mildly_chaotic':np.array([24.9,0.,19.7,0.,0.1403069,0.]),
-#                 'chaotic':np.array([24.9,0.,26.1,0.,0.09521978,0.]),
-#                 'regular':np.array([24.9,0.,6.9,0.,0.19509396,0.])}
 
 three_orbits = {
-    'mildly_chaotic': np.array([29.1,0.,17.7,0.,0.12833595,0.]),
-    'chaotic': np.array([29.1,0.,22.1,0.,0.10171223,0.]),
-    'regular': np.array([29.1,0.,5.1,0.,0.1718898,0.])
+    'near-resonant': np.array([17.0, 0.0, 26.060606060606062, 0.0, 0.12912205829404055, 0.0]), # resonant
+    'non-resonant': np.array([17.0, 0.0, 23.03030303030303, 0.0, 0.15198454276899373, 0.0]), # non-resonant
+    'weak-chaos': np.array([17.0, 0.0, 25.353535353535353, 0.0, 0.1346704105535305, 0.0]), # weak chaos
+    'strong-chaos': np.array([17.0, 0.0, 28.686868686868685, 0.0, 0.10691643457775891, 0.0]) # strong chaos
 }
 
 from experimentrunner import *

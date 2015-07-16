@@ -33,7 +33,7 @@ class Ensemble(OrbitGridExperiment):
                    'nensemble', 'mscale', 'kde_bandwidth', 'neval',
                    'store_all_dens', 'store_all_w', 'min_pericenter']
     config_defaults = dict(
-        energy_tolerance=1E-7, # Maximum allowed fractional energy difference
+        energy_tolerance=1E-8, # Maximum allowed fractional energy difference
         nperiods=16, # Total number of orbital periods to integrate for
         nsteps_per_period=512, # Number of steps per integration period for integration stepsize
         nensemble=1000, # How many orbits per ensemble

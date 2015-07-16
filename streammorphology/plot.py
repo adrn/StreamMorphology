@@ -69,11 +69,15 @@ def autosize_scatter(x, y, color_array=None, mask=None, mask_color='k',
     ax = fig.add_subplot(gs[5:,:])
     cbaxes = fig.add_subplot(gs[:5,:])
 
-    ax.set_xlim(0, max([x[mask].max(),y[mask].max()]))
-    ax.set_ylim(*ax.get_xlim())
+    if np.allclose(y.max() - y.min(), x.max() - x.min()):
+        ax.set_xlim(x.min(),x.max())
+        ax.set_ylim(y.min(),y.max())
+    else:
+        ax.set_xlim(min([x[mask].min(),y[mask].min()]), max([x[mask].max(),y[mask].max()]))
+        ax.set_ylim(*ax.get_xlim())
 
     # automatically determine symbol size
-    xy_pixels = ax.transData.transform(np.vstack([x[mask], y[mask]]).T)
+    xy_pixels = ax.transData.transform(np.vstack([x, y]).T)
     xpix, ypix = xy_pixels.T
 
     # In matplotlib, 0,0 is the lower left corner, whereas it's usually the upper
@@ -93,9 +97,6 @@ def autosize_scatter(x, y, color_array=None, mask=None, mask_color='k',
 
     ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
     ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
-
-    ax.set_xlim(0, max(x.max(), y.max()))
-    ax.set_ylim(0, max(x.max(), y.max()))
 
     if color_array is not None:
         cb = fig.colorbar(sc, cax=cbaxes, orientation='horizontal')
