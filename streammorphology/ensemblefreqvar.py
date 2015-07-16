@@ -137,12 +137,11 @@ class EnsembleFreqVariance(OrbitGridExperiment):
             naff = SuperFreq(t, p=c['hamming_p'])
 
             try:
-                freqs,d,ixs = naff.find_fundamental_frequencies(fs, nintvec=5)
+                freqs,d,ixs = naff.find_fundamental_frequencies(fs, nintvec=c['nintvec'])
             except:
-                result['freqs'] = np.nan
-                result['success'] = False
-                result['error_code'] = 3
-                return result
+                allfreqs.append([np.nan,np.nan,np.nan])
+                allamps.append([np.nan,np.nan,np.nan])
+                continue
 
             allfreqs.append(freqs.tolist())
             allamps.append(d['|A|'][ixs].tolist())
