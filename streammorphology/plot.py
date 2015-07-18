@@ -95,9 +95,6 @@ def autosize_scatter(x, y, color_array=None, mask=None, mask_color='k',
     sc = ax.scatter(x[mask], y[mask],
                     c=c, s=sz, marker='s', **kwargs)
 
-    ax.set_xlabel(r'$x_0$ $[{\rm kpc}]$')
-    ax.set_ylabel(r'$z_0$ $[{\rm kpc}]$')
-
     if color_array is not None:
         cb = fig.colorbar(sc, cax=cbaxes, orientation='horizontal')
         cb_ax = fig.axes[1]
