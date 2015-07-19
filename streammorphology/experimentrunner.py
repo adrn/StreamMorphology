@@ -118,6 +118,8 @@ class OrbitGridExperiment(object):
         """
         if not os.path.exists(config_filename):
             config_path = os.path.join(cache_path, config_filename)
+        else:
+            config_path = config_filename
         return cls(cache_path=cache_path, overwrite=overwrite, **load(config_path))
 
     def callback(self, tmpfile):
