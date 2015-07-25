@@ -358,7 +358,7 @@ def compute_all_freqs(t, ws, hamming_p=1, nintvec=10, force_cartesian=False):
 
     allfreqs = []
     allamps = []
-    for i in range(ws.shape[0]):
+    for i in range(ws.shape[1]):
         ww = ws[:,i]
         if is_tube and not force_cartesian:
             # need to flip coordinates until circulation is around z axis
