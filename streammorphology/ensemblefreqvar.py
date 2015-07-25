@@ -14,7 +14,7 @@ from superfreq import SuperFreq
 
 # Project
 from .util import estimate_dt_nsteps
-from .ensemble import create_ensemble
+from .ensemble import create_ensemble, compute_all_freqs
 from .experimentrunner import OrbitGridExperiment
 
 __all__ = ['EnsembleFreqVariance']
@@ -114,40 +114,12 @@ class EnsembleFreqVariance(OrbitGridExperiment):
             result['error_code'] = 2
             return result
 
-        # classify parent orbit
-        circ = gd.classify_orbit(ws[:,0])
-        is_tube = np.any(circ)
-
         logger.debug("Running SuperFreq on each orbit:")
 
-        allfreqs = []
-        allamps = []
-        for i in range(c['nensemble']+1):
-
-            logger.debug("Orbit {0}".format(i))
-            ww = ws[:,i]
-            if is_tube and not c['force_cartesian']:
-                # need to flip coordinates until circulation is around z axis
-                new_ws = gd.align_circulation_with_z(ww, circ)
-                new_ws = gc.cartesian_to_poincare_polar(new_ws)
-            else:
-                new_ws = ww
-
-            fs = [(new_ws[:,j] + 1j*new_ws[:,j+3]) for j in range(3)]
-            naff = SuperFreq(t, p=c['hamming_p'])
-
-            try:
-                freqs,d,ixs = naff.find_fundamental_frequencies(fs, nintvec=c['nintvec'])
-            except:
-                allfreqs.append([np.nan,np.nan,np.nan])
-                allamps.append([np.nan,np.nan,np.nan])
-                continue
-
-            allfreqs.append(freqs.tolist())
-            allamps.append(d['|A|'][ixs].tolist())
-
-        allfreqs = np.array(allfreqs)
-        allamps = np.array(allamps)
+        allfreqs, allamps = compute_all_freqs(t, ws,
+                                              hamming_p=c['hamming_p'],
+                                              nintvec=c['nintvec'],
+                                              force_cartesian=c['force_cartesian'])
 
         result['freqs'] = allfreqs
         result['amps'] = allamps
