@@ -367,7 +367,7 @@ def compute_all_freqs(t, ws, hamming_p=1, nintvec=10, force_cartesian=False):
         else:
             new_ws = ww
 
-        fs = [(new_ws[:,j] + 1j*new_ws[:,j+ws.shape[-1]]) for j in range(ws.shape[-1])]
+        fs = [(new_ws[:,j] + 1j*new_ws[:,j+ws.shape[-1]//2]) for j in range(ws.shape[-1]//2)]
         sf = SuperFreq(t, p=hamming_p)
 
         try:
