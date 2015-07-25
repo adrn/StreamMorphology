@@ -12,6 +12,7 @@ import gary.integrate as gi
 import gary.dynamics as gd
 import numpy as np
 from scipy.signal import argrelmin, argrelmax
+from superfreq import SuperFreq
 
 from ..util import _validate_nd_array, estimate_dt_nsteps
 
@@ -325,3 +326,60 @@ def prepare_parent_orbit(w0, potential, nperiods, nsteps_per_period, min_pericen
         final_apo_ix = apo_ix[nperiods-2]
 
     return peri_w0, dt, final_apo_ix
+
+def compute_all_freqs(t, ws, hamming_p=1, nintvec=10, force_cartesian=False):
+    """
+    Compute the fundamental frequencies and amplitudes for all
+    specified orbits.
+
+    This assumes that all orbits have the same geometry as the first
+    orbit in the orbit array. That is, (if ``force_cartesian`` is
+    ``False``) if the first orbit is a tube orbit, it assumes all orbits
+    are tubes.
+
+    Parameters
+    ----------
+    t : array_like
+    ws : array_like
+    hamming_p : int (optional)
+    nintvec : int (optional)
+    force_cartesian : bool (optional)
+
+    Returns
+    -------
+    freqs : :class:`numpy.ndarray`
+    amps : :class:`numpy.ndarray`
+    """
+
+    # classify parent orbit
+    circ = gd.classify_orbit(ws[:,0])
+    is_tube = np.any(circ)
+
+    allfreqs = []
+    allamps = []
+    for i in range(ws.shape[0]):
+        ww = ws[:,i]
+        if is_tube and not force_cartesian:
+            # need to flip coordinates until circulation is around z axis
+            new_ws = gd.align_circulation_with_z(ww, circ)
+            new_ws = gc.cartesian_to_poincare_polar(new_ws)
+        else:
+            new_ws = ww
+
+        fs = [(new_ws[:,j] + 1j*new_ws[:,j+ws.shape[-1]]) for j in range(ws.shape[-1])]
+        sf = SuperFreq(t, p=hamming_p)
+
+        try:
+            freqs,d,ixs = sf.find_fundamental_frequencies(fs, nintvec=nintvec)
+        except:
+            allfreqs.append([np.nan,np.nan,np.nan])
+            allamps.append([np.nan,np.nan,np.nan])
+            continue
+
+        allfreqs.append(freqs.tolist())
+        allamps.append(d['|A|'][ixs].tolist())
+
+    allfreqs = np.array(allfreqs)
+    allamps = np.array(allamps)
+
+    return allfreqs, allamps
