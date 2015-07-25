@@ -17,7 +17,8 @@ from superfreq import SuperFreq
 from ..util import _validate_nd_array, estimate_dt_nsteps
 
 __all__ = ['create_ensemble', 'nearest_pericenter', 'nearest_apocenter',
-           'align_ensemble', 'prepare_parent_orbit', 'compute_align_matrix']
+           'align_ensemble', 'prepare_parent_orbit', 'compute_align_matrix',
+           'compute_all_freqs']
 
 def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     """
