@@ -97,3 +97,44 @@ def estimate_dt_nsteps(w0, potential, nperiods, nsteps_per_period, return_period
         return dt, nsteps, T
     else:
         return dt, nsteps
+
+def _hack_label_lines(ax, potential):
+    from . import three_orbits as w0_dict
+    from . import name_map
+
+    slope = 1.
+    xtext = 1.55
+    for i,name in enumerate(w0_dict.keys()):
+        ww0 = w0_dict[name]
+        x = ww0[0] / potential.parameters['r_s']
+        y = ww0[2] / potential.parameters['r_s'] - 0.02 # correct for arrow head
+
+        dy = slope*(xtext-x) - 0.1
+
+        armA = 50
+        armB = 80
+        if name_map[name] == 'A':
+            offset = 0.
+            dy += 0.037
+            armA = 40
+            armB = 90
+        elif name_map[name] == 'C':
+            offset = 0.
+            dy -= 0.02
+            armA = 55
+            armB = 75
+        else:
+            offset = 0.
+
+        xytext = [xtext, y+dy]
+
+        ax.text(xytext[0]+0.02, xytext[1]-0.02+offset, name_map[name], fontsize=12, fontweight=600)
+        ax.annotate("", xy=(x,y), xycoords='data',
+                    xytext=xytext, textcoords='data',
+                    arrowprops=dict(arrowstyle="-|>,head_length=0.75,head_width=0.1",
+                                    shrinkA=0, shrinkB=0,
+                                    connectionstyle="arc,angleA=180,angleB=48,armA={armA},armB={armB},rad=0".format(armA=armA, armB=armB),
+                                    linewidth=1., color='#222222'),
+                    horizontalalignment='left',
+                    verticalalignment='bottom'
+                    )

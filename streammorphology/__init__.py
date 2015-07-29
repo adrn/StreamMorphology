@@ -13,6 +13,13 @@ three_orbits = OrderedDict([
     ('strong-chaos', np.array([17.0, 0.0, 28.686868686868685, 0.0, 0.10691643457775891, 0.0])) # strong chaos
 ])
 
+name_map = dict([
+    ('near-resonant','A'),
+    ('non-resonant', 'B'),
+    ('weak-chaos', 'C'),
+    ('strong-chaos', 'D')
+])
+
 from experimentrunner import *
 from freqmap import Freqmap
 from lyapunov import Lyapmap
