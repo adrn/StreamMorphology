@@ -6,3 +6,6 @@ simulations
 *.c
 *.ipynb
 mpi-submit
+*.pyc
+build
+*.so
