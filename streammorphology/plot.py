@@ -86,7 +86,7 @@ def autosize_scatter(x, y, color_array=None, mask=None, mask_color='k',
     ypix = height - ypix
 
     # this assumes that your data-points are equally spaced
-    sz = max((xpix[1]-xpix[0])**2, (ypix[1]-ypix[0])**2)
+    sz = max((xpix[1]-xpix[0])**2, (ypix[1]-ypix[0])**2) - 1.
 
     # plot bad points
     ax.scatter(x[~mask], y[~mask], c=mask_color, s=sz, marker='s')
@@ -103,7 +103,6 @@ def autosize_scatter(x, y, color_array=None, mask=None, mask_color='k',
         cb_ax.xaxis.set_label_coords(0.5,2.85)
         cb_ax.cb = cb
 
-#     fig.tight_layout()
     ax.set_aspect('equal')
 
     return fig
@@ -150,3 +149,67 @@ def panel_plot(x, symbol, lim=None, relative=True):
     fig.tight_layout()
 
     return fig
+
+def _hack_label_lines_annotate(ax, potential):
+    from . import three_orbits as w0_dict
+    from . import name_map
+
+    slope = 1.
+    xtext = 1.55
+    for i,name in enumerate(w0_dict.keys()):
+        ww0 = w0_dict[name]
+        x = ww0[0] / potential.parameters['r_s']
+        y = ww0[2] / potential.parameters['r_s'] - 0.02 # correct for arrow head
+
+        dy = slope*(xtext-x) - 0.1
+
+        armA = 50
+        armB = 80
+        if name_map[name] == 'A':
+            offset = 0.
+            dy += 0.037
+            armA = 40
+            armB = 90
+        elif name_map[name] == 'C':
+            offset = 0.
+            dy -= 0.02
+            armA = 55
+            armB = 75
+        else:
+            offset = 0.
+
+        xytext = [xtext, y+dy]
+
+        ax.text(xytext[0]+0.02, xytext[1]-0.02+offset, name_map[name], fontsize=12, fontweight=600)
+        ax.annotate("", xy=(x,y), xycoords='data',
+                    xytext=xytext, textcoords='data',
+                    arrowprops=dict(arrowstyle="-|>,head_length=0.75,head_width=0.1",
+                                    shrinkA=0, shrinkB=0,
+                                    connectionstyle="arc,angleA=180,angleB=48,armA={armA},armB={armB},rad=0".format(armA=armA, armB=armB),
+                                    linewidth=1., color='#222222'),
+                    horizontalalignment='left',
+                    verticalalignment='bottom'
+                    )
+
+def _hack_label_lines(ax, potential):
+    from . import three_orbits as w0_dict
+    from . import name_map
+
+    slope = 1.
+    xtext = 1.55
+
+    ytexts = dict()
+    _ytexts = np.linspace(1.65,2,4)
+    for i,(k,v) in enumerate(sorted(w0_dict.items(), key=lambda x: x[1][2])):
+        ytexts[k] = _ytexts[i]
+
+    for i,name in enumerate(w0_dict.keys()):
+        ww0 = w0_dict[name]
+        x0 = ww0[0] / potential.parameters['r_s']
+        y0 = ww0[2] / potential.parameters['r_s']
+
+        ytext = ytexts[name]
+        xbreak = (ytext-y0)/slope + x0
+
+        ax.plot([x0,xbreak,xtext], [y0,ytext,ytext], marker=None, color='#333333')
+        ax.text(xtext+0.02, ytext-0.022, name_map[name], fontsize=12, fontweight=600)
