@@ -25,6 +25,9 @@ def _autodetermine_initial_dt(w0, potential, dE_threshold=1E-9):
     if w0.ndim > 1:
         raise ValueError("Only one set of initial conditions may be passed in at a time. (w0.ndim == 1)")
 
+    if dE_threshold is None:
+        return 1.
+
     dts = np.logspace(-3, 1, 8)[::-1]
     _base_nsteps = 1000
 
@@ -40,7 +43,7 @@ def _autodetermine_initial_dt(w0, potential, dE_threshold=1E-9):
 
     return dt
 
-def estimate_dt_nsteps(w0, potential, nperiods, nsteps_per_period, return_periods=False):
+def estimate_dt_nsteps(w0, potential, nperiods, nsteps_per_period, dE_threshold=1E-9, return_periods=False):
     """
     Estimate the timestep and number of steps to integrate for given a potential
     and set of initial conditions.
@@ -53,13 +56,16 @@ def estimate_dt_nsteps(w0, potential, nperiods, nsteps_per_period, return_period
         Number of (max) periods to integrate.
     nsteps_per_period : int
         Number of steps to take per (max) orbital period.
+    dE_threshold : numeric (optional)
+        Maximum fractional energy difference -- used to determine initial timestep.
+        Set to ``None`` to ignore this.
     return_periods : bool (optional)
         Also return the estimated periods for the orbit.
 
     """
 
     # integrate orbit
-    dt = _autodetermine_initial_dt(w0, potential, dE_threshold=1E-9)
+    dt = _autodetermine_initial_dt(w0, potential, dE_threshold=dE_threshold)
     nsteps = int(round(10000 / dt))
     t,w = potential.integrate_orbit(w0, dt=dt, nsteps=nsteps)
 
