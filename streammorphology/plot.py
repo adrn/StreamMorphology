@@ -191,7 +191,7 @@ def _hack_label_lines_annotate(ax, potential):
                     verticalalignment='bottom'
                     )
 
-def _hack_label_lines(ax, potential):
+def _hack_label_lines(ax, potential, linecolor='#555555'):
     from . import three_orbits as w0_dict
     from . import name_map
 
@@ -211,5 +211,5 @@ def _hack_label_lines(ax, potential):
         ytext = ytexts[name]
         xbreak = (ytext-y0)/slope + x0
 
-        ax.plot([x0,xbreak,xtext], [y0,ytext,ytext], marker=None, color='#333333')
+        ax.plot([x0,xbreak,xtext], [y0,ytext,ytext], marker=None, color=linecolor)
         ax.text(xtext+0.02, ytext-0.022, name_map[name], fontsize=12, fontweight=600)
