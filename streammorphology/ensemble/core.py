@@ -18,7 +18,7 @@ from ..util import _validate_nd_array, estimate_dt_nsteps
 
 __all__ = ['create_ensemble', 'nearest_pericenter', 'nearest_apocenter',
            'align_ensemble', 'prepare_parent_orbit', 'compute_align_matrix',
-           'compute_all_freqs']
+           'compute_all_freqs', 'create_ensemble_isoenergy']
 
 def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     """
@@ -69,6 +69,65 @@ def create_ensemble(w0, potential, n=1000, m_scale=1E4):
     n_vsph[:,0] = np.random.normal(vsph[0], vscale, size=n)
     n_vsph[:,1] = np.zeros(n) + vsph[1]
     n_vsph[:,2] = np.zeros(n) + vsph[2]
+    ensemble_w0[:,3:] = gc.spherical_to_cartesian(ensemble_w0[:,:3].T*u.kpc, n_vsph.T*u.kpc/u.Myr).value.T
+
+    return np.vstack((w0,ensemble_w0))
+
+def create_ensemble_isoenergy(w0, potential, n=1000, m_scale=1E4):
+    """
+    Generate an ensemble of test-particle orbits around the specified initial
+    conditions in the specified potential. The position and velocity scales of
+    the ensemble are set by the mass scale (`m_scale`).
+
+    Parameters
+    ----------
+    w0 : array_like
+        The parent orbit initial conditions as a 1D numpy array.
+    potential : `gary.potential.PotentialBase`
+        The gravitational potential.
+    n : int (optional)
+        Number of orbits in the ensemble.
+    m_scale : numeric (optional)
+        Mass scale of the ensemble.
+
+    Returns
+    -------
+    ensemble_w0 : :class:`numpy.ndarray`
+        The initial conditions for the ensemble. Will have shape (n+1,6),
+        where the first (index 0) initial conditions are the parent orbit
+        (e.g., specified when calling the function).
+    """
+    w0 = _validate_nd_array(w0, expected_ndim=1)
+
+    E = potential.total_energy(w0[:3], w0[3:])[0]
+
+    # compute enclosed mass and position, velocity scales
+    menc = potential.mass_enclosed(w0)
+    rscale = (m_scale / menc)**(1/3.) * np.sqrt(np.sum(w0[:3]**2))
+    vscale = (m_scale / menc)**(1/3.) * np.sqrt(np.sum(w0[3:]**2))
+
+    ensemble_w0 = np.zeros((n,6))
+    ensemble_w0[:,:3] = w0[None,:3]
+    # ensemble_w0[:,:3] = np.random.normal(w0[:3], rscale / np.sqrt(3), size=(n,3))
+    # ensemble_w0[:,3:] = np.random.normal(w0[3:], vscale / np.sqrt(3), size=(n,3))
+    # ensemble_w0[:,3:] = w0[None, 3:]
+    # ensemble_w0[:,3:] = np.random.normal(w0[3:], 0.002/np.sqrt(3), size=(n,3))
+
+    # _r = np.random.normal(0, rscale, size=n)
+    # _phi = np.random.uniform(0, 2*np.pi, size=n)
+    # _theta = np.arccos(2*np.random.uniform(size=n) - 1)
+    # ensemble_w0[:,:3] = np.array([_r*np.cos(_phi)*np.sin(_theta),
+    #                               _r*np.sin(_phi)*np.sin(_theta),
+    #                               _r*np.cos(_theta)]).T + w0[None,:3]
+
+    vsph = gc.cartesian_to_spherical(w0[:3]*u.kpc, w0[3:]*u.kpc/u.Myr).value
+    n_vsph = np.zeros((n,3))
+    n_vsph[:,0] = np.random.normal(vsph[0], vscale, size=n)
+
+    magv = np.sqrt(2*(E-potential.value(ensemble_w0[:,:3])) - (n_vsph[:,0]**2 + vsph[2]**2))
+    POO = np.random.uniform(0,2*np.pi,size=n)
+    n_vsph[:,1] = magv*np.cos(POO)
+    n_vsph[:,2] = magv*np.sin(POO)
     ensemble_w0[:,3:] = gc.spherical_to_cartesian(ensemble_w0[:,:3].T*u.kpc, n_vsph.T*u.kpc/u.Myr).value.T
 
     return np.vstack((w0,ensemble_w0))
@@ -384,3 +443,4 @@ def compute_all_freqs(t, ws, hamming_p=1, nintvec=10, force_cartesian=False):
     allamps = np.array(allamps)
 
     return allfreqs, allamps
+
